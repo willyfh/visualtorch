@@ -1,0 +1,38 @@
+# See https://pre-commit.com for more information
+# See https://pre-commit.com/hooks.html for more hooks
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v3.2.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-added-large-files
+
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: "v1.7.0"
+    hooks:
+      - id: mypy
+        additional_dependencies: [types-PyYAML]
+        exclude: "tests"
+
+  - repo: https://github.com/pre-commit/mirrors-prettier
+    rev: v3.1.0
+    hooks:
+      - id: prettier
+
+  - repo: https://github.com/igorshubovych/markdownlint-cli
+    rev: v0.37.0
+    hooks:
+      - id: markdownlint
+
+  - repo: https://github.com/charliermarsh/ruff-pre-commit
+    rev: "v0.1.5"
+    hooks:
+      # Run the linter.
+      - id: ruff
+        exclude: "tests/legacy"
+        args: ["--fix"]
+      # Run the formatter
+      - id: ruff-format
+        exclude: "tests/legacy"
