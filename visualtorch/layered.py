@@ -23,12 +23,12 @@ def layered_view(
     model,
     input_size=(1, 3, 224, 224),
     to_file: str | None = None,
-    min_z: int = 20,
-    min_xy: int = 20,
+    min_z: int = 10,
+    min_xy: int = 10,
     max_z: int = 400,
     max_xy: int = 2000,
     scale_z: float = 0.1,
-    scale_xy: float = 4,
+    scale_xy: float = 1,
     type_ignore: list | None = None,
     index_ignore: list | None = None,
     color_map: dict | None = None,
@@ -130,7 +130,7 @@ def layered_view(
 
         if len(shape) == 1:
             if one_dim_orientation in ["x", "y", "z"]:
-                shape = (1,) * "xyz".index(one_dim_orientation) + shape
+                shape = (1,) * "cxyz".index(one_dim_orientation) + shape
             else:
                 raise ValueError(f"unsupported orientation: {one_dim_orientation}")
 
