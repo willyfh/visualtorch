@@ -21,7 +21,7 @@ from PIL import Image
 
 def layered_view(
     model,
-    input_size=(1, 3, 224, 224),
+    input_shape=(1, 3, 224, 224),
     to_file: str | None = None,
     min_z: int = 10,
     min_xy: int = 10,
@@ -49,7 +49,7 @@ def layered_view(
 
     Args:
         model (torch.nn.Module): A torch model that will be visualized.
-        input_size (tuple): The size of the input tensor (default: (1, 3, 224, 224)).
+        input_shape (tuple): The shape of the input tensor (default: (1, 3, 224, 224)).
         to_file (str, optional): Path to the file to write the created image. If the image exists, it will be overwritten.
             Image type is inferred from the file extension. Providing None will disable writing.
         min_z (int, optional): Minimum size in pixels that a layer will have along the z-axis.
@@ -99,7 +99,7 @@ def layered_view(
     if color_map is None:
         color_map = dict()
 
-    out = torch.rand(*input_size)
+    out = torch.rand(*input_shape)
 
     # Get the list of layers
     all_layers = get_layers(model)
