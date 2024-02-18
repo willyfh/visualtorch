@@ -2,7 +2,7 @@
 
 **VisualTorch** aims to help visualize Torch-based neural network architectures. Currently, this package supports generating layered-style architectures for Torch Sequential models. This package is adapted from [visualkeras](https://github.com/paulgavrikov/visualkeras) by [@paulgavrikov](https://github.com/paulgavrikov).
 
-**v0.0.1**: Support for layered architecture of torch Sequential.
+**v0.1**: Support for layered architecture of torch Sequential.
 
 ## Installation
 
@@ -47,7 +47,7 @@ visualtorch.layered_view(model, input_shape=input_shape, legend=True, to_file='o
 visualtorch.layered_view(model, input_shape=input_shape, legend=True, to_file='output.png').show() # write and show
 ```
 
-![simple-cnn](https://github.com/willyfh/visualtorch/assets/5786636/7cd10f94-0ddb-4b9d-a4e0-614e55f2ddee)
+![simple-cnn](https://github.com/willyfh/visualtorch/assets/5786636/9b646fac-c336-4253-ac01-8f3e6b2fcc0b)
 
 ## Contributing
 
