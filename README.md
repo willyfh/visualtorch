@@ -46,6 +46,7 @@ visualtorch.layered_view(model, input_shape=input_shape, legend=True).show() # d
 visualtorch.layered_view(model, input_shape=input_shape, legend=True, to_file='output.png') # write to disk
 visualtorch.layered_view(model, input_shape=input_shape, legend=True, to_file='output.png').show() # write and show
 ```
+
 ![simple-cnn](https://github.com/willyfh/visualtorch/assets/5786636/9b646fac-c336-4253-ac01-8f3e6b2fcc0b)
 
 ## Contributing
