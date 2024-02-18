@@ -42,9 +42,9 @@ model = nn.Sequential(
 )
 
 input_shape = (1, 3, 224, 224)
-visualkeras.layered_view(model, input_shape=input_shape, legend=True).show() # display using your system viewer
-visualkeras.layered_view(model, input_shape=input_shape, legend=True, to_file='output.png') # write to disk
-visualkeras.layered_view(model, input_shape=input_shape, legend=True, to_file='output.png').show() # write and show
+visualtorch.layered_view(model, input_shape=input_shape, legend=True).show() # display using your system viewer
+visualtorch.layered_view(model, input_shape=input_shape, legend=True, to_file='output.png') # write to disk
+visualtorch.layered_view(model, input_shape=input_shape, legend=True, to_file='output.png').show() # write and show
 ```
 
 ![simple-cnn](https://github.com/willyfh/visualtorch/assets/5786636/7cd10f94-0ddb-4b9d-a4e0-614e55f2ddee)
