@@ -20,7 +20,7 @@ pip install git+https://github.com/willyfh/visualtorch
 
 ## Usage
 
-### Legend
+### Display with Legend
 
 ```python
 import visualtorch
@@ -50,11 +50,39 @@ visualtorch.layered_view(model, input_shape=input_shape, legend=True).show() # d
 
 ![simple-cnn](https://github.com/willyfh/visualtorch/assets/5786636/9b646fac-c336-4253-ac01-8f3e6b2fcc0b)
 
-### Save the image
+### Save the Image
 
 ```python
-visualtorch.layered_view(model, input_shape=input_shape, legend=True, to_file='output.png') # write to disk
+visualtorch.layered_view(model, input_shape=input_shape, legend=True, to_file='output.png')
 ```
+
+### 2D View
+
+```python
+visualtorch.layered_view(model, input_shape=input_shape, draw_volume=False)
+```
+
+![2d-view](https://github.com/willyfh/visualtorch/assets/5786636/5b16c252-f589-4b3f-8ea4-1bc188e6c124)
+
+### Custom Color
+
+Use 'fill' to change the color of the layer, and use 'outline' to change the color of the lines.
+
+```python
+from collections import defaultdict
+
+color_map = defaultdict(dict)
+color_map[nn.Conv2d]['fill'] = '#FF6F61' # Coral red
+color_map[nn.ReLU]['fill'] = 'skyblue'
+color_map[nn.MaxPool2d]['fill'] = '#88B04B' # Sage green
+color_map[nn.Flatten]['fill'] = 'gold'
+color_map[nn.Linear]['fill'] = '#6B5B95'    # Royal purple
+
+input_shape = (1, 3, 224, 224)
+visualtorch.layered_view(model, input_shape=input_shape, color_map=color_map
+```
+
+![custom-color](https://github.com/willyfh/visualtorch/assets/5786636/57f28191-d86e-4419-a015-f5fc7fa17b5a)
 
 ## Contributing
 
