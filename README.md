@@ -6,13 +6,13 @@
 
 ## Installation
 
-### Install from PyPI
+### Install from PyPI (Latest release)
 
 ```bash
 pip install visualtorch
 ```
 
-### Install from source (latest)
+### Install from source
 
 ```bash
 pip install git+https://github.com/willyfh/visualtorch
@@ -20,11 +20,13 @@ pip install git+https://github.com/willyfh/visualtorch
 
 ## Usage
 
+### Legend
+
 ```python
 import visualtorch
 import torch.nn as nn
 
-# Example of aa simple CNN model using nn.Sequential
+# Example of a simple CNN model using nn.Sequential
 model = nn.Sequential(
     nn.Conv2d(3, 16, kernel_size=3, padding=1),
     nn.ReLU(),
@@ -42,12 +44,17 @@ model = nn.Sequential(
 )
 
 input_shape = (1, 3, 224, 224)
+
 visualtorch.layered_view(model, input_shape=input_shape, legend=True).show() # display using your system viewer
-visualtorch.layered_view(model, input_shape=input_shape, legend=True, to_file='output.png') # write to disk
-visualtorch.layered_view(model, input_shape=input_shape, legend=True, to_file='output.png').show() # write and show
 ```
 
 ![simple-cnn](https://github.com/willyfh/visualtorch/assets/5786636/9b646fac-c336-4253-ac01-8f3e6b2fcc0b)
+
+### Save the image
+
+```python
+visualtorch.layered_view(model, input_shape=input_shape, legend=True, to_file='output.png') # write to disk
+```
 
 ## Contributing
 
@@ -58,3 +65,18 @@ Please feel free to send a pull request to contribute to this project.
 This poject is available as open source under the terms of the [MIT License](https://github.com/willyfh/visualtorch/blob/update-readme/LICENSE).
 
 Originally, this project was based on the [visualkeras](https://github.com/paulgavrikov/visualkeras) (under the MIT license).
+
+## Citation
+
+Please cite this project in your publications if it helps your research as follows:
+
+```bibtex
+@misc{Hendria2024VisualTorch,
+  author = {Hendria, Willy Fitra},
+  title = {visualtorch},
+  year = {2024},
+  publisher = {GitHub},
+  journal = {GitHub repository},
+  note = {\url{https://github.com/willyfh/visualtorch}},
+}
+```
