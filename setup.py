@@ -25,5 +25,5 @@ setuptools.setup(
         "aggdraw>=1.3.11",
         "torch>=2.0.0",
     ],
-    python_requires=">=3.6",
+    python_requires=">=3.10",
 )
