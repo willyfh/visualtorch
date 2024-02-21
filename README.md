@@ -1,4 +1,5 @@
 # ⭐ VisualTorch ⭐
+[![Downloads](https://static.pepy.tech/badge/visualtorch)](https://pepy.tech/project/visualtorch)
 
 **VisualTorch** aims to help visualize Torch-based neural network architectures. Currently, this package supports generating layered-style architectures for Torch Sequential models. This package is adapted from [visualkeras](https://github.com/paulgavrikov/visualkeras) by [@paulgavrikov](https://github.com/paulgavrikov).
 
