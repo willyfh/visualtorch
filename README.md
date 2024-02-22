@@ -24,6 +24,8 @@ pip install git+https://github.com/willyfh/visualtorch
 
 ### Display with Legend
 
+#### Sequential
+
 ```python
 import visualtorch
 import torch.nn as nn
@@ -44,6 +46,46 @@ model = nn.Sequential(
     nn.ReLU(),
     nn.Linear(256, 10)  # Assuming 10 output classes
 )
+
+input_shape = (1, 3, 224, 224)
+
+visualtorch.layered_view(model, input_shape=input_shape, legend=True).show() # display using your system viewer
+```
+
+#### Functional
+
+```python
+import torch.nn as nn
+
+# Example of a simple CNN model with two conv layers
+class SimpleCNN(nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.conv1 = nn.Conv2d(3, 32, kernel_size=3, padding=1)
+        self.relu1 = nn.ReLU()
+        self.maxpool1 = nn.MaxPool2d(2, 2)
+        self.conv2 = nn.Conv2d(32, 64, kernel_size=3, padding=1)
+        self.relu2 = nn.ReLU()
+        self.maxpool2 = nn.MaxPool2d(2, 2)
+        self.fc1 = nn.Linear(64 * 56 * 56, 128)
+        self.relu3 = nn.ReLU()
+        self.fc2 = nn.Linear(128, 10)
+
+    def forward(self, x):
+        x = self.conv1(x)
+        x = self.relu1(x)
+        x = self.maxpool1(x)
+        x = self.conv2(x)
+        x = self.relu2(x)
+        x = self.maxpool2(x)
+        x = x.view(x.size(0), -1)
+        x = self.fc1(x)
+        x = self.relu3(x)
+        x = self.fc2(x)
+        return x
+
+# Create an instance of the SimpleCNN
+model = SimpleCNN()
 
 input_shape = (1, 3, 224, 224)
 
