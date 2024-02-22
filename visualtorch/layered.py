@@ -16,6 +16,7 @@ from .layer_utils import SpacingDummyLayer
 import aggdraw
 import PIL
 import torch
+import torch.nn as nn
 from PIL import Image
 
 from collections import OrderedDict
@@ -111,7 +112,13 @@ def layered_view(
 
     model.apply(lambda module: register_hook(model, module, hooks, layers))
 
-    model(dummy_input)
+    with torch.no_grad():
+        if isinstance(model, nn.ModuleList):
+            output = dummy_input
+            for layer in model:
+                output = layer(output)
+        else:
+            output = model(dummy_input)
 
     # remove these hooks
     for h in hooks:
