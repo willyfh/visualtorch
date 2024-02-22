@@ -3,6 +3,9 @@ from PIL import ImageColor, ImageDraw, Image
 import aggdraw
 import PIL
 import torch
+import torch.nn as nn
+from collections import OrderedDict
+from typing import List, Tuple
 
 
 class RectShape:
@@ -256,20 +259,39 @@ def linear_layout(
     return layout
 
 
-def get_layers(model: torch.nn.Module):
+def register_hook(
+    model: nn.Module, module: nn.Module, hooks: List, layers: OrderedDict
+) -> None:
     """
-    Recursively extracts the list of layers from a PyTorch model.
+    Registers a forward hook on the specified module and collects the module and the output shapes.
 
     Args:
-        model (torch.nn.Module): The PyTorch model from which layers will be extracted.
+        model (nn.Module): The parent model.
+        module (nn.Module): The module to register the hook on.
+        hooks (List): A list to store the registered hooks.
+        layers (OrderedDict): An OrderedDict to store information about the registered modules and output shapes.
 
     Returns:
-        list: A list containing the layers extracted from the model. Each layer is represented as a PyTorch module.
+        None
     """
-    layers = []
-    for module in model.children():
-        if isinstance(module, torch.nn.Sequential):
-            layers.extend(get_layers(module))
+
+    def hook(
+        module: nn.Module, input: Tuple[torch.Tensor], output: torch.Tensor
+    ) -> None:
+        class_name = str(module.__class__).split(".")[-1].split("'")[0]
+        module_idx = len(layers)
+
+        m_key = "%s-%i" % (class_name, module_idx + 1)
+        layers[m_key] = OrderedDict()
+        layers[m_key]["module"] = module
+        if isinstance(output, (list, tuple)):
+            layers[m_key]["output_shape"] = tuple((-1,) + o.size()[1:] for o in output)
         else:
-            layers.append(module)
-    return layers
+            layers[m_key]["output_shape"] = output.size()
+
+    if (
+        not isinstance(module, nn.Sequential)
+        and not isinstance(module, nn.ModuleList)
+        and module is not model
+    ):
+        hooks.append(module.register_forward_hook(hook))
