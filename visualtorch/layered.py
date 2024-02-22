@@ -1,22 +1,25 @@
 from PIL import ImageFont
 from math import ceil
-from typing import Any
+from typing import Any, List
 from .utils import (
     self_multiply,
     linear_layout,
     vertical_image_concat,
     ColorWheel,
-    get_layers,
     Box,
     get_rgba_tuple,
     ImageDraw,
+    register_hook,
 )
 from .layer_utils import SpacingDummyLayer
 
 import aggdraw
 import PIL
 import torch
+import torch.nn as nn
 from PIL import Image
+
+from collections import OrderedDict
 
 
 def layered_view(
@@ -99,19 +102,35 @@ def layered_view(
     if color_map is None:
         color_map = dict()
 
-    out = torch.rand(*input_shape)
+    dummy_input = torch.rand(*input_shape)
 
     # Get the list of layers
-    all_layers = get_layers(model)
+    # all_layers = get_layers(model)
 
-    for index, layer in enumerate(all_layers):
+    layers: OrderedDict[str, Any] = OrderedDict()
+    hooks: List[Any] = []
+
+    model.apply(lambda module: register_hook(model, module, hooks, layers))
+
+    with torch.no_grad():
+        if isinstance(model, nn.ModuleList):
+            output = dummy_input
+            for layer in model:
+                output = layer(output)
+        else:
+            output = model(dummy_input)
+
+    # remove these hooks
+    for h in hooks:
+        h.remove()
+
+    for index, key in enumerate(layers):
+        layer = layers[key]["module"]
+        shape = layers[key]["output_shape"]
         # Do no render the SpacingDummyLayer, just increase the pointer
         if type(layer) == SpacingDummyLayer:
             current_z += layer.spacing
             continue
-
-        out = layer(out)
-        shape = out.shape
 
         # Ignore layers that the use has opted out to
         if type(layer) in type_ignore or index in index_ignore:
