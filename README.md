@@ -22,9 +22,7 @@ pip install git+https://github.com/willyfh/visualtorch
 
 ## Usage
 
-### Display with Legend
-
-#### Sequential
+### Sequential
 
 ```python
 import visualtorch
@@ -52,7 +50,9 @@ input_shape = (1, 3, 224, 224)
 visualtorch.layered_view(model, input_shape=input_shape, legend=True).show() # display using your system viewer
 ```
 
-#### Functional
+![simple-cnn-sequential](https://github.com/willyfh/visualtorch/assets/5786636/9b646fac-c336-4253-ac01-8f3e6b2fcc0b)
+
+### Functional
 
 ```python
 import torch.nn as nn
@@ -91,8 +91,8 @@ input_shape = (1, 3, 224, 224)
 
 visualtorch.layered_view(model, input_shape=input_shape, legend=True).show() # display using your system viewer
 ```
+![simple-cnn-functional](https://github.com/willyfh/visualtorch/assets/5786636/b5f56233-cde1-428f-9b49-8f5088746c7f)
 
-![simple-cnn](https://github.com/willyfh/visualtorch/assets/5786636/9b646fac-c336-4253-ac01-8f3e6b2fcc0b)
 
 ### Save the Image
 
