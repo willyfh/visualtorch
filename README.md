@@ -93,8 +93,8 @@ input_shape = (1, 3, 224, 224)
 
 visualtorch.layered_view(model, input_shape=input_shape, legend=True).show() # display using your system viewer
 ```
-![simple-cnn-functional](https://github.com/willyfh/visualtorch/assets/5786636/b5f56233-cde1-428f-9b49-8f5088746c7f)
 
+![simple-cnn-functional](https://github.com/willyfh/visualtorch/assets/5786636/b5f56233-cde1-428f-9b49-8f5088746c7f)
 
 ### Save the Image
 
