@@ -24,7 +24,7 @@ from collections import OrderedDict
 
 def layered_view(
     model,
-    input_shape=(1, 3, 224, 224),
+    input_shape,
     to_file: str | None = None,
     min_z: int = 10,
     min_xy: int = 10,
