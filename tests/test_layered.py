@@ -55,20 +55,20 @@ def custom_model():
 
 def test_sequential_model_layered_view_runs(sequential_model):
     try:
-        _ = layered_view(sequential_model)
+        _ = layered_view(sequential_model, input_shape=(1, 3, 224, 224))
     except Exception as e:
         pytest.fail(f"layered_view raised an exception with Sequential model: {e}")
 
 
 def test_module_list_model_layered_view_runs(module_list_model):
     try:
-        _ = layered_view(module_list_model)
+        _ = layered_view(module_list_model, input_shape=(1, 3, 224, 224))
     except Exception as e:
         pytest.fail(f"layered_view raised an exception with ModuleList model: {e}")
 
 
 def test_custom_model_layered_view_runs(custom_model):
     try:
-        _ = layered_view(custom_model)
+        _ = layered_view(custom_model, input_shape=(1, 3, 224, 224))
     except Exception as e:
         pytest.fail(f"layered_view raised an exception with Custom model: {e}")
