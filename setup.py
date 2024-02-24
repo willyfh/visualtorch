@@ -28,4 +28,5 @@ setuptools.setup(
         "torch>=2.0.0",
     ],
     python_requires=">=3.10",
+    license=("MIT", "LICENSE"),
 )
