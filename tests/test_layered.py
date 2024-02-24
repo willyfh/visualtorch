@@ -34,11 +34,11 @@ def module_list_model():
 
 
 @pytest.fixture
-def functional_model():
-    # Define the functional model inside the function
-    class FunctionalModel(nn.Module):
+def custom_model():
+    # Define the custom model inside the function
+    class CustomModel(nn.Module):
         def __init__(self):
-            super(FunctionalModel, self).__init__()
+            super(CustomModel, self).__init__()
             self.conv1 = nn.Conv2d(3, 64, 3, 1, 1)
             self.conv2 = nn.Conv2d(64, 128, 3, 1, 1)
 
@@ -48,8 +48,8 @@ def functional_model():
             x = F.max_pool2d(x, 2, 2)
             return x
 
-    # Create an instance of the functional model
-    model = FunctionalModel()
+    # Create an instance of the custom model
+    model = CustomModel()
     return model
 
 
@@ -67,8 +67,8 @@ def test_module_list_model_layered_view_runs(module_list_model):
         pytest.fail(f"layered_view raised an exception with ModuleList model: {e}")
 
 
-def test_functional_model_layered_view_runs(functional_model):
+def test_custom_model_layered_view_runs(custom_model):
     try:
-        _ = layered_view(functional_model)
+        _ = layered_view(custom_model)
     except Exception as e:
-        pytest.fail(f"layered_view raised an exception with Functional model: {e}")
+        pytest.fail(f"layered_view raised an exception with Custom model: {e}")
