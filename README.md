@@ -56,7 +56,7 @@ visualtorch.layered_view(model, input_shape=input_shape, legend=True).show() # d
 
 ### Custom Model
 
-In a custom model, only the components defined within the model's __init__ method are visualized. The operations that are defined exclusively within the forward function are not visualized.
+In a custom model, only the components defined within the model's **init** method are visualized. The operations that are defined exclusively within the forward function are not visualized.
 
 ```python
 import torch.nn as nn
