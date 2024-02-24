@@ -2,9 +2,9 @@
 
 [![python](https://img.shields.io/badge/python-3.10%2B-blue)]() [![pytorch](https://img.shields.io/badge/pytorch-2.0%2B-orange)]() [![Downloads](https://static.pepy.tech/personalized-badge/visualtorch?period=total&units=international_system&left_color=grey&right_color=green&left_text=PyPI%20Downloads)](https://pepy.tech/project/visualtorch)
 
-**VisualTorch** aims to help visualize Torch-based neural network architectures. Currently, this package supports generating layered-style architectures for Torch Sequential and Functional models. This package is adapted from [visualkeras](https://github.com/paulgavrikov/visualkeras) by [@paulgavrikov](https://github.com/paulgavrikov).
+**VisualTorch** aims to help visualize Torch-based neural network architectures. Currently, this package supports generating layered-style architectures for Torch Sequential and Custom models. This package is adapted from [visualkeras](https://github.com/paulgavrikov/visualkeras) by [@paulgavrikov](https://github.com/paulgavrikov).
 
-**v0.2**: Support for functional models has been added.
+**v0.2**: Support for custom models has been added.
 
 **v0.1.1**: Support for the layered architecture of Torch Sequential.
 
@@ -54,7 +54,7 @@ visualtorch.layered_view(model, input_shape=input_shape, legend=True).show() # d
 
 ![simple-cnn-sequential](https://github.com/willyfh/visualtorch/assets/5786636/9b646fac-c336-4253-ac01-8f3e6b2fcc0b)
 
-### Functional
+### Custom Model
 
 ```python
 import torch.nn as nn
@@ -94,7 +94,7 @@ input_shape = (1, 3, 224, 224)
 visualtorch.layered_view(model, input_shape=input_shape, legend=True).show() # display using your system viewer
 ```
 
-![simple-cnn-functional](https://github.com/willyfh/visualtorch/assets/5786636/b5f56233-cde1-428f-9b49-8f5088746c7f)
+![simple-cnn-custom](https://github.com/willyfh/visualtorch/assets/5786636/b5f56233-cde1-428f-9b49-8f5088746c7f)
 
 ### Save the Image
 
