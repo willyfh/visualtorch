@@ -1,7 +1,6 @@
 <div align="center">
  <h1>🔥 VisualTorch 🔥</h1>
 
-
 [![python](https://img.shields.io/badge/python-3.10%2B-blue)]() [![pytorch](https://img.shields.io/badge/pytorch-2.0%2B-orange)]() [![Downloads](https://static.pepy.tech/personalized-badge/visualtorch?period=total&units=international_system&left_color=grey&right_color=green&left_text=PyPI%20Downloads)](https://pepy.tech/project/visualtorch) [![Run Tests](https://github.com/willyfh/visualtorch/actions/workflows/pytest.yml/badge.svg)](https://github.com/willyfh/visualtorch/actions/workflows/pytest.yml)
 
 </div>
@@ -11,7 +10,6 @@
 **Note:** VisualTorch may not yet support complex models, but contributions are welcome!
 
 ![layered-and-graph](https://github.com/willyfh/visualtorch/assets/5786636/694e6e6c-58ea-46d6-9280-348337c08ec7)
-
 
 **v0.2**: Added support for custom models and implemented graph view functionality.
 
