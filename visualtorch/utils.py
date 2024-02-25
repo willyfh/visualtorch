@@ -103,6 +103,49 @@ class Box(RectShape):
         draw.rectangle([self.x1, self.y1, self.x2, self.y2], pen, brush)
 
 
+class Circle(RectShape):
+    def draw(self, draw: ImageDraw):
+        pen, brush = self._get_pen_brush()
+        draw.ellipse([self.x1, self.y1, self.x2, self.y2], pen, brush)
+
+
+class Ellipses(RectShape):
+    def draw(self, draw: ImageDraw):
+        pen, brush = self._get_pen_brush()
+        w = self.x2 - self.x1
+        d = int(w / 7)
+        draw.ellipse(
+            [
+                self.x1 + (w - d) / 2,
+                self.y1 + 1 * d,
+                self.x1 + (w + d) / 2,
+                self.y1 + 2 * d,
+            ],
+            pen,
+            brush,
+        )
+        draw.ellipse(
+            [
+                self.x1 + (w - d) / 2,
+                self.y1 + 3 * d,
+                self.x1 + (w + d) / 2,
+                self.y1 + 4 * d,
+            ],
+            pen,
+            brush,
+        )
+        draw.ellipse(
+            [
+                self.x1 + (w - d) / 2,
+                self.y1 + 5 * d,
+                self.x1 + (w + d) / 2,
+                self.y1 + 6 * d,
+            ],
+            pen,
+            brush,
+        )
+
+
 class ColorWheel:
     def __init__(self, colors: list | None = None):
         self._cache: Dict[type, Any] = dict()
