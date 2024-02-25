@@ -2,11 +2,11 @@
 
 [![python](https://img.shields.io/badge/python-3.10%2B-blue)]() [![pytorch](https://img.shields.io/badge/pytorch-2.0%2B-orange)]() [![Downloads](https://static.pepy.tech/personalized-badge/visualtorch?period=total&units=international_system&left_color=grey&right_color=green&left_text=PyPI%20Downloads)](https://pepy.tech/project/visualtorch) [![Run Tests](https://github.com/willyfh/visualtorch/actions/workflows/pytest.yml/badge.svg)](https://github.com/willyfh/visualtorch/actions/workflows/pytest.yml)
 
-**VisualTorch** aims to help visualize Torch-based neural network architectures. Currently, this package supports generating layered-style architectures for Torch Sequential and Custom models. This package is adapted from [visualkeras](https://github.com/paulgavrikov/visualkeras) by [@paulgavrikov](https://github.com/paulgavrikov).
+**VisualTorch** aims to help visualize Torch-based neural network architectures. Currently, this package supports generating layered-style and graph-style architectures for PyTorch Sequential and Custom models. This package is adapted from [visualkeras](https://github.com/paulgavrikov/visualkeras), [pytorchviz](https://github.com/szagoruyko/pytorchviz), and [pytorch-summary](https://github.com/sksq96/pytorch-summary).
 
-**v0.2**: Support for custom models has been added.
+**v0.2**: Added support for custom models and implemented graph view functionality.
 
-**v0.1.1**: Support for the layered architecture of Torch Sequential.
+**v0.1.1**: Added support for the layered architecture of Torch Sequential.
 
 ## Installation
 
