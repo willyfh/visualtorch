@@ -100,6 +100,36 @@ visualtorch.layered_view(model, input_shape=input_shape, legend=True).show() # d
 
 ![simple-cnn-custom](https://github.com/willyfh/visualtorch/assets/5786636/f22298b4-f341-4a0d-b85b-11f01e207ad8)
 
+### Graph View
+```python
+import torch
+import torch.nn as nn
+import visualtorch
+
+class SimpleDense(nn.Module):
+    def __init__(self):
+        super(SimpleDense, self).__init__()
+        self.h0 = nn.Linear(4, 8)
+        self.h1 = nn.Linear(8, 8)
+        self.h2 = nn.Linear(8, 4)
+        self.out = nn.Linear(4, 2)
+
+    def forward(self, x):
+        x = self.h0(x)
+        x = self.h1(x)
+        x = self.h2(x)
+        x = self.out(x)
+        return x
+
+model = SimpleDense()
+
+input_shape = (1, 4)
+
+visualtorch.graph_view(model, input_shape).show()
+```
+
+![graph-view](https://github.com/willyfh/visualtorch/assets/5786636/a65b4208-72da-497b-b6c9-aafc82b67b58)
+
 ### Save the Image
 
 ```python
@@ -142,7 +172,7 @@ Please feel free to send a pull request to contribute to this project.
 
 This poject is available as open source under the terms of the [MIT License](https://github.com/willyfh/visualtorch/blob/update-readme/LICENSE).
 
-Originally, this project was based on the [visualkeras](https://github.com/paulgavrikov/visualkeras) (under the MIT license).
+Originally, this project was based on the [visualkeras](https://github.com/paulgavrikov/visualkeras) (under the MIT license), with additional modifications inspired by [pytorchviz](https://github.com/szagoruyko/pytorchviz), and [pytorch-summary](https://github.com/sksq96/pytorch-summary), both of which are also licensed under the MIT license.
 
 ## Citation
 
