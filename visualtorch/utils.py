@@ -152,7 +152,7 @@ class ColorWheel:
         self.colors = (
             colors
             if colors is not None
-            else ["#ffd166", "#ef476f", "#06d6a0", "#118ab2", "#073b4c"]
+            else ["#FFE4B5", "#ADD8E6", "#98FB98", "#FFA07A", "#D8BFD8"]
         )
 
     def get_color(self, class_type: type):
