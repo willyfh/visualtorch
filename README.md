@@ -101,6 +101,7 @@ visualtorch.layered_view(model, input_shape=input_shape, legend=True).show() # d
 ![simple-cnn-custom](https://github.com/willyfh/visualtorch/assets/5786636/f22298b4-f341-4a0d-b85b-11f01e207ad8)
 
 ### Graph View
+
 ```python
 import torch
 import torch.nn as nn
