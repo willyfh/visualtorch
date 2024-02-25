@@ -121,7 +121,7 @@ def graph_view(
 
                 current_y = c.y2 + node_spacing
 
-                c.fill = color_map.get(type(layer), {}).get("fill", "orange")
+                c.fill = color_map.get(type(layer), {}).get("fill", "blue")
                 c.outline = color_map.get(type(layer), {}).get("outline", "black")
 
                 layer_nodes.append(c)
