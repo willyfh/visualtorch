@@ -24,7 +24,7 @@ MD033: false
 # If a page is printed, it helps if the URL is viewable.
 MD034: false # Bare URL used
 
-# This is needed for the anomalib tagline in the README
+# This is needed for the tagline in the README
 MD036: false # Emphasis used instead of a header
 
 # Some md files have comments or links at the top of the files.
