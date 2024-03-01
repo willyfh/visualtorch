@@ -17,6 +17,26 @@ Installing visualtorch via PyPI or Source.
 
 ::::
 
+## {octicon}`code-square` Module References
+
+::::{grid}
+
+:::{grid-item-card} {octicon}`tools` Layered View
+:link: markdown/module_references/layered
+:link-type: doc
+
+Module references for layered view.
+:::
+
+:::{grid-item-card} {octicon}`tools` Graph View
+:link: markdown/module_references/graph
+:link-type: doc
+
+Module references for graph view.
+:::
+
+::::
+
 ```{toctree}
 :caption: Get Started
 :hidden:
@@ -33,11 +53,11 @@ markdown/usage_examples/graph
 ```
 
 ```{toctree}
-:caption: References
+:caption: Module References
 :hidden:
 
-markdown/references/layered
-markdown/references/graph
+markdown/module_references/layered
+markdown/module_references/graph
 ```
 
 ```{toctree}
