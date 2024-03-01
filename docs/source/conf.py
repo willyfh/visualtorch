@@ -20,7 +20,6 @@ sys.path.insert(0, str(module_path.resolve()))
 
 project = "VisualTorch"
 copyright = "2024, Willy Fitra Hendria"  # noqa: A001
-author = "Willy Fitra Hendria"
 release = "2024"
 
 # -- General configuration ---------------------------------------------------
