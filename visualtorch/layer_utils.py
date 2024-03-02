@@ -7,8 +7,14 @@ from .utils import get_keys_by_value
 
 from typing import Tuple, Dict, List, Any
 
+from collections import defaultdict
 
-TARGET_OPS = {"AddmmBackward0", "ConvolutionBackward0"}
+# WARNING: currently, graph visualization relying on following operations,
+# thereby only linear and convolutional layers are supported.
+# TODO: implement a more dynamic/better approach to support all layers
+TARGET_OPS = defaultdict(
+    lambda: None, {"AddmmBackward0": nn.Linear, "ConvolutionBackward0": nn.Conv2d}
+)
 
 
 class SpacingDummyLayer(nn.Module):
@@ -21,7 +27,10 @@ class InputDummyLayer:
     def __init__(self, name, units=None):
         if units:
             self.units = units
-        self.name = name
+        self._name = name
+
+    def name(self):
+        return self._name
 
 
 def model_to_adj_matrix(
@@ -53,7 +62,7 @@ def model_to_adj_matrix(
     def add_nodes(fn, source=None, level=0):
         assert not torch.is_tensor(fn)
 
-        if str(type(fn).__name__) in TARGET_OPS:
+        if str(type(fn).__name__) in TARGET_OPS.keys():
             node_id = str(id(fn))
             id_to_ops[node_id] = fn
             if node_id not in nodes:
