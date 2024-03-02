@@ -1,3 +1,8 @@
+"""Layered View module for pytorch model visualization."""
+
+# Copyright (C) 2024 Willy Fitra Hendria
+# SPDX-License-Identifier: MIT
+
 from PIL import ImageFont
 from math import ceil
 from typing import Any, List

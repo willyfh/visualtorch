@@ -1,7 +1,12 @@
+"""Graph View module for pytorch model visualization."""
+
+# Copyright (C) 2024 Willy Fitra Hendria
+# SPDX-License-Identifier: MIT
+
 import aggdraw
 from PIL import Image
 from math import ceil
-from .layer_utils import model_to_adj_matrix, add_input_dummy_layer
+from .layer_utils import model_to_adj_matrix, add_input_dummy_layer, TARGET_OPS
 from .utils import Circle, Ellipses, get_keys_by_value, Box
 import numpy as np
 from typing import Optional, Dict, Any, Tuple, List
@@ -84,6 +89,7 @@ def graph_view(
     for index, layer_list in enumerate(model_layers):
         current_y = 0
         nodes = []
+        layer: Any
         for layer in layer_list:
             is_box = True
             units = 1
@@ -121,8 +127,12 @@ def graph_view(
 
                 current_y = c.y2 + node_spacing
 
-                c.fill = color_map.get(type(layer), {}).get("fill", "#ADD8E6")
-                c.outline = color_map.get(type(layer), {}).get("outline", "black")
+                c.fill = color_map.get(TARGET_OPS[layer.name()], {}).get(
+                    "fill", "#ADD8E6"
+                )
+                c.outline = color_map.get(TARGET_OPS[layer.name()], {}).get(
+                    "outline", "black"
+                )
 
                 layer_nodes.append(c)
 

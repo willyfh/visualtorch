@@ -1,3 +1,8 @@
+"""Utils module for pytorch model visualization."""
+
+# Copyright (C) 2024 Willy Fitra Hendria
+# SPDX-License-Identifier: MIT
+
 from typing import Any, Dict
 from PIL import ImageColor, ImageDraw, Image
 import aggdraw

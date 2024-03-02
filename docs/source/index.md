@@ -2,13 +2,13 @@
 
 VisualTorch aims to help visualize Torch-based neural network architectures. It currently supports generating layered-style and graph-style architectures for PyTorch Sequential and Custom models.
 
-🚧 This documentation is under construction 🚧
+![VisualTorch](_static/images/banners/visualizations-preview.png)
 
 ## {octicon}`rocket` Get Started
 
 ::::{grid}
 
-:::{grid-item-card} {octicon}`tools` Installation
+:::{grid-item-card} Installation
 :link: markdown/get_started/installation
 :link-type: doc
 
@@ -17,25 +17,46 @@ Installing visualtorch via PyPI or Source.
 
 ::::
 
-## {octicon}`code-square` Module References
+## {octicon}`eye` Usage Examples
 
 ::::{grid}
 
-:::{grid-item-card} {octicon}`tools` Layered View
-:link: markdown/module_references/layered
+:::{grid-item-card} All Examples
+:link: usage_examples/index
 :link-type: doc
 
-Module references for layered view.
-:::
-
-:::{grid-item-card} {octicon}`tools` Graph View
-:link: markdown/module_references/graph
-:link-type: doc
-
-Module references for graph view.
+Usage examples of VisualTorch.
 :::
 
 ::::
+
+## {octicon}`code-square` API References
+
+::::{grid}
+
+:::{grid-item-card} Layered View
+:link: markdown/api_references/layered
+:link-type: doc
+
+API references for layered view.
+:::
+
+:::{grid-item-card} Graph View
+:link: markdown/api_references/graph
+:link-type: doc
+
+API references for graph view.
+:::
+
+::::
+
+## {octicon}`book` Citation
+
+Please cite this project in your publications if it helps your research as follows:
+
+```{literalinclude} snippets/citation/bib.txt
+:language: bibtex
+```
 
 ```{toctree}
 :caption: Get Started
@@ -48,16 +69,16 @@ markdown/get_started/installation
 :caption: Usage Examples
 :hidden:
 
-markdown/usage_examples/layered
-markdown/usage_examples/graph
+usage_examples/layered/index
+usage_examples/graph/index
 ```
 
 ```{toctree}
-:caption: Module References
+:caption: API References
 :hidden:
 
-markdown/module_references/layered
-markdown/module_references/graph
+markdown/api_references/layered
+markdown/api_references/graph
 ```
 
 ```{toctree}
