@@ -15,7 +15,7 @@
 
 Online documentation is available at [visualtorch.readthedocs.io](https://visualtorch.readthedocs.io/en/latest/).
 
-The docs include more usage examples, module references, and other useful information.
+The docs include more usage examples, API references, and other useful information.
 
 ## Installation
 

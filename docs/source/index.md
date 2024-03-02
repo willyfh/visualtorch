@@ -30,22 +30,22 @@ Usage examples of VisualTorch.
 
 ::::
 
-## {octicon}`code-square` Module References
+## {octicon}`code-square` API References
 
 ::::{grid}
 
 :::{grid-item-card} Layered View
-:link: markdown/module_references/layered
+:link: markdown/api_references/layered
 :link-type: doc
 
-Module references for layered view.
+API references for layered view.
 :::
 
 :::{grid-item-card} Graph View
-:link: markdown/module_references/graph
+:link: markdown/api_references/graph
 :link-type: doc
 
-Module references for graph view.
+API references for graph view.
 :::
 
 ::::
@@ -74,11 +74,11 @@ usage_examples/graph/index
 ```
 
 ```{toctree}
-:caption: Module References
+:caption: API References
 :hidden:
 
-markdown/module_references/layered
-markdown/module_references/graph
+markdown/api_references/layered
+markdown/api_references/graph
 ```
 
 ```{toctree}
