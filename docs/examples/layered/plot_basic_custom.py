@@ -31,7 +31,6 @@ class SimpleCNN(nn.Module):
         x = self.conv3(x)
         x = F.relu(x)
         x = F.max_pool2d(x, 2, 2)
-        print(x.shape)
         x = x.view(x.size(0), -1)
         x = self.fc1(x)
         x = F.relu(x)
