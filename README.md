@@ -17,6 +17,12 @@
 
 **v0.1.1**: Added support for the layered architecture of Torch Sequential.
 
+## Documentation
+
+Online documentation is available at [visualtorch.readthedocs.io](https://visualtorch.readthedocs.io/en/latest/).
+
+The docs include more usage examples, module references, and other useful information.
+
 ## Installation
 
 ### Install from PyPI (Latest release)
