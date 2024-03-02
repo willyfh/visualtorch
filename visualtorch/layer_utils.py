@@ -1,3 +1,8 @@
+"""Layer Utils module for pytorch model visualization."""
+
+# Copyright (C) 2024 Willy Fitra Hendria
+# SPDX-License-Identifier: MIT
+
 import numpy as np
 
 import torch

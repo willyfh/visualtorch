@@ -1,3 +1,8 @@
+"""Tests for layered view."""
+
+# Copyright (C) 2024 Willy Fitra Hendria
+# SPDX-License-Identifier: MIT
+
 import pytest
 import torch.nn as nn
 import torch.nn.functional as F

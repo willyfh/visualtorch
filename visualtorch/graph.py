@@ -1,3 +1,8 @@
+"""Graph View module for pytorch model visualization."""
+
+# Copyright (C) 2024 Willy Fitra Hendria
+# SPDX-License-Identifier: MIT
+
 import aggdraw
 from PIL import Image
 from math import ceil

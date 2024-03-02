@@ -1,3 +1,8 @@
+"""Setup file for visualtorch."""
+
+# Copyright (C) 2024 Willy Fitra Hendria
+# SPDX-License-Identifier: MIT
+
 import setuptools
 
 with open("README.md", "r") as fh:
