@@ -1,5 +1,11 @@
 # MIT License
 
+This poject is available as open source under the terms of the [MIT License](https://github.com/willyfh/visualtorch/blob/update-readme/LICENSE).
+
+Originally, this project was based on the [visualkeras](https://github.com/paulgavrikov/visualkeras) (under the MIT license), with additional modifications inspired by [pytorchviz](https://github.com/szagoruyko/pytorchviz), and [pytorch-summary](https://github.com/sksq96/pytorch-summary), both of which are also licensed under the MIT license.
+
+--
+
 Copyright (c) 2024 Willy Fitra Hendria
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
