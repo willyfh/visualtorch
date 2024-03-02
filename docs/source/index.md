@@ -54,15 +54,8 @@ Module references for graph view.
 
 Please cite this project in your publications if it helps your research as follows:
 
-```bibtex
-@misc{Hendria2024VisualTorch,
-  author = {Hendria, Willy Fitra},
-  title = {visualtorch},
-  year = {2024},
-  publisher = {GitHub},
-  journal = {GitHub repository},
-  note = {\url{https://github.com/willyfh/visualtorch}},
-}
+```{literalinclude} snippets/citation/bib.txt
+:language: bibtex
 ```
 
 ```{toctree}
