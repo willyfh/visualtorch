@@ -10,9 +10,9 @@
 **Note:** VisualTorch may not yet support complex models, but contributions are welcome!
 
 <div align="center">
- 
- ![VisualTorch Examples](https://github.com/willyfh/visualtorch/assets/5786636/7e2c35ea-d34d-4b92-b414-285bccb8576a)
- 
+
+![VisualTorch Examples](https://github.com/willyfh/visualtorch/assets/5786636/7e2c35ea-d34d-4b92-b414-285bccb8576a)
+
 </div>
 
 ## Documentation
