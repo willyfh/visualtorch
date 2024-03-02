@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import sys
 from pathlib import Path
+from sphinx_gallery.sorting import ExplicitOrder
 
 # Define the path to your module using Path
 module_path = Path(__file__).parent.parent / "src"
@@ -68,6 +69,7 @@ sphinx_gallery_conf = {
     "examples_dirs": "../examples",  # path to your example scripts
     "gallery_dirs": "usage_examples",  # path to where to save gallery generated output
     "min_reported_time": 10,
+    "subsection_order": ExplicitOrder(["../examples/layered", "../examples/graph"]),
 }
 
 exclude_patterns = [
