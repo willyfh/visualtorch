@@ -9,7 +9,11 @@
 
 **Note:** VisualTorch may not yet support complex models, but contributions are welcome!
 
-![layered-and-graph](https://github.com/willyfh/visualtorch/assets/5786636/694e6e6c-58ea-46d6-9280-348337c08ec7)
+<div align="center">
+ 
+ ![VisualTorch Examples](https://github.com/willyfh/visualtorch/assets/5786636/7e2c35ea-d34d-4b92-b414-285bccb8576a)
+ 
+</div>
 
 ## Documentation
 
@@ -20,6 +24,10 @@ The docs include [usage examples](https://visualtorch.readthedocs.io/en/latest/u
 ## Installation
 
 See the [Installation page](https://visualtorch.readthedocs.io/en/latest/markdown/get_started/installation.html).
+
+## Examples
+
+See the [Usage Examples page](https://visualtorch.readthedocs.io/en/latest/usage_examples/index.html).
 
 ## Contributing
 
