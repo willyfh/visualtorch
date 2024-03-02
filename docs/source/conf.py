@@ -60,8 +60,26 @@ html_favicon = "_static/images/logos/fire-icon.png"
 html_static_path = ["_static"]
 html_theme_options = {
     "logo": {
-        "text": "VisualTorch",
+        "text": "<b>VisualTorch</b>",
     },
+    "icon_links": [
+        {
+            "name": "Downloads",
+            "url": "https://pepy.tech/project/visualtorch",
+            "icon": "https://static.pepy.tech/personalized-badge/visualtorch?period=total&units=international_system&left_color=grey&right_color=orange&left_text=PyPI%20Downloads",
+            "type": "url",
+        },
+        {
+            # Label for this link
+            "name": "GitHub",
+            # URL where the link will redirect
+            "url": "https://github.com/willyfh/visualtorch",  # required
+            # Icon class (if "type": "fontawesome"), or path to local image (if "type": "local")
+            "icon": "fa-brands fa-square-github",
+            # The type of image to be used (see below for details)
+            "type": "fontawesome",
+        },
+    ],
 }
 
 
