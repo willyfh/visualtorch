@@ -34,18 +34,11 @@ Usage examples of VisualTorch.
 
 ::::{grid}
 
-:::{grid-item-card} Layered View
-:link: markdown/api_references/layered
+:::{grid-item-card} All API References
+:link: markdown/api_references/index
 :link-type: doc
 
-API references for layered view.
-:::
-
-:::{grid-item-card} Graph View
-:link: markdown/api_references/graph
-:link-type: doc
-
-API references for graph view.
+API references of VisualTorch.
 :::
 
 ::::
