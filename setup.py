@@ -10,7 +10,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="visualtorch",
-    version="0.2.1",
+    version="0.2.2",
     author="Willy Fitra Hendria",
     author_email="willyfitrahendria@gmail.com",
     description="Architecture visualization of Torch models",
