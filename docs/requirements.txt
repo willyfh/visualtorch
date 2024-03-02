@@ -7,3 +7,4 @@ sphinx_book_theme
 sphinx-copybutton
 sphinx_design
 sphinx_gallery
+matplotlib
