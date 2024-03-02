@@ -8,7 +8,7 @@ VisualTorch aims to help visualize Torch-based neural network architectures. It 
 
 ::::{grid}
 
-:::{grid-item-card} {octicon}`tools` Installation
+:::{grid-item-card} Installation
 :link: markdown/get_started/installation
 :link-type: doc
 
@@ -17,18 +17,31 @@ Installing visualtorch via PyPI or Source.
 
 ::::
 
+## {octicon}`eye` Usage Examples
+
+::::{grid}
+
+:::{grid-item-card} All Examples
+:link: usage_examples/index
+:link-type: doc
+
+Usage examples of VisualTorch.
+:::
+
+::::
+
 ## {octicon}`code-square` Module References
 
 ::::{grid}
 
-:::{grid-item-card} {octicon}`tools` Layered View
+:::{grid-item-card} Layered View
 :link: markdown/module_references/layered
 :link-type: doc
 
 Module references for layered view.
 :::
 
-:::{grid-item-card} {octicon}`tools` Graph View
+:::{grid-item-card} Graph View
 :link: markdown/module_references/graph
 :link-type: doc
 
@@ -36,6 +49,21 @@ Module references for graph view.
 :::
 
 ::::
+
+## {octicon}`book` Citation
+
+Please cite this project in your publications if it helps your research as follows:
+
+```bibtex
+@misc{Hendria2024VisualTorch,
+  author = {Hendria, Willy Fitra},
+  title = {visualtorch},
+  year = {2024},
+  publisher = {GitHub},
+  journal = {GitHub repository},
+  note = {\url{https://github.com/willyfh/visualtorch}},
+}
+```
 
 ```{toctree}
 :caption: Get Started
@@ -48,8 +76,8 @@ markdown/get_started/installation
 :caption: Usage Examples
 :hidden:
 
-markdown/usage_examples/layered
-markdown/usage_examples/graph
+usage_examples/layered/index
+usage_examples/graph/index
 ```
 
 ```{toctree}
