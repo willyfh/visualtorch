@@ -7,13 +7,9 @@ from typing import Any, Dict
 from PIL import ImageColor, ImageDraw, Image
 import aggdraw
 import PIL
-import torch
-import torch.nn as nn
-from collections import OrderedDict
-from typing import List, Tuple
 
 
-class RectShape:
+class Shape:
     def __init__(self):
         self.x1 = 0
         self.x2 = 0
@@ -26,9 +22,18 @@ class RectShape:
     def fill(self):
         return self._fill
 
-    @fill.setter
-    def fill(self, v):
-        self._fill = get_rgba_tuple(v)
+    def set_fill(self, color: Any, opacity: int) -> None:
+        """
+        Set color and opacity.
+
+        Args:
+            color (Any): The color representation, i.e., rbg, hex, or color name.
+            opacity (int): The transparency of the color (0 ~ 255).
+
+        Returns:
+            None
+        """
+        self._fill = get_rgba_tuple(color, opacity)
 
     @property
     def outline(self):
@@ -44,7 +49,7 @@ class RectShape:
         return pen, brush
 
 
-class Box(RectShape):
+class Box(Shape):
     de: int
     shade: int
 
@@ -108,13 +113,13 @@ class Box(RectShape):
         draw.rectangle([self.x1, self.y1, self.x2, self.y2], pen, brush)
 
 
-class Circle(RectShape):
+class Circle(Shape):
     def draw(self, draw: ImageDraw):
         pen, brush = self._get_pen_brush()
         draw.ellipse([self.x1, self.y1, self.x2, self.y2], pen, brush)
 
 
-class Ellipses(RectShape):
+class Ellipses(Shape):
     def draw(self, draw: ImageDraw):
         pen, brush = self._get_pen_brush()
         w = self.x2 - self.x1
@@ -174,12 +179,13 @@ def fade_color(color: tuple, fade_amount: int) -> tuple:
     return r, g, b, color[3]
 
 
-def get_rgba_tuple(color: Any) -> tuple:
+def get_rgba_tuple(color: Any, opacity: int = 255) -> tuple:
     """
     Converts a color representation to an RGBA tuple.
 
     Args:
         color (Any): The color representation to be converted.
+        opacity (int): The transparency of the color (0 ~ 255).
 
     Returns:
         tuple: A tuple representing the color in RGBA format, with values for red (R), green (G), blue (B), and alpha (A).
@@ -192,7 +198,7 @@ def get_rgba_tuple(color: Any) -> tuple:
         rgba = ImageColor.getrgb(color)
 
     if len(rgba) == 3:
-        rgba = (rgba[0], rgba[1], rgba[2], 255)
+        rgba = (rgba[0], rgba[1], rgba[2], opacity)
     return rgba
 
 
@@ -305,41 +311,3 @@ def linear_layout(
         layout.paste(img, coord)
 
     return layout
-
-
-def register_hook(
-    model: nn.Module, module: nn.Module, hooks: List, layers: OrderedDict
-) -> None:
-    """
-    Registers a forward hook on the specified module and collects the module and the output shapes.
-
-    Args:
-        model (nn.Module): The parent model.
-        module (nn.Module): The module to register the hook on.
-        hooks (List): A list to store the registered hooks.
-        layers (OrderedDict): An OrderedDict to store information about the registered modules and output shapes.
-
-    Returns:
-        None
-    """
-
-    def hook(
-        module: nn.Module, input: Tuple[torch.Tensor], output: torch.Tensor
-    ) -> None:
-        class_name = str(module.__class__).split(".")[-1].split("'")[0]
-        module_idx = len(layers)
-
-        m_key = "%s-%i" % (class_name, module_idx + 1)
-        layers[m_key] = OrderedDict()
-        layers[m_key]["module"] = module
-        if isinstance(output, (list, tuple)):
-            layers[m_key]["output_shape"] = tuple((-1,) + o.size()[1:] for o in output)
-        else:
-            layers[m_key]["output_shape"] = output.size()
-
-    if (
-        not isinstance(module, nn.Sequential)
-        and not isinstance(module, nn.ModuleList)
-        and module is not model
-    ):
-        hooks.append(module.register_forward_hook(hook))

@@ -6,11 +6,12 @@
 import aggdraw
 from PIL import Image
 from math import ceil
-from .layer_utils import model_to_adj_matrix, add_input_dummy_layer, TARGET_OPS
-from .utils import Circle, Ellipses, get_keys_by_value, Box
+from .utils.layer_utils import model_to_adj_matrix, add_input_dummy_layer, TARGET_OPS
+from .utils.utils import Circle, Ellipses, get_keys_by_value, Box
 import numpy as np
 from typing import Optional, Dict, Any, Tuple, List
 import torch
+from collections import defaultdict
 
 
 def graph_view(
@@ -26,8 +27,8 @@ def graph_view(
     connector_fill: Any = "gray",
     connector_width: int = 1,
     ellipsize_after: int = 10,
-    inout_as_tensor: bool = True,
     show_neurons: bool = True,
+    opacity: int = 255,
 ) -> Image.Image:
     """
     Generates an architecture visualization for a given linear PyTorch model (i.e., one input and output tensor for each
@@ -50,18 +51,17 @@ def graph_view(
         connector_width (int, optional): Line-width of the connectors in pixels.
         ellipsize_after (int, optional): Maximum number of neurons per layer to draw. If a layer is exceeding this,
             the remaining neurons will be drawn as ellipses.
-        inout_as_tensor (bool, optional): If True there will be one input and output node for each tensor, else the
-            tensor will be flattened and one node for each scalar will be created (e.g., a (10, 10) shape will be
-            represented by 100 nodes).
         show_neurons (bool, optional): If True a node for each neuron in supported layers is created (constrained by
             ellipsize_after), else each layer is represented by a node.
+        opacity (int, optional): Transparency of the color (0 ~ 255).
 
     Returns:
         Image.Image: Generated architecture image.
     """
 
-    if color_map is None:
-        color_map = dict()
+    _color_map: Dict = dict()
+    if color_map is not None:
+        _color_map = defaultdict(dict, color_map)
 
     # Iterate over the model to compute bounds and generate boxes
 
@@ -127,10 +127,11 @@ def graph_view(
 
                 current_y = c.y2 + node_spacing
 
-                c.fill = color_map.get(TARGET_OPS[layer.name()], {}).get(
-                    "fill", "#ADD8E6"
+                c.set_fill(
+                    _color_map.get(TARGET_OPS[layer.name()], {}).get("fill", "#ADD8E6"),
+                    opacity,
                 )
-                c.outline = color_map.get(TARGET_OPS[layer.name()], {}).get(
+                c.outline = _color_map.get(TARGET_OPS[layer.name()], {}).get(
                     "outline", "black"
                 )
 

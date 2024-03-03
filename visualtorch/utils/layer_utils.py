@@ -4,15 +4,11 @@
 # SPDX-License-Identifier: MIT
 
 import numpy as np
-
 import torch
 import torch.nn as nn
-
 from .utils import get_keys_by_value
-
 from typing import Tuple, Dict, List, Any
-
-from collections import defaultdict
+from collections import defaultdict, OrderedDict
 
 # WARNING: currently, graph visualization relying on following operations,
 # thereby only linear and convolutional layers are supported.
@@ -173,3 +169,41 @@ def add_input_dummy_layer(
     )
     adj_matrix[-1, id_to_num_mapping[str(id(first_hidden_layer))]] += 1
     return id_to_num_mapping, adj_matrix, model_layers
+
+
+def register_hook(
+    model: nn.Module, module: nn.Module, hooks: List, layers: OrderedDict
+) -> None:
+    """
+    Registers a forward hook on the specified module and collects the module and the output shapes.
+
+    Args:
+        model (nn.Module): The parent model.
+        module (nn.Module): The module to register the hook on.
+        hooks (List): A list to store the registered hooks.
+        layers (OrderedDict): An OrderedDict to store information about the registered modules and output shapes.
+
+    Returns:
+        None
+    """
+
+    def hook(
+        module: nn.Module, input: Tuple[torch.Tensor], output: torch.Tensor
+    ) -> None:
+        class_name = str(module.__class__).split(".")[-1].split("'")[0]
+        module_idx = len(layers)
+
+        m_key = "%s-%i" % (class_name, module_idx + 1)
+        layers[m_key] = OrderedDict()
+        layers[m_key]["module"] = module
+        if isinstance(output, (list, tuple)):
+            layers[m_key]["output_shape"] = tuple((-1,) + o.size()[1:] for o in output)
+        else:
+            layers[m_key]["output_shape"] = output.size()
+
+    if (
+        not isinstance(module, nn.Sequential)
+        and not isinstance(module, nn.ModuleList)
+        and module is not model
+    ):
+        hooks.append(module.register_forward_hook(hook))
