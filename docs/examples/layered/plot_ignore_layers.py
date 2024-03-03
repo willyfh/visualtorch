@@ -1,16 +1,15 @@
-"""
-Ignore Layers
+"""Ignore Layers
 =======================================
 
 Visualize some layers only
 
 .. note::
-    You can also use `index_ignore` of :func:`visualtorch.layered.layered_view` to ignore the layers based on the layers index.
-"""
+    You can also use `index_ignore` of :func:`visualtorch.layered.layered_view` to ignore layers based on the index.
+"""  # noqa: D205
 
-import visualtorch
-import torch.nn as nn
 import matplotlib.pyplot as plt
+import visualtorch
+from torch import nn
 
 # Example of a simple CNN model using nn.Sequential
 model = nn.Sequential(
@@ -33,7 +32,9 @@ ignored_layers = [nn.ReLU, nn.Flatten]
 
 input_shape = (1, 3, 224, 224)
 img = visualtorch.layered_view(
-    model, input_shape=input_shape, type_ignore=ignored_layers
+    model,
+    input_shape=input_shape,
+    type_ignore=ignored_layers,
 )
 
 plt.axis("off")

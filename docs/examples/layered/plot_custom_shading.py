@@ -1,13 +1,12 @@
-"""
-Custom Shading
+"""Custom Shading
 =======================================
 
 Visualization of custom shading
-"""
+"""  # noqa: D205
 
-import visualtorch
-import torch.nn as nn
 import matplotlib.pyplot as plt
+import visualtorch
+from torch import nn
 
 # Example of a simple CNN model using nn.Sequential
 model = nn.Sequential(

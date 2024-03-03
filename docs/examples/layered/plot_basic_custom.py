@@ -1,19 +1,21 @@
-"""
-Basic Custom
+"""Basic Custom
 =======================================
 
 Visualization of basic custom model
-"""
+"""  # noqa: D205
 
-import torch.nn as nn
-import torch.nn.functional as F
-import visualtorch
 import matplotlib.pyplot as plt
+import torch
+import torch.nn.functional as func
+import visualtorch
+from torch import nn
 
 
 # Example of a simple CNN model
 class SimpleCNN(nn.Module):
-    def __init__(self):
+    """Simple CNN Model."""
+
+    def __init__(self) -> None:
         super().__init__()
         self.conv1 = nn.Conv2d(3, 16, kernel_size=3, padding=1)
         self.conv2 = nn.Conv2d(16, 32, kernel_size=3, padding=1)
@@ -21,21 +23,21 @@ class SimpleCNN(nn.Module):
         self.fc1 = nn.Linear(64 * 28 * 28, 128)
         self.fc2 = nn.Linear(128, 10)
 
-    def forward(self, x):
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """Define the forward pass."""
         x = self.conv1(x)
-        x = F.relu(x)
-        x = F.max_pool2d(x, 2, 2)
+        x = func.relu(x)
+        x = func.max_pool2d(x, 2, 2)
         x = self.conv2(x)
-        x = F.relu(x)
-        x = F.max_pool2d(x, 2, 2)
+        x = func.relu(x)
+        x = func.max_pool2d(x, 2, 2)
         x = self.conv3(x)
-        x = F.relu(x)
-        x = F.max_pool2d(x, 2, 2)
+        x = func.relu(x)
+        x = func.max_pool2d(x, 2, 2)
         x = x.view(x.size(0), -1)
         x = self.fc1(x)
-        x = F.relu(x)
-        x = self.fc2(x)
-        return x
+        x = func.relu(x)
+        return self.fc2(x)
 
 
 # Create an instance of the SimpleCNN

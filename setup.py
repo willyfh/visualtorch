@@ -3,9 +3,12 @@
 # Copyright (C) 2024 Willy Fitra Hendria
 # SPDX-License-Identifier: MIT
 
+from pathlib import Path
+
 import setuptools
 
-with open("README.md", "r") as fh:
+file_path = Path("README.md")
+with file_path.open("r") as fh:
     long_description = fh.read()
 
 setuptools.setup(
