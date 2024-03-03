@@ -7,7 +7,8 @@ from pathlib import Path
 
 import setuptools
 
-with Path.open("README.md") as fh:
+file_path = Path("README.md")
+with file_path.open("r") as fh:
     long_description = fh.read()
 
 setuptools.setup(
