@@ -1,12 +1,11 @@
 """Ignore Layers
-
 =======================================
 
 Visualize some layers only
 
 .. note::
     You can also use `index_ignore` of :func:`visualtorch.layered.layered_view` to ignore layers based on the index.
-"""
+"""  # noqa: D205
 
 import matplotlib.pyplot as plt
 import visualtorch

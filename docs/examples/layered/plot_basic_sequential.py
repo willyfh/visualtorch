@@ -1,9 +1,8 @@
 """Basic Sequential
-
 =======================================
 
 Visualization of basic sequential model
-"""
+"""  # noqa: D205
 
 import matplotlib.pyplot as plt
 import visualtorch

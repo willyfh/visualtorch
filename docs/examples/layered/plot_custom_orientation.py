@@ -1,9 +1,8 @@
 """Custom Orientation
-
 =======================================
 
 Visualization of custom orientation for 1 dim layers
-"""
+"""  # noqa: D205
 
 import matplotlib.pyplot as plt
 import visualtorch

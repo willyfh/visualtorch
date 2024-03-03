@@ -14,7 +14,7 @@ from .utils import get_keys_by_value
 
 # WARNING: currently, graph visualization relying on following operations,
 # thereby only linear and convolutional layers are supported.
-# TODO: implement a more dynamic/better approach to support all layers
+# We need to implement a more dynamic/better approach to support all layers
 TARGET_OPS = defaultdict(
     lambda: None,
     {"AddmmBackward0": nn.Linear, "ConvolutionBackward0": nn.Conv2d},
@@ -22,24 +22,29 @@ TARGET_OPS = defaultdict(
 
 
 class SpacingDummyLayer(nn.Module):
-    def __init__(self, spacing: int = 50):
+    """A dummy layer to add spacing."""
+
+    def __init__(self, spacing: int = 50) -> None:
         super().__init__()
         self.spacing = spacing
 
 
 class InputDummyLayer:
-    def __init__(self, name, units=None):
+    """A dummy layer for input."""
+
+    def __init__(self, name: str, units: int | None = None) -> None:
         if units:
             self.units = units
         self._name = name
 
-    def name(self):
+    def name(self) -> str:
+        """Return layer name"""
         return self._name
 
 
 def model_to_adj_matrix(
-    model,
-    input_shape,
+    model: nn.Module | nn.Sequential,
+    input_shape: tuple[int, ...],
 ) -> tuple[dict[str, int], np.ndarray, list[list[torch.nn.Module]]]:
     """Extract adjacency matrix representation from a pytorch model.
 
@@ -49,48 +54,21 @@ def model_to_adj_matrix(
 
     Returns:
         tuple: A tuple containing:
-            - id_to_index_adj_mapping (dict): Mapping from node IDs to their corresponding index in the adjacency matrix.
-            - adjacency_matrix (numpy.ndarray): The adjacency matrix representing connections between model operations/layers.
+            - id_to_index_adj_mapping (dict): Mapping from node IDs to their corresponding index in
+                the adjacency matrix.
+            - adjacency_matrix (numpy.ndarray): The adjacency matrix representing connections between
+                model operations/layers.
             - model_layers (list): List of model layers organized by their hierarchy.
     """
     dummy_input = torch.rand(input_shape)
     output_var = model(dummy_input)
 
-    nodes = []
-    edges = []
-    id_to_ops = {}
+    nodes: list = []
+    edges: list = []
+    id_to_ops: dict = {}
 
     max_level = [0]
     max_level_id = [""]
-
-    def add_nodes(fn, source=None, level=0):
-        assert not torch.is_tensor(fn)
-
-        if str(type(fn).__name__) in TARGET_OPS.keys():
-            node_id = str(id(fn))
-            id_to_ops[node_id] = fn
-            if node_id not in nodes:
-                nodes.append(node_id)
-            level += 1
-            if level > max_level[0]:
-                max_level[0] = level
-                max_level_id[0] = node_id
-
-            edges.append((node_id, source))
-            source = node_id
-
-        # recurse
-        if hasattr(fn, "next_functions"):
-            for u in fn.next_functions:
-                if u[0] is not None:
-                    add_nodes(u[0], source, level)
-
-    def add_base_tensor(var):
-        if var.grad_fn:
-            add_nodes(var.grad_fn)
-
-        if var._is_view():
-            add_base_tensor(var._base)
 
     # Extract nodes and edges for the target ops
     # Currently only the ones in the TARGET_OPS are supported.
@@ -98,9 +76,9 @@ def model_to_adj_matrix(
     # handle multiple outputs
     if isinstance(output_var, tuple):
         for v in output_var:
-            add_base_tensor(v)
+            _add_base_tensor(v, id_to_ops, nodes, edges, max_level, max_level_id)
     else:
-        add_base_tensor(output_var)
+        _add_base_tensor(output_var, id_to_ops, nodes, edges, max_level, max_level_id)
 
     # Create adjacency matrix
     adjacency_matrix = np.zeros((len(nodes), len(nodes)))
@@ -158,7 +136,8 @@ def add_input_dummy_layer(
 
     Returns:
         tuple: A tuple containing:
-            - id_to_num_mapping (dict): Updated mapping from node IDs to their corresponding index in the adjacency matrix.
+            - id_to_num_mapping (dict): Updated mapping from node IDs to their corresponding index in
+                the adjacency matrix.
             - adj_matrix (numpy.ndarray): Updated adjacency matrix.
             - model_layers (list): Updated list of model layers with the input dummy layer.
     """
@@ -196,8 +175,8 @@ def register_hook(
 
     def hook(
         module: nn.Module,
-        input: tuple[torch.Tensor],
-        output: torch.Tensor,
+        _: tuple[torch.Tensor],
+        out: torch.Tensor,
     ) -> None:
         class_name = str(module.__class__).split(".")[-1].split("'")[0]
         module_idx = len(layers)
@@ -205,10 +184,57 @@ def register_hook(
         m_key = "%s-%i" % (class_name, module_idx + 1)
         layers[m_key] = OrderedDict()
         layers[m_key]["module"] = module
-        if isinstance(output, (list, tuple)):
-            layers[m_key]["output_shape"] = tuple((-1,) + o.size()[1:] for o in output)
+        if isinstance(out, list | tuple):
+            layers[m_key]["output_shape"] = tuple((-1,) + o.size()[1:] for o in out)
         else:
-            layers[m_key]["output_shape"] = output.size()
+            layers[m_key]["output_shape"] = out.size()
 
     if not isinstance(module, nn.Sequential) and not isinstance(module, nn.ModuleList) and module is not model:
         hooks.append(module.register_forward_hook(hook))
+
+
+def _add_nodes(
+    fn: torch.autograd.function,
+    id_to_ops: dict,
+    nodes: list,
+    edges: list,
+    max_level: list[int],
+    max_level_id: list[str],
+    source: str | None = None,
+    level: int = 0,
+) -> None:
+    assert not torch.is_tensor(fn)
+
+    if str(type(fn).__name__) in TARGET_OPS:
+        node_id = str(id(fn))
+        id_to_ops[node_id] = fn
+        if node_id not in nodes:
+            nodes.append(node_id)
+        level += 1
+        if level > max_level[0]:
+            max_level[0] = level
+            max_level_id[0] = node_id
+
+        edges.append((node_id, source))
+        source = node_id
+
+    # recurse
+    if hasattr(fn, "next_functions"):
+        for u in fn.next_functions:
+            if u[0] is not None:
+                _add_nodes(u[0], id_to_ops, nodes, edges, max_level, max_level_id, source, level)
+
+
+def _add_base_tensor(
+    var: torch.Tensor,
+    id_to_ops: dict,
+    nodes: list,
+    edges: list,
+    max_level: list[int],
+    max_level_id: list[str],
+) -> None:
+    if var.grad_fn:
+        _add_nodes(var.grad_fn, id_to_ops, nodes, edges, max_level, max_level_id)
+
+    if var._is_view():  # noqa: SLF001
+        _add_base_tensor(var._base, id_to_ops, nodes, edges, max_level, max_level_id)  # noqa: SLF001

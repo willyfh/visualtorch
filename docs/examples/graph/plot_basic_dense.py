@@ -1,9 +1,8 @@
 """Basic Dense
-
 =======================================
 
 Visualization of basic dense model
-"""
+"""  # noqa: D205
 
 import matplotlib.pyplot as plt
 import torch

@@ -1,9 +1,8 @@
 """Basic Custom
-
 =======================================
 
 Visualization of basic custom model
-"""
+"""  # noqa: D205
 
 import matplotlib.pyplot as plt
 import torch

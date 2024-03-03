@@ -1,9 +1,8 @@
 """Custom Color
-
 =======================================
 
 Visualization of custom color
-"""
+"""  # noqa: D205
 
 from collections import defaultdict
 

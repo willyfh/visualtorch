@@ -1,9 +1,8 @@
 """Custom Spacing for Layers
-
 =======================================
 
 Visualization of custom spacing between layers
-"""
+"""  # noqa: D205
 
 import matplotlib.pyplot as plt
 import torch

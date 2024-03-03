@@ -1,9 +1,8 @@
 """2D View
-
 =======================================
 
 Visualization of 2D view
-"""
+"""  # noqa: D205
 
 import matplotlib.pyplot as plt
 import visualtorch

@@ -3,6 +3,7 @@
 # Copyright (C) 2024 Willy Fitra Hendria
 # SPDX-License-Identifier: MIT
 
+from collections.abc import Generator
 from typing import Any
 
 import aggdraw
@@ -11,19 +12,22 @@ from PIL import Image, ImageColor, ImageDraw
 
 
 class Shape:
-    def __init__(self):
+    """Base class for shapes"""
+
+    def __init__(self) -> None:
         self.x1 = 0
         self.x2 = 0
         self.y1 = 0
         self.y2 = 0
-        self._fill = None
-        self._outline = None
+        self._fill = ()
+        self._outline = ()
 
     @property
-    def fill(self):
+    def fill(self) -> tuple:
+        """Return the fill color."""
         return self._fill
 
-    def set_fill(self, color: Any, opacity: int) -> None:
+    def set_fill(self, color: str | tuple, opacity: int) -> None:
         """Set color and opacity.
 
         Args:
@@ -36,24 +40,29 @@ class Shape:
         self._fill = get_rgba_tuple(color, opacity)
 
     @property
-    def outline(self):
+    def outline(self) -> tuple:
+        """Return the outline/border color."""
         return self._outline
 
     @outline.setter
-    def outline(self, v):
+    def outline(self, v: str | tuple) -> None:
         self._outline = get_rgba_tuple(v)
 
-    def _get_pen_brush(self):
+    def _get_pen_brush(self) -> tuple:
+        """Get aggdraw pen and brush"""
         pen = aggdraw.Pen(self._outline)
         brush = aggdraw.Brush(self._fill)
         return pen, brush
 
 
 class Box(Shape):
+    """Box shape class."""
+
     de: int
     shade: int
 
-    def draw(self, draw: ImageDraw):
+    def draw(self, draw: ImageDraw) -> None:
+        """Draw box shape."""
         pen, brush = self._get_pen_brush()
 
         if hasattr(self, "de") and self.de > 0:
@@ -114,13 +123,19 @@ class Box(Shape):
 
 
 class Circle(Shape):
-    def draw(self, draw: ImageDraw):
+    """Circle shape class."""
+
+    def draw(self, draw: ImageDraw) -> None:
+        """Draw circle shape."""
         pen, brush = self._get_pen_brush()
         draw.ellipse([self.x1, self.y1, self.x2, self.y2], pen, brush)
 
 
 class Ellipses(Shape):
-    def draw(self, draw: ImageDraw):
+    """Ellipses shape class."""
+
+    def draw(self, draw: ImageDraw) -> None:
+        """Draw ellipses shape."""
         pen, brush = self._get_pen_brush()
         w = self.x2 - self.x1
         d = int(w / 7)
@@ -157,25 +172,29 @@ class Ellipses(Shape):
 
 
 class ColorWheel:
-    def __init__(self, colors: list | None = None):
-        self._cache: dict[type, Any] = dict()
+    """Default colors for the shapes."""
+
+    def __init__(self, colors: list | None = None) -> None:
+        self._cache: dict[type, Any] = {}
         self.colors = colors if colors is not None else ["#FFE4B5", "#ADD8E6", "#98FB98", "#FFA07A", "#D8BFD8"]
 
-    def get_color(self, class_type: type):
-        if class_type not in self._cache.keys():
+    def get_color(self, class_type: type) -> tuple | None:
+        """Return color from cache if exist, if not, get from the list and store it to the cache."""
+        if class_type not in self._cache:
             index = len(self._cache.keys()) % len(self.colors)
             self._cache[class_type] = self.colors[index]
         return self._cache.get(class_type)
 
 
 def _fade_color(color: tuple, fade_amount: int) -> tuple:
+    """To create shadow effect."""
     r = max(0, color[0] - fade_amount)
     g = max(0, color[1] - fade_amount)
     b = max(0, color[2] - fade_amount)
     return r, g, b, color[3]
 
 
-def get_rgba_tuple(color: Any, opacity: int = 255) -> tuple:
+def get_rgba_tuple(color: str | int | tuple, opacity: int = 255) -> tuple:
     """Converts a color representation to an RGBA tuple.
 
     Args:
@@ -183,7 +202,7 @@ def get_rgba_tuple(color: Any, opacity: int = 255) -> tuple:
         opacity (int): The transparency of the color (0 ~ 255).
 
     Returns:
-        tuple: A tuple representing the color in RGBA format, with values for red (R), green (G), blue (B), and alpha (A).
+        tuple: A tuple representing the color in RGBA format, with values for R, G, B, and A.
     """
     if isinstance(color, tuple):
         rgba = color
@@ -197,8 +216,9 @@ def get_rgba_tuple(color: Any, opacity: int = 255) -> tuple:
     return rgba
 
 
-def get_keys_by_value(d, v):
-    for key in d.keys():  # reverse search the dict for the value
+def get_keys_by_value(d: dict, v: int) -> Generator:
+    """Get keys from dictionary given the value."""
+    for key in d:  # reverse search the dict for the value
         if d[key] == v:
             yield key
 
@@ -226,14 +246,14 @@ def self_multiply(tensor_tuple: tuple) -> int | float:
 def vertical_image_concat(
     im1: Image,
     im2: Image,
-    background_fill: Any = "white",
+    background_fill: str | tuple = "white",
 ) -> PIL.Image:
     """Concatenates two PIL images vertically.
 
     Args:
         im1 (PIL.Image): The top image.
         im2 (PIL.Image): The bottom image.
-        background_fill (str or tuple, optional): Color for the image background. Can be a string or a tuple (R, G, B, A).
+        background_fill (str or tuple, optional): Color for the background. A string or a tuple (R, G, B, A).
 
     Returns:
         PIL.Image: A new image resulting from the vertical concatenation of the two input images.
@@ -255,10 +275,11 @@ def linear_layout(
     horizontal: bool = True,
     padding: int = 0,
     spacing: int = 0,
-    background_fill: Any = "white",
+    background_fill: str | tuple = "white",
 ) -> PIL.Image:
-    """Creates a linear layout of a passed list of images in horizontal or vertical orientation. The layout will wrap in x
-    or y dimension if a maximum value is exceeded.
+    """Creates a linear layout of a passed list of images in horizontal or vertical orientation.
+
+    The layout will wrap in x or y dimension if a maximum value is exceeded.
 
     Args:
         images (list): List of PIL images.
@@ -267,12 +288,12 @@ def linear_layout(
         horizontal (bool, optional): If True, will draw images horizontally, else vertically.
         padding (int, optional): Top, bottom, left, right border distance in pixels.
         spacing (int, optional): Spacing in pixels between elements.
-        background_fill (str or tuple, optional): Color for the image background. Can be a string or a tuple (R, G, B, A).
+        background_fill (str or tuple, optional): Color for the background. A string or a tuple (R, G, B, A).
 
     Returns:
         PIL.Image: An Image object representing the linear layout of the passed list of images.
     """
-    coords = list()
+    coords = []
     width = 0
     height = 0
 
@@ -303,7 +324,7 @@ def linear_layout(
             y += img.height + spacing
 
     layout = Image.new("RGBA", (width, height), background_fill)
-    for img, coord in zip(images, coords):
+    for img, coord in zip(images, coords, strict=False):
         layout.paste(img, coord)
 
     return layout

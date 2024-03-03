@@ -1,9 +1,8 @@
 """Custom Node Size
-
 =======================================
 
 Visualization of custom node size
-"""
+"""  # noqa: D205
 
 import matplotlib.pyplot as plt
 import torch

@@ -1,9 +1,8 @@
 """Custom Shading
-
 =======================================
 
 Visualization of custom shading
-"""
+"""  # noqa: D205
 
 import matplotlib.pyplot as plt
 import visualtorch

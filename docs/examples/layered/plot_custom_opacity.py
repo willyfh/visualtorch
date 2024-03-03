@@ -1,9 +1,8 @@
 """Custom Opacity
-
 =======================================
 
 Change the color transparency
-"""
+"""  # noqa: D205
 
 import matplotlib.pyplot as plt
 import visualtorch

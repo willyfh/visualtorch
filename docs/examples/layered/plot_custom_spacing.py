@@ -1,9 +1,8 @@
 """Custom Spacing
-
 =======================================
 
 Visualization of custom spacing
-"""
+"""  # noqa: D205
 
 import matplotlib.pyplot as plt
 import visualtorch
