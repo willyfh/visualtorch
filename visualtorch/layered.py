@@ -5,8 +5,8 @@
 
 from PIL import ImageFont
 from math import ceil
-from typing import Any, List
-from .utils import (
+from typing import Any, List, Dict
+from .utils.utils import (
     self_multiply,
     linear_layout,
     vertical_image_concat,
@@ -14,9 +14,8 @@ from .utils import (
     Box,
     get_rgba_tuple,
     ImageDraw,
-    register_hook,
 )
-from .layer_utils import SpacingDummyLayer
+from .utils.layer_utils import register_hook, SpacingDummyLayer
 
 import aggdraw
 import PIL
@@ -24,7 +23,7 @@ import torch
 import torch.nn as nn
 from PIL import Image
 
-from collections import OrderedDict
+from collections import OrderedDict, defaultdict
 
 
 def layered_view(
@@ -50,6 +49,7 @@ def layered_view(
     legend: bool = False,
     font: ImageFont = None,
     font_color: Any = "black",
+    opacity: int = 255,
 ) -> PIL.Image:
     """
     Generate a layered architecture visualization for a given linear torch model (i.e., one input and output tensor for each
@@ -80,6 +80,7 @@ def layered_view(
         legend (bool, optional): Add a legend of the layers to the image.
         font (PIL.ImageFont, optional): Font that will be used for the legend. Leaving this as None will use the default font.
         font_color (str or tuple, optional): Color for the font if used. Can be a string or a tuple (R, G, B, A).
+        opacity (int): Transparency of the color (0 ~ 255).
 
     Returns:
         PIL.Image: An Image object representing the generated architecture visualization.
@@ -104,8 +105,9 @@ def layered_view(
     if index_ignore is None:
         index_ignore = list()
 
-    if color_map is None:
-        color_map = dict()
+    _color_map: Dict = dict()
+    if color_map is not None:
+        _color_map = defaultdict(dict, color_map)
 
     dummy_input = torch.rand(*input_shape)
 
@@ -181,11 +183,14 @@ def layered_view(
         box.x2 = box.x1 + z
         box.y2 = box.y1 + y
 
-        box.fill = color_map.get(layer_type, {}).get(
-            "fill", color_wheel.get_color(layer_type)
+        box.set_fill(
+            _color_map.get(layer_type, {}).get(
+                "fill", color_wheel.get_color(layer_type)
+            ),
+            opacity,
         )
-        box.outline = color_map.get(layer_type, {}).get("outline", "black")
-        color_map[layer_type] = {"fill": box.fill, "outline": box.outline}
+        box.outline = _color_map.get(layer_type, {}).get("outline", "black")
+        _color_map[layer_type] = {"fill": box.fill, "outline": box.outline}
 
         box.shade = shade_step
         boxes.append(box)
@@ -287,8 +292,8 @@ def layered_view(
             box.y2 = box.y1 + cube_size
             box.de = de
             box.shade = shade_step
-            box.fill = color_map.get(layer_type, {}).get("fill", "#000000")
-            box.outline = color_map.get(layer_type, {}).get("outline", "#000000")
+            box.set_fill(_color_map.get(layer_type, {}).get("fill", "#000000"), opacity)
+            box.outline = _color_map.get(layer_type, {}).get("outline", "#000000")
             box.draw(draw_box)
 
             text_x = box.x2 + box.de + spacing
