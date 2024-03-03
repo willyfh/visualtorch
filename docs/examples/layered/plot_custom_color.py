@@ -1,14 +1,15 @@
-"""
-Custom Color
+"""Custom Color
+
 =======================================
 
 Visualization of custom color
 """
 
-import visualtorch
-import torch.nn as nn
-import matplotlib.pyplot as plt
 from collections import defaultdict
+
+import matplotlib.pyplot as plt
+import visualtorch
+from torch import nn
 
 # Example of a simple CNN model using nn.Sequential
 model = nn.Sequential(

@@ -1,29 +1,32 @@
-"""
-Custom Node Size
+"""Custom Node Size
+
 =======================================
 
 Visualization of custom node size
 """
 
-import torch.nn as nn
-import visualtorch
 import matplotlib.pyplot as plt
+import torch
+import visualtorch
+from torch import nn
 
 
 class SimpleDense(nn.Module):
-    def __init__(self):
-        super(SimpleDense, self).__init__()
+    """Simple Dense Model."""
+
+    def __init__(self) -> None:
+        super().__init__()
         self.h0 = nn.Linear(4, 8)
         self.h1 = nn.Linear(8, 8)
         self.h2 = nn.Linear(8, 4)
         self.out = nn.Linear(4, 2)
 
-    def forward(self, x):
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """Define the forward pass."""
         x = self.h0(x)
         x = self.h1(x)
         x = self.h2(x)
-        x = self.out(x)
-        return x
+        return self.out(x)
 
 
 model = SimpleDense()

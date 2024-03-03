@@ -1,13 +1,13 @@
-"""
-Basic Sequential
+"""Basic Sequential
+
 =======================================
 
 Visualization of basic sequential model
 """
 
-import visualtorch
-import torch.nn as nn
 import matplotlib.pyplot as plt
+import visualtorch
+from torch import nn
 
 # Example of a simple CNN model using nn.Sequential
 model = nn.Sequential(

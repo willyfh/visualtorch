@@ -3,18 +3,21 @@
 # Copyright (C) 2024 Willy Fitra Hendria
 # SPDX-License-Identifier: MIT
 
+from collections import OrderedDict, defaultdict
+from typing import Any
+
 import numpy as np
 import torch
-import torch.nn as nn
+from torch import nn
+
 from .utils import get_keys_by_value
-from typing import Tuple, Dict, List, Any
-from collections import defaultdict, OrderedDict
 
 # WARNING: currently, graph visualization relying on following operations,
 # thereby only linear and convolutional layers are supported.
 # TODO: implement a more dynamic/better approach to support all layers
 TARGET_OPS = defaultdict(
-    lambda: None, {"AddmmBackward0": nn.Linear, "ConvolutionBackward0": nn.Conv2d}
+    lambda: None,
+    {"AddmmBackward0": nn.Linear, "ConvolutionBackward0": nn.Conv2d},
 )
 
 
@@ -35,10 +38,10 @@ class InputDummyLayer:
 
 
 def model_to_adj_matrix(
-    model, input_shape
-) -> Tuple[Dict[str, int], np.ndarray, List[List[torch.nn.Module]]]:
-    """
-    Extract adjacency matrix representation from a pytorch model.
+    model,
+    input_shape,
+) -> tuple[dict[str, int], np.ndarray, list[list[torch.nn.Module]]]:
+    """Extract adjacency matrix representation from a pytorch model.
 
     Args:
         model: PyTorch model.
@@ -126,7 +129,7 @@ def model_to_adj_matrix(
 
     # Filter duplicate layers
     seen = set()
-    model_layers: List[List] = []
+    model_layers: list[list] = []
     for i in range(len(temp_model_layers) - 1, -1, -1):
         new_layers = []
         for layer_id in temp_model_layers[i]:
@@ -140,13 +143,12 @@ def model_to_adj_matrix(
 
 
 def add_input_dummy_layer(
-    input_shape: Tuple[int, ...],
-    id_to_num_mapping: Dict[str, int],
+    input_shape: tuple[int, ...],
+    id_to_num_mapping: dict[str, int],
     adj_matrix: np.ndarray,
-    model_layers: List[List[Any]],
-) -> Tuple[Dict[str, int], np.ndarray, List[List[str]]]:
-    """
-    Add an input dummy layer to the model layers and update the adjacency matrix accordingly.
+    model_layers: list[list[Any]],
+) -> tuple[dict[str, int], np.ndarray, list[list[str]]]:
+    """Add an input dummy layer to the model layers and update the adjacency matrix accordingly.
 
     Args:
         input_shape (tuple): The shape of the input tensor.
@@ -165,17 +167,22 @@ def add_input_dummy_layer(
     model_layers.insert(0, [input_dummy_layer])
     id_to_num_mapping[str(id(input_dummy_layer))] = len(id_to_num_mapping.keys())
     adj_matrix = np.pad(
-        adj_matrix, ((0, 1), (0, 1)), mode="constant", constant_values=0
+        adj_matrix,
+        ((0, 1), (0, 1)),
+        mode="constant",
+        constant_values=0,
     )
     adj_matrix[-1, id_to_num_mapping[str(id(first_hidden_layer))]] += 1
     return id_to_num_mapping, adj_matrix, model_layers
 
 
 def register_hook(
-    model: nn.Module, module: nn.Module, hooks: List, layers: OrderedDict
+    model: nn.Module,
+    module: nn.Module,
+    hooks: list,
+    layers: OrderedDict,
 ) -> None:
-    """
-    Registers a forward hook on the specified module and collects the module and the output shapes.
+    """Registers a forward hook on the specified module and collects the module and the output shapes.
 
     Args:
         model (nn.Module): The parent model.
@@ -188,7 +195,9 @@ def register_hook(
     """
 
     def hook(
-        module: nn.Module, input: Tuple[torch.Tensor], output: torch.Tensor
+        module: nn.Module,
+        input: tuple[torch.Tensor],
+        output: torch.Tensor,
     ) -> None:
         class_name = str(module.__class__).split(".")[-1].split("'")[0]
         module_idx = len(layers)
@@ -201,9 +210,5 @@ def register_hook(
         else:
             layers[m_key]["output_shape"] = output.size()
 
-    if (
-        not isinstance(module, nn.Sequential)
-        and not isinstance(module, nn.ModuleList)
-        and module is not model
-    ):
+    if not isinstance(module, nn.Sequential) and not isinstance(module, nn.ModuleList) and module is not model:
         hooks.append(module.register_forward_hook(hook))

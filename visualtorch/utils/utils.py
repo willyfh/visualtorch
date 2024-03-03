@@ -3,10 +3,11 @@
 # Copyright (C) 2024 Willy Fitra Hendria
 # SPDX-License-Identifier: MIT
 
-from typing import Any, Dict
-from PIL import ImageColor, ImageDraw, Image
+from typing import Any
+
 import aggdraw
 import PIL
+from PIL import Image, ImageColor, ImageDraw
 
 
 class Shape:
@@ -23,8 +24,7 @@ class Shape:
         return self._fill
 
     def set_fill(self, color: Any, opacity: int) -> None:
-        """
-        Set color and opacity.
+        """Set color and opacity.
 
         Args:
             color (Any): The color representation, i.e., rbg, hex, or color name.
@@ -57,8 +57,8 @@ class Box(Shape):
         pen, brush = self._get_pen_brush()
 
         if hasattr(self, "de") and self.de > 0:
-            brush_s1 = aggdraw.Brush(fade_color(self.fill, self.shade))
-            brush_s2 = aggdraw.Brush(fade_color(self.fill, 2 * self.shade))
+            brush_s1 = aggdraw.Brush(_fade_color(self.fill, self.shade))
+            brush_s2 = aggdraw.Brush(_fade_color(self.fill, 2 * self.shade))
 
             draw.line(
                 [
@@ -158,12 +158,8 @@ class Ellipses(Shape):
 
 class ColorWheel:
     def __init__(self, colors: list | None = None):
-        self._cache: Dict[type, Any] = dict()
-        self.colors = (
-            colors
-            if colors is not None
-            else ["#FFE4B5", "#ADD8E6", "#98FB98", "#FFA07A", "#D8BFD8"]
-        )
+        self._cache: dict[type, Any] = dict()
+        self.colors = colors if colors is not None else ["#FFE4B5", "#ADD8E6", "#98FB98", "#FFA07A", "#D8BFD8"]
 
     def get_color(self, class_type: type):
         if class_type not in self._cache.keys():
@@ -172,7 +168,7 @@ class ColorWheel:
         return self._cache.get(class_type)
 
 
-def fade_color(color: tuple, fade_amount: int) -> tuple:
+def _fade_color(color: tuple, fade_amount: int) -> tuple:
     r = max(0, color[0] - fade_amount)
     g = max(0, color[1] - fade_amount)
     b = max(0, color[2] - fade_amount)
@@ -180,8 +176,7 @@ def fade_color(color: tuple, fade_amount: int) -> tuple:
 
 
 def get_rgba_tuple(color: Any, opacity: int = 255) -> tuple:
-    """
-    Converts a color representation to an RGBA tuple.
+    """Converts a color representation to an RGBA tuple.
 
     Args:
         color (Any): The color representation to be converted.
@@ -209,8 +204,7 @@ def get_keys_by_value(d, v):
 
 
 def self_multiply(tensor_tuple: tuple) -> int | float:
-    """
-    Multiplies all elements in the tuple together.
+    """Multiplies all elements in the tuple together.
 
     Args:
         tensor_tuple (tuple): A tuple containing tensors.
@@ -230,10 +224,11 @@ def self_multiply(tensor_tuple: tuple) -> int | float:
 
 
 def vertical_image_concat(
-    im1: Image, im2: Image, background_fill: Any = "white"
+    im1: Image,
+    im2: Image,
+    background_fill: Any = "white",
 ) -> PIL.Image:
-    """
-    Concatenates two PIL images vertically.
+    """Concatenates two PIL images vertically.
 
     Args:
         im1 (PIL.Image): The top image.
@@ -244,7 +239,9 @@ def vertical_image_concat(
         PIL.Image: A new image resulting from the vertical concatenation of the two input images.
     """
     dst = Image.new(
-        "RGBA", (max(im1.width, im2.width), im1.height + im2.height), background_fill
+        "RGBA",
+        (max(im1.width, im2.width), im1.height + im2.height),
+        background_fill,
     )
     dst.paste(im1, (0, 0))
     dst.paste(im2, (0, im1.height))
@@ -260,8 +257,7 @@ def linear_layout(
     spacing: int = 0,
     background_fill: Any = "white",
 ) -> PIL.Image:
-    """
-    Creates a linear layout of a passed list of images in horizontal or vertical orientation. The layout will wrap in x
+    """Creates a linear layout of a passed list of images in horizontal or vertical orientation. The layout will wrap in x
     or y dimension if a maximum value is exceeded.
 
     Args:

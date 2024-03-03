@@ -3,27 +3,26 @@
 # Copyright (C) 2024 Willy Fitra Hendria
 # SPDX-License-Identifier: MIT
 
-from PIL import ImageFont
+from collections import OrderedDict, defaultdict
 from math import ceil
-from typing import Any, List, Dict
-from .utils.utils import (
-    self_multiply,
-    linear_layout,
-    vertical_image_concat,
-    ColorWheel,
-    Box,
-    get_rgba_tuple,
-    ImageDraw,
-)
-from .utils.layer_utils import register_hook, SpacingDummyLayer
+from typing import Any
 
 import aggdraw
 import PIL
 import torch
-import torch.nn as nn
-from PIL import Image
+from PIL import Image, ImageFont
+from torch import nn
 
-from collections import OrderedDict, defaultdict
+from .utils.layer_utils import SpacingDummyLayer, register_hook
+from .utils.utils import (
+    Box,
+    ColorWheel,
+    ImageDraw,
+    get_rgba_tuple,
+    linear_layout,
+    self_multiply,
+    vertical_image_concat,
+)
 
 
 def layered_view(
@@ -51,8 +50,7 @@ def layered_view(
     font_color: Any = "black",
     opacity: int = 255,
 ) -> PIL.Image:
-    """
-    Generate a layered architecture visualization for a given linear torch model (i.e., one input and output tensor for each
+    """Generate a layered architecture visualization for a given linear torch model (i.e., one input and output tensor for each
     layer), suitable for Convolutional Neural Networks (CNNs).
 
     Args:
@@ -85,7 +83,6 @@ def layered_view(
     Returns:
         PIL.Image: An Image object representing the generated architecture visualization.
     """
-
     # Iterate over the model to compute bounds and generate boxes
 
     boxes = list()
@@ -105,7 +102,7 @@ def layered_view(
     if index_ignore is None:
         index_ignore = list()
 
-    _color_map: Dict = dict()
+    _color_map: dict = dict()
     if color_map is not None:
         _color_map = defaultdict(dict, color_map)
 
@@ -115,7 +112,7 @@ def layered_view(
     # all_layers = get_layers(model)
 
     layers: OrderedDict[str, Any] = OrderedDict()
-    hooks: List[Any] = []
+    hooks: list[Any] = []
 
     model.apply(lambda module: register_hook(model, module, hooks, layers))
 
@@ -185,7 +182,8 @@ def layered_view(
 
         box.set_fill(
             _color_map.get(layer_type, {}).get(
-                "fill", color_wheel.get_color(layer_type)
+                "fill",
+                color_wheel.get_color(layer_type),
             ),
             opacity,
         )
@@ -209,7 +207,9 @@ def layered_view(
     # Generate image
     img_width = max_right + x_off + padding
     img = Image.new(
-        "RGBA", (int(ceil(img_width)), int(ceil(img_height))), background_fill
+        "RGBA",
+        (int(ceil(img_width)), int(ceil(img_height))),
+        background_fill,
     )
     draw = aggdraw.Draw(img)
 
@@ -297,9 +297,7 @@ def layered_view(
             box.draw(draw_box)
 
             text_x = box.x2 + box.de + spacing
-            text_y = (
-                label_patch_size[1] - text_height
-            ) / 2  # 2D center; use text_height and not the current label!
+            text_y = (label_patch_size[1] - text_height) / 2  # 2D center; use text_height and not the current label!
             draw_text.text((text_x, text_y), label, font=font, fill=font_color)
 
             draw_box.flush()

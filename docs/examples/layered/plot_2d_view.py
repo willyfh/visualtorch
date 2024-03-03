@@ -1,13 +1,13 @@
-"""
-2D View
+"""2D View
+
 =======================================
 
 Visualization of 2D view
 """
 
-import visualtorch
-import torch.nn as nn
 import matplotlib.pyplot as plt
+import visualtorch
+from torch import nn
 
 # Example of a simple CNN model using nn.Sequential
 model = nn.Sequential(

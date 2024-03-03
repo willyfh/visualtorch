@@ -11,7 +11,8 @@ from __future__ import annotations
 
 import sys
 from pathlib import Path
-from sphinx_gallery.sorting import ExplicitOrder, ExampleTitleSortKey
+
+from sphinx_gallery.sorting import ExampleTitleSortKey, ExplicitOrder
 
 # Define the path to your module using Path
 module_path = Path(__file__).parent.parent / "src"
