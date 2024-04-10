@@ -1,6 +1,6 @@
 # VisualTorch Documentation
 
-VisualTorch aims to help visualize Torch-based neural network architectures. It currently supports generating layered-style and graph-style architectures for PyTorch Sequential and Custom models.
+VisualTorch aims to help visualize Torch-based neural network architectures. It currently supports generating layered-style, graph-style, and LeNet-style architectures for PyTorch Sequential and Custom models.
 
 ![VisualTorch](_static/images/banners/visualizations-preview.png)
 
@@ -64,6 +64,7 @@ markdown/get_started/installation
 
 usage_examples/layered/index
 usage_examples/graph/index
+usage_examples/lenet_style/index
 ```
 
 ```{toctree}
@@ -72,6 +73,8 @@ usage_examples/graph/index
 
 markdown/api_references/layered
 markdown/api_references/graph
+markdown/api_references/lenet_style
+
 ```
 
 ```{toctree}

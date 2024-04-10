@@ -55,6 +55,43 @@ class Shape:
         return pen, brush
 
 
+class StackedBox(Shape):
+    """Stacked Box shape class."""
+
+    de: int
+    shade: int
+    offset_z: int
+    label: str
+    output_shape: tuple
+
+    def draw(self, draw: ImageDraw) -> None:
+        """Draw box shape."""
+        pen, brush = self._get_pen_brush()
+
+        if hasattr(self, "de") and self.de > 0:
+            brush_s2 = aggdraw.Brush(_fade_color(self.fill, 4 * self.shade))
+
+            # Calculate initial offset
+            offset = -self.offset_z * self.de // 2
+
+            # Define initial brush
+            brush_choice = brush_s2 if self.de % 2 == 0 else brush
+
+            # Loop through each iteration
+            for _ in range(self.de):
+                draw.rectangle(
+                    [self.x1 + offset, self.y1 + offset, self.x2 + offset, self.y2 + offset],
+                    pen,
+                    brush_choice,
+                )
+                offset += self.offset_z
+                # Switch brush
+                brush_choice = brush_s2 if brush_choice is brush else brush
+
+        else:
+            draw.rectangle([self.x1, self.y1, self.x2, self.y2], pen, brush)
+
+
 class Box(Shape):
     """Box shape class."""
 
