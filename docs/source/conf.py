@@ -91,7 +91,7 @@ sphinx_gallery_conf = {
     "examples_dirs": "../examples",  # path to your example scripts
     "gallery_dirs": "usage_examples",  # path to where to save gallery generated output
     "min_reported_time": 10,
-    "subsection_order": ExplicitOrder(["../examples/layered", "../examples/graph"]),
+    "subsection_order": ExplicitOrder(["../examples/layered", "../examples/graph", "../examples/lenet_style"]),
     "within_subsection_order": ExampleTitleSortKey,
 }
 

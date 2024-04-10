@@ -14,8 +14,6 @@ model = nn.Sequential(
     nn.MaxPool2d(2, 2),
     nn.Conv2d(8, 16, kernel_size=3, padding=1),
     nn.MaxPool2d(2, 2),
-    nn.Conv2d(16, 32, kernel_size=3, padding=1),
-    nn.MaxPool2d(2, 2),
 )
 
 input_shape = (1, 3, 128, 128)
