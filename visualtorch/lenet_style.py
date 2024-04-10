@@ -48,6 +48,8 @@ def lenet_view(
 ) -> PIL.Image:
     """Generate a LeNet style architecture visualization for a given torch model.
 
+    TODO: remove unnecessary arguments for this LeNet style architecture.
+
     Args:
         model (torch.nn.Module): A torch model that will be visualized.
         input_shape (tuple): The shape of the input tensor (default: (1, 3, 224, 224)).
