@@ -1,4 +1,4 @@
-"""Tests for layered view."""
+"""Tests for lenet view."""
 
 # Copyright (C) 2024 Willy Fitra Hendria
 # SPDX-License-Identifier: MIT
@@ -7,7 +7,7 @@ import pytest
 import torch
 import torch.nn.functional as func
 from torch import nn
-from visualtorch import layered_view
+from visualtorch import lenet_view
 
 
 @pytest.fixture()
@@ -58,16 +58,16 @@ def custom_model() -> nn.Module:
     return CustomModel()
 
 
-def test_sequential_model_layered_view_runs(sequential_model: nn.Sequential) -> None:
-    """Test layered view on sequential model."""
-    _ = layered_view(sequential_model, input_shape=(1, 3, 224, 224))
+def test_sequential_model_lenet_view_runs(sequential_model: nn.Sequential) -> None:
+    """Test lenet view on sequential model."""
+    _ = lenet_view(sequential_model, input_shape=(1, 3, 224, 224))
 
 
-def test_module_list_model_layered_view_runs(module_list_model: nn.ModuleList) -> None:
-    """Test layered view on module list model."""
-    _ = layered_view(module_list_model, input_shape=(1, 3, 224, 224))
+def test_module_list_model_lenet_view_runs(module_list_model: nn.ModuleList) -> None:
+    """Test lenet view on module list model."""
+    _ = lenet_view(module_list_model, input_shape=(1, 3, 224, 224))
 
 
-def test_custom_model_layered_view_runs(custom_model: nn.Module) -> None:
-    """Test layered view on custom model."""
-    _ = layered_view(custom_model, input_shape=(1, 3, 224, 224))
+def test_custom_model_lenet_view_runs(custom_model: nn.Module) -> None:
+    """Test lenet view on custom model."""
+    _ = lenet_view(custom_model, input_shape=(1, 3, 224, 224))
