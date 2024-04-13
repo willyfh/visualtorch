@@ -11,6 +11,14 @@ file_path = Path("README.md")
 with file_path.open("r") as fh:
     long_description = fh.read()
 
+
+def _read_requirements(file: str) -> list:
+    file_path = Path(file)
+    with file_path.open("r") as fh:
+        reqs = fh.read()
+    return reqs.strip().split("\n")
+
+
 setuptools.setup(
     name="visualtorch",
     version="0.2.3",
@@ -29,12 +37,8 @@ setuptools.setup(
         "License :: OSI Approved :: MIT License",
         "Operating System :: OS Independent",
     ],
-    install_requires=[
-        "pillow>=10.0.0",
-        "numpy>=1.18.1",
-        "aggdraw>=1.3.11",
-        "torch>=2.0.0",
-    ],
+    install_requires=_read_requirements("requirements.txt"),
+    extras_require={"dev": _read_requirements("docs/requirements.txt") + _read_requirements("dev-requirements.txt")},
     python_requires=">=3.10",
     license="MIT",
     license_files=("LICENSE",),
