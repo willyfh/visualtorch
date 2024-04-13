@@ -31,7 +31,7 @@ See the [Usage Examples page](https://visualtorch.readthedocs.io/en/latest/usage
 
 ## Contributing
 
-Please feel free to send a pull request to contribute to this project.
+Please feel free to send a pull request to contribute to this project by following this [guideline](https://github.com/willyfh/visualtorch/blob/main/CONTRIBUTING.md).
 
 ## License
 
