@@ -1,0 +1,328 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!DOCTYPE article PUBLIC "-//NLM//DTD JATS (Z39.96) Journal Publishing DTD v1.2 20190208//EN"
+                  "JATS-publishing1.dtd">
+<article xmlns:mml="http://www.w3.org/1998/Math/MathML" xmlns:xlink="http://www.w3.org/1999/xlink" dtd-version="1.2" article-type="other">
+<front>
+<journal-meta>
+<journal-id></journal-id>
+<journal-title-group>
+<journal-title>Journal of Open Source Software</journal-title>
+<abbrev-journal-title>JOSS</abbrev-journal-title>
+</journal-title-group>
+<issn publication-format="electronic">2475-9066</issn>
+<publisher>
+<publisher-name>Open Journals</publisher-name>
+</publisher>
+</journal-meta>
+<article-meta>
+<article-id pub-id-type="publisher-id">0</article-id>
+<article-id pub-id-type="doi">N/A</article-id>
+<title-group>
+<article-title>VisualTorch: Streamlining Visualization for PyTorch
+Neural Network Architectures</article-title>
+</title-group>
+<contrib-group>
+<contrib contrib-type="author">
+<name>
+<surname>Hendria</surname>
+<given-names>Willy Fitra</given-names>
+</name>
+<xref ref-type="aff" rid="aff-1"/>
+</contrib>
+<aff id="aff-1">
+<institution-wrap>
+<institution>Independent Researcher</institution>
+</institution-wrap>
+</aff>
+</contrib-group>
+<pub-date date-type="pub" publication-format="electronic" iso-8601-date="2024-02-18">
+<day>18</day>
+<month>2</month>
+<year>2024</year>
+</pub-date>
+<volume>¿VOL?</volume>
+<issue>¿ISSUE?</issue>
+<fpage>¿PAGE?</fpage>
+<permissions>
+<copyright-statement>Authors of papers retain copyright and release the
+work under a Creative Commons Attribution 4.0 International License (CC
+BY 4.0)</copyright-statement>
+<copyright-year>2022</copyright-year>
+<copyright-holder>The article authors</copyright-holder>
+<license license-type="open-access" xlink:href="https://creativecommons.org/licenses/by/4.0/">
+<license-p>Authors of papers retain copyright and release the work under
+a Creative Commons Attribution 4.0 International License (CC BY
+4.0)</license-p>
+</license>
+</permissions>
+<kwd-group kwd-group-type="author">
+<kwd>Python</kwd>
+<kwd>PyTorch</kwd>
+<kwd>Visualization</kwd>
+<kwd>Neural Networks</kwd>
+<kwd>Artificial Intelligence</kwd>
+</kwd-group>
+</article-meta>
+</front>
+<body>
+<sec id="summary">
+  <title>Summary</title>
+  <p>VisualTorch is a library designed for visualizing neural network
+  architectures in PyTorch. It offers support for multiple visualization
+  styles, such as layered-style, graph-style, and the newly added
+  LeNet-like visualization. When provided with a sequential or custom
+  PyTorch model, alongside the input shape and visualization
+  specifications, VisualTorch automatically translates the model
+  structure into an architectural diagram. The resulting diagram can be
+  refined using various configurations, including style, color, opacity,
+  size, and a legend. VisualTorch is particularly valuable for projects
+  involving PyTorch-based neural networks. By facilitating the
+  generation of graphics with a single function call, it streamlines the
+  process of visualizing neural network architectures. This ensures that
+  the produced results are suitable for publication with minimal
+  additional modifications. Moreover, owing to its diverse customization
+  options, VisualTorch empowers users to generate polished figures
+  suitable for publication.</p>
+</sec>
+<sec id="statement-of-need">
+  <title>Statement of Need</title>
+  <p>Neural network architecture visualization plays an important role
+  in the scientific process within the realm of artificial intelligence
+  and machine learning. While mathematical equations and descriptive
+  paragraphs provide detailed information about architectures, effective
+  visualizations can significantly aid scientists in communicating their
+  proposed architectures to others.</p>
+  <p>In deep learning projects based on Keras
+  (<xref alt="Chollet &amp; others, 2015" rid="ref-CholletU003A2015" ref-type="bibr">Chollet
+  &amp; others, 2015</xref>), the visualkeras project
+  (<xref alt="Gavrikov, 2020" rid="ref-GavrikovU003A2020" ref-type="bibr">Gavrikov,
+  2020</xref>) has been gaining traction over nearly four years of
+  development. It offers visualization of Keras-based neural network
+  architectures in two styles: layered and graph. The visualtorch
+  library provides visualization for PyTorch-based architectures
+  (<xref alt="Paszke et al., 2019" rid="ref-PaszkeU003A2019" ref-type="bibr">Paszke
+  et al., 2019</xref>). PyTorch itself has gained popularity among deep
+  learning frameworks within the scientific community in recent years
+  (<xref alt="Aoun et al., 2022" rid="ref-AounU003A2022" ref-type="bibr">Aoun
+  et al., 2022</xref>). Our VisualTorch library offers more
+  visualization styles, improved usability, and a development
+  environment by providing web-based documentation and CI/CD pipelines
+  for seamless future contributions and collaborations.</p>
+</sec>
+<sec id="introduction">
+  <title>Introduction</title>
+  <p>Recent advancements in artificial intelligence have sparked
+  widespread interest among researchers, particularly in exploring
+  innovative algorithmic approaches such as neural networks or deep
+  learning architectures. These architectures have demonstrated
+  remarkable utility across various AI applications, including computer
+  vision, natural language processing, and robotics. For implementing
+  the neural network architectures, many researchers and practitioners
+  often utilize established deep learning frameworks, such as PyTorch
+  (<xref alt="Paszke et al., 2019" rid="ref-PaszkeU003A2019" ref-type="bibr">Paszke
+  et al., 2019</xref>), TensorFlow
+  (<xref alt="Abadi &amp; others, 2015" rid="ref-AbadiU003A2015" ref-type="bibr">Abadi
+  &amp; others, 2015</xref>), and Keras
+  (<xref alt="Chollet &amp; others, 2015" rid="ref-CholletU003A2015" ref-type="bibr">Chollet
+  &amp; others, 2015</xref>). Among the existing deep learning
+  frameworks, PyTorch has been gaining increasing popularity,
+  experiencing a surge in adoption within the AI community in recent
+  years
+  (<xref alt="Aoun et al., 2022" rid="ref-AounU003A2022" ref-type="bibr">Aoun
+  et al., 2022</xref>).</p>
+  <p>To effectively communicate their ideas, researchers often employ
+  architecture diagrams as aids for comprehension. While detailed
+  mathematical descriptions help in understanding the intricacies of
+  algorithms, visual representations of architectures offer an
+  additional means of conveying concepts, enabling individuals to grasp
+  the overall visual representation. Our VisualTorch library is designed
+  to streamline the visualization of PyTorch-based neural network
+  architectures. Instead of manually constructing diagrams from scratch,
+  researchers can leverage a single function call of our library to
+  generate visualizations. With a variety of customization options,
+  users can tailor visualizations to suit their preferences.</p>
+  <p>One of the important features of VisualTorch is its ability to
+  automatically map a neural network model to visualizations using
+  various styles such as layered, graph, and LeNet-like visualization
+  (<xref alt="Lecun et al., 1998" rid="ref-LecunU003A1998" ref-type="bibr">Lecun
+  et al., 1998</xref>). Users can further refine these visualizations by
+  adjusting attributes such as color, opacity, and size. VisualTorch
+  aims to offer a solution for rapidly visualizing a wide range of
+  neural network architectures in PyTorch. Inspired by the visualkeras
+  (<xref alt="Gavrikov, 2020" rid="ref-GavrikovU003A2020" ref-type="bibr">Gavrikov,
+  2020</xref>) project, our VisualTorch library shares a similar
+  motivation but offers enhanced functionality specifically tailored for
+  PyTorch-based architectures. In addition to providing more
+  visualization styles, our library also provides online web-based
+  documentation and streamlined CI/CD workflows, which improve usability
+  and facilitate future development.</p>
+</sec>
+<sec id="usage-example">
+  <title>Usage Example</title>
+  <p>We provide a usage example for each layered, LeNet, and graph style
+  visualization in
+  <xref alt="[fig:layered]" rid="figU003Alayered">[fig:layered]</xref>,
+  <xref alt="[fig:lenet]" rid="figU003Alenet">[fig:lenet]</xref>, and
+  <xref alt="[fig:graph]" rid="figU003Agraph">[fig:graph]</xref>,
+  respectively. For each example, we display the graphic generated by
+  our library using the matplotlib library
+  (<xref alt="Hunter, 2007" rid="ref-HunterU003A2007" ref-type="bibr">Hunter,
+  2007</xref>).</p>
+  <fig>
+    <caption><p>An example of layered style visualization generated
+    using VisualTorch, accompanied by its corresponding Python
+    code.<styled-content id="figU003Alayered"></styled-content></p></caption>
+    <graphic mimetype="image" mime-subtype="png" xlink:href="media/figure-layered.png" />
+  </fig>
+  <fig>
+    <caption><p>An example of LeNet style visualization generated using
+    VisualTorch, accompanied by its corresponding Python
+    code.<styled-content id="figU003Alenet"></styled-content></p></caption>
+    <graphic mimetype="image" mime-subtype="png" xlink:href="media/figure-lenet.png" />
+  </fig>
+  <fig>
+    <caption><p>An example of graph style visualization generated using
+    VisualTorch, accompanied by its corresponding Python
+    code.<styled-content id="figU003Agraph"></styled-content></p></caption>
+    <graphic mimetype="image" mime-subtype="png" xlink:href="media/figure-graph.png" />
+  </fig>
+</sec>
+<sec id="acknowledgements">
+  <title>Acknowledgements</title>
+  <p>We extend our appreciation to our community that we anticipate will
+  contribute to the advancement of VisualTorch. Your future
+  contributions, whether through questions, bug reports, or code
+  submissions, will be instrumental in shaping the development of this
+  project. Together, we look forward to fostering a collaborative
+  environment that drives innovation and progress. Thank you for your
+  anticipated dedication and commitment to excellence.</p>
+</sec>
+</body>
+<back>
+<ref-list>
+  <ref id="ref-AounU003A2022">
+    <element-citation>
+      <person-group person-group-type="author">
+        <name><surname>Aoun</surname><given-names>Mohamed Raed El</given-names></name>
+        <name><surname>Tidjon</surname><given-names>Lionel Nganyewou</given-names></name>
+        <name><surname>Rombaut</surname><given-names>Ben</given-names></name>
+        <name><surname>Khomh</surname><given-names>Foutse</given-names></name>
+        <name><surname>Hassan</surname><given-names>Ahmed E.</given-names></name>
+      </person-group>
+      <article-title>An empirical study of library usage and dependency in deep learning frameworks</article-title>
+      <year iso-8601-date="2022">2022</year>
+      <uri>https://arxiv.org/abs/2211.15733</uri>
+    </element-citation>
+  </ref>
+  <ref id="ref-GavrikovU003A2020">
+    <element-citation>
+      <person-group person-group-type="author">
+        <name><surname>Gavrikov</surname><given-names>Paul</given-names></name>
+      </person-group>
+      <article-title>Visualkeras</article-title>
+      <source>GitHub repository</source>
+      <publisher-name>https://github.com/paulgavrikov/visualkeras; GitHub</publisher-name>
+      <year iso-8601-date="2020">2020</year>
+    </element-citation>
+  </ref>
+  <ref id="ref-CholletU003A2015">
+    <element-citation>
+      <person-group person-group-type="author">
+        <name><surname>Chollet</surname><given-names>François</given-names></name>
+        <name><surname>others</surname></name>
+      </person-group>
+      <article-title>Keras</article-title>
+      <publisher-name>https://github.com/fchollet/keras; GitHub</publisher-name>
+      <year iso-8601-date="2015">2015</year>
+    </element-citation>
+  </ref>
+  <ref id="ref-PaszkeU003A2019">
+    <element-citation publication-type="chapter">
+      <person-group person-group-type="author">
+        <name><surname>Paszke</surname><given-names>Adam</given-names></name>
+        <name><surname>Gross</surname><given-names>Sam</given-names></name>
+        <name><surname>Massa</surname><given-names>Francisco</given-names></name>
+        <name><surname>Lerer</surname><given-names>Adam</given-names></name>
+        <name><surname>Bradbury</surname><given-names>James</given-names></name>
+        <name><surname>Chanan</surname><given-names>Gregory</given-names></name>
+        <name><surname>Killeen</surname><given-names>Trevor</given-names></name>
+        <name><surname>Lin</surname><given-names>Zeming</given-names></name>
+        <name><surname>Gimelshein</surname><given-names>Natalia</given-names></name>
+        <name><surname>Antiga</surname><given-names>Luca</given-names></name>
+        <name><surname>Desmaison</surname><given-names>Alban</given-names></name>
+        <name><surname>Kopf</surname><given-names>Andreas</given-names></name>
+        <name><surname>Yang</surname><given-names>Edward</given-names></name>
+        <name><surname>DeVito</surname><given-names>Zachary</given-names></name>
+        <name><surname>Raison</surname><given-names>Martin</given-names></name>
+        <name><surname>Tejani</surname><given-names>Alykhan</given-names></name>
+        <name><surname>Chilamkurthy</surname><given-names>Sasank</given-names></name>
+        <name><surname>Steiner</surname><given-names>Benoit</given-names></name>
+        <name><surname>Fang</surname><given-names>Lu</given-names></name>
+        <name><surname>Bai</surname><given-names>Junjie</given-names></name>
+        <name><surname>Chintala</surname><given-names>Soumith</given-names></name>
+      </person-group>
+      <article-title>PyTorch: An imperative style, high-performance deep learning library</article-title>
+      <source>Advances in neural information processing systems 32</source>
+      <person-group person-group-type="editor">
+        <name><surname>Wallach</surname><given-names>H.</given-names></name>
+        <name><surname>Larochelle</surname><given-names>H.</given-names></name>
+        <name><surname>Beygelzimer</surname><given-names>A.</given-names></name>
+        <name><surname>dAlché-Buc</surname><given-names>F.</given-names></name>
+        <name><surname>Fox</surname><given-names>E.</given-names></name>
+        <name><surname>Garnett</surname><given-names>R.</given-names></name>
+      </person-group>
+      <publisher-name>Curran Associates, Inc.</publisher-name>
+      <year iso-8601-date="2019">2019</year>
+      <uri>http://papers.neurips.cc/paper/9015-pytorch-an-imperative-style-high-performance-deep-learning-library.pdf</uri>
+      <fpage>8024</fpage>
+      <lpage>8035</lpage>
+    </element-citation>
+  </ref>
+  <ref id="ref-AbadiU003A2015">
+    <element-citation>
+      <person-group person-group-type="author">
+        <name><surname>Abadi</surname><given-names>Martín</given-names></name>
+        <name><surname>others</surname></name>
+      </person-group>
+      <article-title>TensorFlow: Large-scale machine learning on heterogeneous systems</article-title>
+      <year iso-8601-date="2015">2015</year>
+      <uri>https://www.tensorflow.org/</uri>
+    </element-citation>
+  </ref>
+  <ref id="ref-HunterU003A2007">
+    <element-citation publication-type="article-journal">
+      <person-group person-group-type="author">
+        <name><surname>Hunter</surname><given-names>J. D.</given-names></name>
+      </person-group>
+      <article-title>Matplotlib: A 2D graphics environment</article-title>
+      <source>Computing in Science &amp; Engineering</source>
+      <publisher-name>IEEE COMPUTER SOC</publisher-name>
+      <year iso-8601-date="2007">2007</year>
+      <volume>9</volume>
+      <issue>3</issue>
+      <pub-id pub-id-type="doi">10.1109/MCSE.2007.55</pub-id>
+      <fpage>90</fpage>
+      <lpage>95</lpage>
+    </element-citation>
+  </ref>
+  <ref id="ref-LecunU003A1998">
+    <element-citation publication-type="article-journal">
+      <person-group person-group-type="author">
+        <name><surname>Lecun</surname><given-names>Y.</given-names></name>
+        <name><surname>Bottou</surname><given-names>L.</given-names></name>
+        <name><surname>Bengio</surname><given-names>Y.</given-names></name>
+        <name><surname>Haffner</surname><given-names>P.</given-names></name>
+      </person-group>
+      <article-title>Gradient-based learning applied to document recognition</article-title>
+      <source>Proceedings of the IEEE</source>
+      <year iso-8601-date="1998">1998</year>
+      <volume>86</volume>
+      <issue>11</issue>
+      <pub-id pub-id-type="doi">10.1109/5.726791</pub-id>
+      <fpage>2278</fpage>
+      <lpage>2324</lpage>
+    </element-citation>
+  </ref>
+</ref-list>
+</back>
+</article>

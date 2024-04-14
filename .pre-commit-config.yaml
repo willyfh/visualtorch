@@ -27,6 +27,7 @@ repos:
     rev: v0.37.0
     hooks:
       - id: markdownlint
+        args: ["--ignore", "paper/paper.md"]
 
   - repo: https://github.com/charliermarsh/ruff-pre-commit
     rev: "v0.1.5"

@@ -1,0 +1,52 @@
+---
+title: "VisualTorch: Streamlining Visualization for PyTorch Neural Network Architectures"
+tags:
+  - Python
+  - PyTorch
+  - Visualization
+  - Neural Networks
+  - Artificial Intelligence
+
+authors:
+  - name: Willy Fitra Hendria
+    affiliation: 1
+affiliations:
+  - name: Independent Researcher
+    index: 1
+date: 18 February 2024
+bibliography: paper.bib
+---
+
+# Summary
+
+VisualTorch is a library designed for visualizing neural network architectures in PyTorch. It offers support for multiple visualization styles, such as layered-style, graph-style, and the newly added LeNet-like visualization. When provided with a sequential or custom PyTorch model, alongside the input shape and visualization specifications, VisualTorch automatically translates the model structure into an architectural diagram. The resulting diagram can be refined using various configurations, including style, color, opacity, size, and a legend. VisualTorch is particularly valuable for projects involving PyTorch-based neural networks. By facilitating the generation of graphics with a single function call, it streamlines the process of visualizing neural network architectures. This ensures that the produced results are suitable for publication with minimal additional modifications. Moreover, owing to its diverse customization options, VisualTorch empowers users to generate polished figures suitable for publication.
+
+# Statement of Need
+
+Neural network architecture visualization plays an important role in the scientific process within the realm of artificial intelligence and machine learning. While mathematical equations and descriptive paragraphs provide detailed information about architectures, effective visualizations can significantly aid scientists in communicating their proposed architectures to others.
+
+In deep learning projects based on Keras [@Chollet:2015], the visualkeras project [@Gavrikov:2020] has been gaining traction over nearly four years of development. It offers visualization of Keras-based neural network architectures in two styles: layered and graph. The visualtorch library provides visualization for PyTorch-based architectures [@Paszke:2019]. PyTorch itself has gained popularity among deep learning frameworks within the scientific community in recent years [@Aoun:2022]. Our VisualTorch library offers more visualization styles, improved usability, and a development environment by providing web-based documentation and CI/CD pipelines for seamless future contributions and collaborations.
+
+# Introduction
+
+Recent advancements in artificial intelligence have sparked widespread interest among researchers, particularly in exploring innovative algorithmic approaches such as neural networks or deep learning architectures. These architectures have demonstrated remarkable utility across various AI applications, including computer vision, natural language processing, and robotics. For implementing the neural network architectures, many researchers and practitioners often utilize established deep learning frameworks, such as PyTorch [@Paszke:2019], TensorFlow [@Abadi:2015], and Keras [@Chollet:2015]. Among the existing deep learning frameworks, PyTorch has been gaining increasing popularity, experiencing a surge in adoption within the AI community in recent years [@Aoun:2022].
+
+To effectively communicate their ideas, researchers often employ architecture diagrams as aids for comprehension. While detailed mathematical descriptions help in understanding the intricacies of algorithms, visual representations of architectures offer an additional means of conveying concepts, enabling individuals to grasp the overall visual representation. Our VisualTorch library is designed to streamline the visualization of PyTorch-based neural network architectures. Instead of manually constructing diagrams from scratch, researchers can leverage a single function call of our library to generate visualizations. With a variety of customization options, users can tailor visualizations to suit their preferences.
+
+One of the important features of VisualTorch is its ability to automatically map a neural network model to visualizations using various styles such as layered, graph, and LeNet-like visualization [@Lecun:1998]. Users can further refine these visualizations by adjusting attributes such as color, opacity, and size. VisualTorch aims to offer a solution for rapidly visualizing a wide range of neural network architectures in PyTorch. Inspired by the visualkeras [@Gavrikov:2020] project, our VisualTorch library shares a similar motivation but offers enhanced functionality specifically tailored for PyTorch-based architectures. In addition to providing more visualization styles, our library also provides online web-based documentation and streamlined CI/CD workflows, which improve usability and facilitate future development.
+
+# Usage Example
+
+We provide a usage example for each layered, LeNet, and graph style visualization in \autoref{fig:layered}, \autoref{fig:lenet}, and \autoref{fig:graph}, respectively. For each example, we display the graphic generated by our library using the matplotlib library [@Hunter:2007].
+
+![An example of layered style visualization generated using VisualTorch, accompanied by its corresponding Python code.\label{fig:layered}](figure-layered.png){ width=80% }
+
+![An example of LeNet style visualization generated using VisualTorch, accompanied by its corresponding Python code.\label{fig:lenet}](figure-lenet.png){ width=80% }
+
+![An example of graph style visualization generated using VisualTorch, accompanied by its corresponding Python code.\label{fig:graph}](figure-graph.png){ width=80% }
+
+# Acknowledgements
+
+We extend our appreciation to our community that we anticipate will contribute to the advancement of VisualTorch. Your future contributions, whether through questions, bug reports, or code submissions, will be instrumental in shaping the development of this project. Together, we look forward to fostering a collaborative environment that drives innovation and progress. Thank you for your anticipated dedication and commitment to excellence.
+
+# References
