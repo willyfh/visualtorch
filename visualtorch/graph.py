@@ -168,7 +168,6 @@ def _draw_connector(
 
 def _retrieve_isbox_units(layer: torch.autograd.Function, show_neurons: bool) -> tuple[bool, int]:
     """Return the number of units and the flag whether to visualize using a box or not."""
-    print("test: ", type(layer))
     is_box = True
     units = 1
     if show_neurons:
