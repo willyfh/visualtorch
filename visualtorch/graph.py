@@ -1,5 +1,6 @@
 """Graph View module for pytorch model visualization."""
 
+# Copyright (C) 2020 Paul Gavrikov
 # Copyright (C) 2024 Willy Fitra Hendria
 # SPDX-License-Identifier: MIT
 
