@@ -43,7 +43,20 @@ API references of VisualTorch.
 
 ::::
 
-## {octicon}`book` Citation
+## {octicon}`book` Developer Guides
+
+::::{grid}
+
+:::{grid-item-card} Contributing to VisualTorch
+:link: markdown/developer_guides/contributing
+:link-type: doc
+
+How to contribute, prepare the development environment, test, report issues, and seek support.
+:::
+
+::::
+
+## {octicon}`bookmark` Citation
 
 Please cite this project in your publications if it helps your research as follows:
 
