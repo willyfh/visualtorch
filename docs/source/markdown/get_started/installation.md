@@ -29,3 +29,9 @@ VisualTorch can be installed using the following commands:
 ::::
 
 :::::
+
+The following dependencies will also be installed if you run the above command:
+
+```{literalinclude} ../../snippets/install/requirements.txt
+:language: bash
+```
