@@ -11,14 +11,12 @@ authors:
   - name: Willy Fitra Hendria
     affiliation: '1'
   - name: Paul Gavrikov
-    affiliation: [ 2, 3 ]
+    affiliation: '2'
 affiliations:
   - index: 1
     name: Independent Researcher
   - index: 2
-    name: Offenburg University
-  - index: 3
-    name: University of Mannheim
+    name: Offenburg University and University of Mannheim
     
     
 date: 18 February 2024
