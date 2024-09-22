@@ -11,7 +11,7 @@ authors:
   - name: Willy Fitra Hendria
     affiliation: 1
   - name: Paul Gavrikov
-    affiliation: [2, 3]
+    affiliation: '2 3'
 affiliations:
   - name: Independent Researcher
     index: 1
