@@ -9,16 +9,17 @@ tags:
 
 authors:
   - name: Willy Fitra Hendria
-    affiliation: 1
+    affiliation: '1'
   - name: Paul Gavrikov
-    affiliation: '2 3'
+    affiliation: [ '2', '3' ]
 affiliations:
-  - name: Independent Researcher
-    index: 1
-  - name: Offenburg University, 
-    index: 2
-  - name: University of Mannheim
-    index: 3
+  - index: 1
+    name: Independent Researcher
+  - index: 2
+    name: Offenburg University, 
+  - index: 3
+    name: University of Mannheim
+    
     
 date: 18 February 2024
 bibliography: paper.bib
