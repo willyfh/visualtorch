@@ -16,7 +16,7 @@ affiliations:
   - index: 1
     name: Independent Researcher
   - index: 2
-    name: Offenburg University, 
+    name: Offenburg University
   - index: 3
     name: University of Mannheim
     
