@@ -16,9 +16,9 @@ affiliations:
   - index: 1
     name: Independent Researcher
   - index: 2
-    name: Offenburg University
+    name: IMLA, Offenburg University, Germany
   - index: 3
-    name: University of Mannheim
+    name: University of Mannheim, Germany
     
     
 date: 18 February 2024
