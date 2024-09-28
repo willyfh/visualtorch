@@ -19,8 +19,7 @@ affiliations:
     name: IMLA, Offenburg University, Germany
   - index: 3
     name: University of Mannheim, Germany
-    
-    
+
 date: 18 February 2024
 bibliography: paper.bib
 ---
