@@ -10,8 +10,10 @@ tags:
 authors:
   - name: Willy Fitra Hendria
     affiliation: "1"
+    orcid: 0000-0002-6209-3981
   - name: Paul Gavrikov
     affiliation: "2, 3"
+    orcid: 0000-0003-2667-9333
 affiliations:
   - index: 1
     name: Independent Researcher
