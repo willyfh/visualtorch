@@ -21,7 +21,7 @@ def _read_requirements(file: str) -> list:
 
 setuptools.setup(
     name="visualtorch",
-    version="0.2.4",
+    version="0.2.5",
     author="Willy Fitra Hendria",
     author_email="willyfitrahendria@gmail.com",
     description="Architecture visualization of Torch models",
