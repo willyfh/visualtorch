@@ -58,6 +58,26 @@ def custom_model() -> nn.Module:
     return CustomModel()
 
 
+@pytest.fixture()
+def lstm_model() -> nn.Module:
+    """Define a simple LSTM model for testing."""
+
+    class LSTMModel(nn.Module):
+        """A simple LSTM model."""
+
+        def __init__(self, input_size: int, hidden_size: int, num_layers: int) -> None:
+            super().__init__()
+            self.lstm = nn.LSTM(input_size, hidden_size, num_layers, batch_first=True)
+
+        def forward(self, x: torch.Tensor) -> torch.Tensor:
+            """Forward pass."""
+            out, _ = self.lstm(x)
+            return out
+
+    # Create an instance of the LSTM model
+    return LSTMModel(input_size=10, hidden_size=20, num_layers=2)
+
+
 def test_sequential_model_layered_view_runs(sequential_model: nn.Sequential) -> None:
     """Test layered view on sequential model."""
     _ = layered_view(sequential_model, input_shape=(1, 3, 224, 224))
@@ -71,3 +91,8 @@ def test_module_list_model_layered_view_runs(module_list_model: nn.ModuleList) -
 def test_custom_model_layered_view_runs(custom_model: nn.Module) -> None:
     """Test layered view on custom model."""
     _ = layered_view(custom_model, input_shape=(1, 3, 224, 224))
+
+
+def test_lstm_model_layered_view_runs(lstm_model: nn.Module) -> None:
+    """Test layered view on lstm model."""
+    _ = layered_view(lstm_model, input_shape=(1, 10, 10))

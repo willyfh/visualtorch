@@ -185,8 +185,13 @@ def register_hook(
         m_key = "%s-%i" % (class_name, module_idx + 1)
         layers[m_key] = OrderedDict()
         layers[m_key]["module"] = module
-        if isinstance(out, list | tuple):
-            layers[m_key]["output_shape"] = tuple((-1,) + o.size()[1:] for o in out)
+        if isinstance(out, tuple):
+            if hasattr(out[0], "size"):
+                layers[m_key]["output_shape"] = out[0].size()
+            else:
+                layers[m_key]["output_shape"] = tuple(o.size() for o in out if hasattr(o, "size"))
+        elif isinstance(out, list):
+            layers[m_key]["output_shape"] = tuple(o.size() for o in out if hasattr(o, "size"))
         else:
             layers[m_key]["output_shape"] = out.size()
 
