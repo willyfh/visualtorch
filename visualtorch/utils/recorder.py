@@ -122,8 +122,7 @@ def _wrapped_module_call(
             node_id = str(id(mod))
             id_to_module[node_id] = mod
             id_to_output_shape[node_id] = _first_tensor_shape(out)
-            for producer_id in producer_ids:
-                edges.append((producer_id, node_id))
+            edges.extend((producer_id, node_id) for producer_id in producer_ids)
             _stamp_producer_ids(out, {node_id})
 
         return out
@@ -147,6 +146,7 @@ class Recorder:
         self._edges = edges
 
     def __enter__(self) -> "Recorder":
+        """Patch nn.Module.__call__ to start tracing."""
         nn.Module.__call__ = _wrapped_module_call(  # type: ignore[method-assign]
             self._model,
             self._id_to_module,
@@ -156,6 +156,7 @@ class Recorder:
         return self
 
     def __exit__(self, exc_type: Any, exc_value: Any, exc_tb: Any) -> None:
+        """Restore the original nn.Module.__call__."""
         nn.Module.__call__ = _orig_module_call  # type: ignore[method-assign]
 
 
