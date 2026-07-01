@@ -5,15 +5,13 @@
 
 from pathlib import Path
 
-import numpy as np
 import pytest
 import torch
 from PIL import Image
 from torch import nn
 from visualtorch import graph_view
-from visualtorch.graph import _compute_skip_levels
-from visualtorch.utils.layer_utils import model_to_adj_matrix
-from visualtorch.utils.utils import Box, Ellipses
+from visualtorch.backend import extract_architecture
+from visualtorch.connectors import compute_skip_levels
 
 
 @pytest.fixture()
@@ -148,32 +146,33 @@ def test_graph_view_batchnorm_model_runs(batchnorm_model: nn.Module) -> None:
     assert img is not None
 
 
-def test_model_to_adj_matrix_edge_count_dense_model(dense_model: nn.Module) -> None:
-    """model_to_adj_matrix should produce exactly the expected edges for a known simple chain."""
-    _, adj_matrix, model_layers, _ = model_to_adj_matrix(dense_model, input_shape=(1, 4))
+def test_extract_architecture_edge_count_dense_model(dense_model: nn.Module) -> None:
+    """extract_architecture should produce exactly the expected edges for a known simple chain."""
+    architecture = extract_architecture(dense_model, input_shape=(1, 4))
 
-    # 4 chained Linear layers => exactly 3 edges, one layer per column.
-    assert int(adj_matrix.sum()) == 3
-    assert len(model_layers) == 4
-    for column in model_layers:
+    # 4 chained Linear layers => 3 edges between them, plus 1 from the input dummy to the first
+    # layer, and one layer per column (plus the synthetic input column).
+    assert int(architecture.adjacency.sum()) == 4
+    assert len(architecture.columns) == 5
+    for column in architecture.columns:
         assert len(column) == 1
 
 
-def test_model_to_adj_matrix_captures_branching(residual_model: nn.Module) -> None:
+def test_extract_architecture_captures_branching(residual_model: nn.Module) -> None:
     """The merge point of a skip connection should have 2 incoming edges, not 1."""
-    id_to_index, adj_matrix, _, _ = model_to_adj_matrix(residual_model, input_shape=(1, 4))
+    architecture = extract_architecture(residual_model, input_shape=(1, 4))
 
     out_node_id = f"{id(residual_model.out)}#0"
-    in_degree = adj_matrix[:, id_to_index[out_node_id]].sum()
+    in_degree = architecture.adjacency[:, architecture.id_to_index[out_node_id]].sum()
 
     assert in_degree == 2, "expected the merge node to have 2 incoming edges from the skip connection"
 
 
-def test_model_to_adj_matrix_supports_untracked_layer_type(batchnorm_model: nn.Module) -> None:
+def test_extract_architecture_supports_untracked_layer_type(batchnorm_model: nn.Module) -> None:
     """A BatchNorm2d instance should actually appear among the traced layers."""
-    _, _, model_layers, _ = model_to_adj_matrix(batchnorm_model, input_shape=(2, 3, 8, 8))
+    architecture = extract_architecture(batchnorm_model, input_shape=(2, 3, 8, 8))
 
-    traced_types = {type(wrapper.module) for column in model_layers for wrapper in column}
+    traced_types = {type(wrapper.module) for column in architecture.columns for wrapper in column}
     assert nn.BatchNorm2d in traced_types
 
 
@@ -199,7 +198,7 @@ def test_graph_view_bare_leaf_module_as_model() -> None:
     assert img is not None
 
 
-def test_model_to_adj_matrix_wires_deeper_direct_input_consumer() -> None:
+def test_extract_architecture_wires_deeper_direct_input_consumer() -> None:
     """A node that reads the raw input directly, in addition to a hidden predecessor, still gets its input edge."""
 
     class M(nn.Module):
@@ -213,13 +212,16 @@ def test_model_to_adj_matrix_wires_deeper_direct_input_consumer() -> None:
             return self.b(x + a)
 
     model = M()
-    _, _, _, direct_input_node_ids = model_to_adj_matrix(model, input_shape=(1, 4))
+    architecture = extract_architecture(model, input_shape=(1, 4))
 
-    b_node_id = next(node_id for node_id in direct_input_node_ids if node_id.startswith(f"{id(model.b)}#"))
-    assert b_node_id is not None
+    input_node_id = architecture.columns[0][0].node_id
+    input_index = architecture.id_to_index[input_node_id]
+    b_node_id = next(node_id for node_id in architecture.id_to_index if node_id.startswith(f"{id(model.b)}#"))
+
+    assert architecture.adjacency[input_index, architecture.id_to_index[b_node_id]] == 1
 
 
-def test_model_to_adj_matrix_survives_subclass_escaping_op() -> None:
+def test_extract_architecture_survives_subclass_escaping_op() -> None:
     """Lineage should survive a leaf module whose forward escapes the tensor subclass internally."""
 
     class NumpyRoundTrip(nn.Module):
@@ -240,10 +242,12 @@ def test_model_to_adj_matrix_survives_subclass_escaping_op() -> None:
             return self.b(x)
 
     model = M()
-    _, adj_matrix, model_layers, _ = model_to_adj_matrix(model, input_shape=(1, 4))
+    architecture = extract_architecture(model, input_shape=(1, 4))
 
-    assert int(adj_matrix.sum()) == 2
-    assert [type(wrapper.module).__name__ for column in model_layers for wrapper in column] == [
+    # input->a, a->roundtrip, roundtrip->b.
+    assert int(architecture.adjacency.sum()) == 3
+    assert [type(wrapper.module).__name__ for column in architecture.columns for wrapper in column] == [
+        "InputDummyLayer",
         "Linear",
         "NumpyRoundTrip",
         "Linear",
@@ -270,18 +274,9 @@ def test_graph_view_show_dimension_with_branching(residual_model: nn.Module) -> 
 
 def test_compute_skip_levels_ignores_span_le_1_edges() -> None:
     """An edge with column span <= 1 should never be assigned a detour level."""
-    id_to_num_mapping = {"a": 0, "b": 1}
-    id_to_column_index = {"a": 0, "b": 1}
-    id_to_node_list_map = {"a": [Box()], "b": [Box()]}
-    adj_matrix = np.zeros((2, 2))
-    adj_matrix[0, 1] = 1
+    id_to_column = {"a": 0, "b": 1}
 
-    edge_to_level, num_levels = _compute_skip_levels(
-        adj_matrix,
-        id_to_num_mapping,
-        id_to_column_index,
-        id_to_node_list_map,
-    )
+    edge_to_level, num_levels = compute_skip_levels([("a", "b")], id_to_column, lambda *_: True)
 
     assert edge_to_level == {}
     assert num_levels == 0
@@ -289,20 +284,10 @@ def test_compute_skip_levels_ignores_span_le_1_edges() -> None:
 
 def test_compute_skip_levels_assigns_distinct_levels_to_overlapping_skips() -> None:
     """Two skip edges whose column spans genuinely overlap must get different levels."""
-    ids = ["a", "b", "c", "d"]
-    id_to_num_mapping = {node_id: idx for idx, node_id in enumerate(ids)}
-    id_to_column_index = {"a": 0, "b": 3, "c": 2, "d": 5}
-    id_to_node_list_map = {node_id: [Box()] for node_id in ids}
-    adj_matrix = np.zeros((4, 4))
-    adj_matrix[id_to_num_mapping["a"], id_to_num_mapping["b"]] = 1
-    adj_matrix[id_to_num_mapping["c"], id_to_num_mapping["d"]] = 1
+    id_to_column = {"a": 0, "b": 3, "c": 2, "d": 5}
+    edges = [("a", "b"), ("c", "d")]
 
-    edge_to_level, num_levels = _compute_skip_levels(
-        adj_matrix,
-        id_to_num_mapping,
-        id_to_column_index,
-        id_to_node_list_map,
-    )
+    edge_to_level, num_levels = compute_skip_levels(edges, id_to_column, lambda *_: True)
 
     assert num_levels == 2
     assert edge_to_level[("a", "b")] != edge_to_level[("c", "d")]
@@ -310,39 +295,20 @@ def test_compute_skip_levels_assigns_distinct_levels_to_overlapping_skips() -> N
 
 def test_compute_skip_levels_allows_touching_intervals_to_share_a_level() -> None:
     """Two skip edges that only touch at a shared column boundary can share a level."""
-    ids = ["a", "b", "c", "d"]
-    id_to_num_mapping = {node_id: idx for idx, node_id in enumerate(ids)}
-    id_to_column_index = {"a": 0, "b": 3, "c": 3, "d": 5}
-    id_to_node_list_map = {node_id: [Box()] for node_id in ids}
-    adj_matrix = np.zeros((4, 4))
-    adj_matrix[id_to_num_mapping["a"], id_to_num_mapping["b"]] = 1
-    adj_matrix[id_to_num_mapping["c"], id_to_num_mapping["d"]] = 1
+    id_to_column = {"a": 0, "b": 3, "c": 3, "d": 5}
+    edges = [("a", "b"), ("c", "d")]
 
-    edge_to_level, num_levels = _compute_skip_levels(
-        adj_matrix,
-        id_to_num_mapping,
-        id_to_column_index,
-        id_to_node_list_map,
-    )
+    edge_to_level, num_levels = compute_skip_levels(edges, id_to_column, lambda *_: True)
 
     assert num_levels == 1
     assert edge_to_level[("a", "b")] == edge_to_level[("c", "d")] == 0
 
 
-def test_compute_skip_levels_ignores_all_ellipses_edge() -> None:
-    """A skip edge whose only node pairs are Ellipses-gated shouldn't consume a level."""
-    id_to_num_mapping = {"a": 0, "b": 1}
-    id_to_column_index = {"a": 0, "b": 3}
-    id_to_node_list_map = {"a": [Ellipses()], "b": [Ellipses()]}
-    adj_matrix = np.zeros((2, 2))
-    adj_matrix[0, 1] = 1
+def test_compute_skip_levels_ignores_edges_with_no_content() -> None:
+    """A skip edge that `edge_has_content` reports as empty shouldn't consume a level."""
+    id_to_column = {"a": 0, "b": 3}
 
-    edge_to_level, num_levels = _compute_skip_levels(
-        adj_matrix,
-        id_to_num_mapping,
-        id_to_column_index,
-        id_to_node_list_map,
-    )
+    edge_to_level, num_levels = compute_skip_levels([("a", "b")], id_to_column, lambda *_: False)
 
     assert edge_to_level == {}
     assert num_levels == 0
@@ -421,3 +387,40 @@ def test_graph_view_residual_model_show_neurons_true_runs(residual_model: nn.Mod
     """A skip edge under show_neurons=True should collapse to one connector, not crash on a dense mesh."""
     img = graph_view(residual_model, input_shape=(1, 4), show_neurons=True)
     assert img is not None
+
+
+def test_graph_view_output_size_matches_pre_refactor_baseline(
+    dense_model: nn.Module,
+    conv_model: nn.Module,
+    residual_model: nn.Module,
+) -> None:
+    """Locks in graph_view's canvas size across the backend/connectors extraction refactor.
+
+    Sizes captured from `main` (1ee630e) before `model_to_adj_matrix`/`add_input_dummy_layer`
+    and `_compute_skip_levels`/`_draw_connector` were moved into `visualtorch.backend`/
+    `visualtorch.connectors` - confirmed byte-identical (not just same-size) via a `git worktree`
+    hash comparison on a single machine at the time of the extraction. A per-pixel hash isn't
+    portable across CI runners though: an identical hardcoded hash failed in CI (Linux) despite
+    matching on macOS, because `aggdraw`'s anti-aliasing differs slightly by platform even though
+    the underlying layout math - which is what this refactor could actually have broken - is
+    identical. Canvas size is a platform-independent proxy for that layout math.
+    """
+    cases = {
+        "dense_default": graph_view(dense_model, input_shape=(1, 4)),
+        "dense_show_neurons_false": graph_view(dense_model, input_shape=(1, 4), show_neurons=False),
+        "dense_show_dimension": graph_view(dense_model, input_shape=(1, 4), show_dimension=True),
+        "conv_default": graph_view(conv_model, input_shape=(1, 3, 16, 16)),
+        "residual_default": graph_view(residual_model, input_shape=(1, 4)),
+        "residual_show_neurons_false": graph_view(residual_model, input_shape=(1, 4), show_neurons=False),
+    }
+    expected_sizes = {
+        "dense_default": (1270, 490),
+        "dense_show_neurons_false": (1270, 170),
+        "dense_show_dimension": (1270, 507),
+        "conv_default": (670, 610),
+        "residual_default": (1270, 300),
+        "residual_show_neurons_false": (1270, 220),
+    }
+
+    for name, img in cases.items():
+        assert img.size == expected_sizes[name], f"{name} canvas size changed"

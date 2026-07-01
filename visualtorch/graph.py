@@ -9,13 +9,13 @@ from math import ceil
 from typing import Any
 
 import aggdraw
-import numpy as np
 import torch
 from PIL import Image, ImageFont
 
-from .utils.layer_utils import add_input_dummy_layer, model_to_adj_matrix
+from .backend import Architecture, extract_architecture
+from .connectors import compute_skip_levels, draw_connector
 from .utils.traced_layer import TracedLayer
-from .utils.utils import Box, Circle, Ellipses, ImageDraw, get_keys_by_value
+from .utils.utils import Box, Circle, Ellipses, ImageDraw
 
 
 def graph_view(
@@ -73,31 +73,14 @@ def graph_view(
     if color_map is not None:
         _color_map = defaultdict(dict, color_map)
 
-    # Iterate over the model to compute bounds and generate boxes
-
-    # Attach helper layers
-
-    id_to_num_mapping, adj_matrix, model_layers, direct_input_node_ids = model_to_adj_matrix(
-        model,
-        input_shape,
-    )
-
-    # Add fake input layers
-
-    id_to_num_mapping, adj_matrix, model_layers = add_input_dummy_layer(
-        input_shape,
-        id_to_num_mapping,
-        adj_matrix,
-        model_layers,
-        direct_input_node_ids,
-    )
+    architecture = extract_architecture(model, input_shape)
 
     # Create architecture
 
     current_x = padding  # + input_label_size[0] + text_padding
 
-    layers, layer_y, id_to_node_list_map, label_info, id_to_column_index = _create_architecture(
-        model_layers,
+    layers, layer_y, id_to_node_list_map, label_info = _create_architecture(
+        architecture.columns,
         current_x,
         show_neurons,
         ellipsize_after,
@@ -111,11 +94,10 @@ def graph_view(
     # Skip connections (edges spanning more than one column) need to be routed above the
     # diagram, or they'd draw collinear with - and hidden under - the ordinary adjacent-column
     # edges beneath them. Compute this before img_height so the canvas can reserve the room.
-    edge_to_level, num_levels = _compute_skip_levels(
-        adj_matrix,
-        id_to_num_mapping,
-        id_to_column_index,
-        id_to_node_list_map,
+    edge_to_level, num_levels = compute_skip_levels(
+        architecture.edges(),
+        architecture.id_to_column,
+        lambda start_id, end_id: _edge_draws_visible_content(id_to_node_list_map, start_id, end_id),
     )
     resolved_level_gap = level_gap if level_gap is not None else node_size
     top_margin_for_skips = num_levels * resolved_level_gap
@@ -157,8 +139,7 @@ def graph_view(
 
     _draw_connectors(
         draw,
-        adj_matrix,
-        id_to_num_mapping,
+        architecture,
         id_to_node_list_map,
         edge_to_level,
         num_levels,
@@ -185,10 +166,18 @@ def graph_view(
     return img
 
 
+def _edge_draws_visible_content(id_to_node_list_map: dict[str, list], start_id: str, end_id: str) -> bool:
+    """Whether this edge has at least one non-Ellipses node pair, i.e. would draw something."""
+    return any(
+        not isinstance(start_node, Ellipses) and not isinstance(end_node, Ellipses)
+        for start_node in id_to_node_list_map[start_id]
+        for end_node in id_to_node_list_map[end_id]
+    )
+
+
 def _draw_connectors(
     draw: aggdraw.Draw,
-    adj_matrix: np.ndarray,
-    id_to_num_mapping: dict[str, int],
+    architecture: Architecture,
     id_to_node_list_map: dict[str, list],
     edge_to_level: dict[tuple[str, str], int],
     num_levels: int,
@@ -199,10 +188,7 @@ def _draw_connectors(
     connector_width: int,
 ) -> None:
     """Draw every connector, routing skip-connection edges above the diagram."""
-    for start_idx, end_idx in zip(*np.where(adj_matrix > 0), strict=False):
-        start_id = next(get_keys_by_value(id_to_num_mapping, start_idx))
-        end_id = next(get_keys_by_value(id_to_num_mapping, end_idx))
-
+    for start_id, end_id in architecture.edges():
         start_layer_list = id_to_node_list_map[start_id]
         end_layer_list = id_to_node_list_map[end_id]
 
@@ -216,7 +202,7 @@ def _draw_connectors(
             start_candidates = [node for node in start_layer_list if not isinstance(node, Ellipses)]
             end_candidates = [node for node in end_layer_list if not isinstance(node, Ellipses)]
             if start_candidates and end_candidates:
-                _draw_connector(
+                draw_connector(
                     draw,
                     start_candidates[0].x2,
                     (min(node.y1 for node in start_candidates) + max(node.y2 for node in start_candidates)) / 2,
@@ -231,7 +217,7 @@ def _draw_connectors(
         for start_node in start_layer_list:
             for end_node in end_layer_list:
                 if not isinstance(start_node, Ellipses) and not isinstance(end_node, Ellipses):
-                    _draw_connector(
+                    draw_connector(
                         draw,
                         start_node.x2,
                         start_node.y1 + (start_node.y2 - start_node.y1) / 2,
@@ -296,92 +282,6 @@ def _draw_dimension_labels(
     return Image.alpha_composite(img, text_img)
 
 
-def _draw_connector(
-    draw: aggdraw.Draw,
-    x1: float,
-    y1: float,
-    x2: float,
-    y2: float,
-    color: str | tuple[int, ...],
-    width: int,
-    detour_y: float | None = None,
-) -> None:
-    """Draw the line connector between two points.
-
-    A plain straight line, unless `detour_y` is given - a skip connection whose column span
-    would otherwise draw collinear with (and hidden under) the ordinary adjacent-column edges
-    beneath it, so it's routed with a right-angle detour above the diagram instead.
-    """
-    pen = aggdraw.Pen(color, width)
-    if detour_y is None:
-        draw.line([x1, y1, x2, y2], pen)
-        return
-    draw.line([x1, y1, x1, detour_y, x2, detour_y, x2, y2], pen)
-
-
-def _compute_skip_levels(
-    adj_matrix: np.ndarray,
-    id_to_num_mapping: dict[str, int],
-    id_to_column_index: dict[str, int],
-    id_to_node_list_map: dict[str, list],
-) -> tuple[dict[tuple[str, str], int], int]:
-    """Assign a detour level to every graph edge whose column span is > 1 (a genuine skip).
-
-    Levels are assigned via greedy interval-graph-coloring over each edge's (start_col, end_col)
-    span, so that skip connections whose spans overlap never share a level (and so never draw
-    collinear with each other), while non-overlapping spans - e.g. back-to-back residual blocks -
-    can safely share the same level. Edges that would draw nothing (every node pair is `Ellipses`-
-    gated) don't consume a level.
-
-    Args:
-        adj_matrix (numpy.ndarray): The adjacency matrix representing connections between layers.
-        id_to_num_mapping (dict): Mapping from node IDs to their index in the adjacency matrix.
-        id_to_column_index (dict): Mapping from node IDs to their column index.
-        id_to_node_list_map (dict): Mapping from node IDs to their drawable node objects.
-
-    Returns:
-        tuple: A tuple containing:
-            - edge_to_level (dict): Mapping from `(start_id, end_id)` to its detour level (0 =
-                closest to the diagram). Only contains edges with span > 1 that draw something.
-            - num_levels (int): Total distinct levels used (0 if there are no qualifying edges).
-    """
-    intervals: list[tuple[int, int, tuple[str, str]]] = []
-    for start_idx, end_idx in zip(*np.where(adj_matrix > 0), strict=False):
-        start_id = next(get_keys_by_value(id_to_num_mapping, start_idx))
-        end_id = next(get_keys_by_value(id_to_num_mapping, end_idx))
-
-        start_col = id_to_column_index[start_id]
-        end_col = id_to_column_index[end_id]
-        if end_col - start_col <= 1:
-            continue
-
-        start_nodes = id_to_node_list_map[start_id]
-        end_nodes = id_to_node_list_map[end_id]
-        draws_something = any(
-            not isinstance(start_node, Ellipses) and not isinstance(end_node, Ellipses)
-            for start_node in start_nodes
-            for end_node in end_nodes
-        )
-        if draws_something:
-            intervals.append((start_col, end_col, (start_id, end_id)))
-
-    intervals.sort(key=lambda interval: interval[0])
-
-    levels: list[list[tuple[int, int]]] = []
-    edge_to_level: dict[tuple[str, str], int] = {}
-    for start_col, end_col, edge_key in intervals:
-        for level_idx, occupied in enumerate(levels):
-            if not any(start_col < o_end and o_start < end_col for o_start, o_end in occupied):
-                occupied.append((start_col, end_col))
-                edge_to_level[edge_key] = level_idx
-                break
-        else:
-            levels.append([(start_col, end_col)])
-            edge_to_level[edge_key] = len(levels) - 1
-
-    return edge_to_level, len(levels)
-
-
 def _retrieve_isbox_units(layer: TracedLayer, show_neurons: bool) -> tuple[bool, int]:
     """Return the number of units and the flag whether to visualize using a box or not.
 
@@ -405,7 +305,7 @@ def _retrieve_isbox_units(layer: TracedLayer, show_neurons: bool) -> tuple[bool,
 
 
 def _create_architecture(
-    model_layers: list[list[TracedLayer]],
+    columns: list[list[TracedLayer]],
     current_x: int,
     show_neurons: bool,
     ellipsize_after: int,
@@ -414,16 +314,15 @@ def _create_architecture(
     color_map: dict[Any, Any],
     opacity: int,
     layer_spacing: int,
-) -> tuple[list, list, dict, list[list[tuple[str, float, float]]], dict[str, int]]:
+) -> tuple[list, list, dict, list[list[tuple[str, float, float]]]]:
     """Create nodes of architecture for each layers."""
     id_to_node_list_map = {}
-    id_to_column_index: dict[str, int] = {}
     layers = []
     layer_y = []
     # (label text, x center, y bottom) per layer, grouped by column - a column can hold more
     # than one layer if multiple leaf modules share the same depth (parallel branches).
     label_info: list[list[tuple[str, float, float]]] = []
-    for col_idx, layer_list in enumerate(model_layers):
+    for layer_list in columns:
         current_y = 0
         nodes = []
         column_labels: list[tuple[str, float, float]] = []
@@ -463,7 +362,6 @@ def _create_architecture(
                 layer_nodes.append(c)
 
             id_to_node_list_map[layer.node_id] = layer_nodes
-            id_to_column_index[layer.node_id] = col_idx
             nodes.extend(layer_nodes)
             column_labels.append((str(layer.output_shape), current_x + node_size / 2, current_y))
             current_y += 2 * node_size
@@ -472,4 +370,4 @@ def _create_architecture(
         layers.append(nodes)
         label_info.append(column_labels)
         current_x += node_size + layer_spacing
-    return layers, layer_y, id_to_node_list_map, label_info, id_to_column_index
+    return layers, layer_y, id_to_node_list_map, label_info

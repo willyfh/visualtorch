@@ -6,8 +6,6 @@
 from .layer_utils import (
     InputDummyLayer,
     SpacingDummyLayer,
-    add_input_dummy_layer,
-    model_to_adj_matrix,
     register_hook,
 )
 from .utils import (
@@ -16,7 +14,6 @@ from .utils import (
     ColorWheel,
     Ellipses,
     Shape,
-    get_keys_by_value,
     get_rgba_tuple,
     linear_layout,
     self_multiply,
@@ -33,10 +30,7 @@ __all__ = [
     "linear_layout",
     "vertical_image_concat",
     "get_rgba_tuple",
-    "get_keys_by_value",
     "SpacingDummyLayer",
     "InputDummyLayer",
-    "add_input_dummy_layer",
-    "model_to_adj_matrix",
     "register_hook",
 ]

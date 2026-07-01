@@ -4,14 +4,10 @@
 # Copyright (C) 2024 Willy Fitra Hendria
 # SPDX-License-Identifier: MIT
 
-from collections import OrderedDict, deque
+from collections import OrderedDict
 
-import numpy as np
 import torch
 from torch import nn
-
-from .recorder import trace_module_graph
-from .traced_layer import TracedLayer
 
 
 class SpacingDummyLayer(nn.Module):
@@ -33,125 +29,6 @@ class InputDummyLayer:
     def name(self) -> str:
         """Return layer name"""
         return self._name
-
-
-def model_to_adj_matrix(
-    model: nn.Module | nn.Sequential,
-    input_shape: tuple[int, ...],
-) -> tuple[dict[str, int], np.ndarray, list[list[TracedLayer]], set[str]]:
-    """Extract adjacency matrix representation from a pytorch model.
-
-    Traces an actual forward pass (see `visualtorch.utils.recorder.trace_module_graph`) instead of
-    walking the autograd backward graph, so any leaf module type is supported (not just a
-    hardcoded list), and branching/skip-connections are captured naturally.
-
-    Args:
-        model: PyTorch model.
-        input_shape (tuple): The shape of the input tensor expected by the model, including batch dim.
-
-    Returns:
-        tuple: A tuple containing:
-            - id_to_index_adj_mapping (dict): Mapping from node IDs to their corresponding index in
-                the adjacency matrix.
-            - adjacency_matrix (numpy.ndarray): The adjacency matrix representing connections between
-                model layers.
-            - model_layers (list): List of `TracedLayer` wrappers organized by their hierarchy.
-            - direct_input_node_ids (set): Node ids that consume the traced input tensor directly,
-                for `add_input_dummy_layer` to wire up - not just whichever nodes end up at depth 0,
-                since a node can consume the raw input directly *and* have other predecessors (e.g.
-                the far side of a skip connection around a hidden sub-block).
-    """
-    id_to_module, id_to_output_shape, edges, input_id = trace_module_graph(model, input_shape)
-
-    nodes = list(id_to_module.keys())
-    id_to_index_adj_mapping = {node_id: idx for idx, node_id in enumerate(nodes)}
-
-    direct_input_node_ids: set[str] = set()
-    adjacency_matrix = np.zeros((len(nodes), len(nodes)))
-    successors: dict[str, list[str]] = {node_id: [] for node_id in nodes}
-    in_degree: dict[str, int] = {node_id: 0 for node_id in nodes}
-    for src_id, trg_id in edges:
-        if src_id == input_id:
-            direct_input_node_ids.add(trg_id)
-            continue
-        adjacency_matrix[id_to_index_adj_mapping[src_id], id_to_index_adj_mapping[trg_id]] += 1
-        successors[src_id].append(trg_id)
-        in_degree[trg_id] += 1
-
-    # Longest-path-from-source layering: a node's depth is 1 + the max depth of its
-    # predecessors (0 if it has none), computed via topological order so a merge node
-    # (e.g. the far side of a skip connection) is never placed before a branch that
-    # hasn't converged yet.
-    depth: dict[str, int] = {}
-    queue: deque[str] = deque()
-    for node_id in nodes:
-        if in_degree[node_id] == 0:
-            depth[node_id] = 0
-            queue.append(node_id)
-
-    while queue:
-        node_id = queue.popleft()
-        for succ_id in successors[node_id]:
-            depth[succ_id] = max(depth.get(succ_id, 0), depth[node_id] + 1)
-            in_degree[succ_id] -= 1
-            if in_degree[succ_id] == 0:
-                queue.append(succ_id)
-
-    max_depth = max(depth.values(), default=-1)
-    model_layers: list[list[TracedLayer]] = [[] for _ in range(max_depth + 1)]
-    for node_id in nodes:
-        wrapper = TracedLayer(
-            module=id_to_module[node_id],
-            output_shape=id_to_output_shape[node_id],
-            node_id=node_id,
-        )
-        model_layers[depth[node_id]].append(wrapper)
-
-    return id_to_index_adj_mapping, adjacency_matrix, model_layers, direct_input_node_ids
-
-
-def add_input_dummy_layer(
-    input_shape: tuple[int, ...],
-    id_to_num_mapping: dict[str, int],
-    adj_matrix: np.ndarray,
-    model_layers: list[list[TracedLayer]],
-    direct_input_node_ids: set[str],
-) -> tuple[dict[str, int], np.ndarray, list[list[TracedLayer]]]:
-    """Add an input dummy layer to the model layers and update the adjacency matrix accordingly.
-
-    Args:
-        input_shape (tuple): The shape of the input tensor.
-        id_to_num_mapping (dict): Mapping from node IDs to their corresponding index in the adjacency matrix.
-        adj_matrix (numpy.ndarray): The adjacency matrix representing connections between model layers.
-        model_layers (list): List of `TracedLayer` wrappers organized by their dependencies.
-        direct_input_node_ids (set): Node ids that consume the input directly (from
-            `model_to_adj_matrix`), wired up regardless of which depth they ended up at.
-
-    Returns:
-        tuple: A tuple containing:
-            - id_to_num_mapping (dict): Updated mapping from node IDs to their corresponding index in
-                the adjacency matrix.
-            - adj_matrix (numpy.ndarray): Updated adjacency matrix.
-            - model_layers (list): Updated list of model layers with the input dummy layer.
-    """
-    input_node_id = "__input_dummy__"
-    input_dummy_layer = TracedLayer(
-        module=InputDummyLayer("input", input_shape[1]),
-        output_shape=input_shape,
-        node_id=input_node_id,
-    )
-    model_layers.insert(0, [input_dummy_layer])
-    id_to_num_mapping[input_node_id] = len(id_to_num_mapping.keys())
-    adj_matrix = np.pad(
-        adj_matrix,
-        ((0, 1), (0, 1)),
-        mode="constant",
-        constant_values=0,
-    )
-    input_index = id_to_num_mapping[input_node_id]
-    for node_id in direct_input_node_ids:
-        adj_matrix[input_index, id_to_num_mapping[node_id]] += 1
-    return id_to_num_mapping, adj_matrix, model_layers
 
 
 def register_hook(
