@@ -43,4 +43,17 @@ Originally, this project was based on the [visualkeras](https://github.com/paulg
 
 Please cite this project in your publications if it helps your research.
 
-[A ready-made citation entry](https://visualtorch.readthedocs.io/en/latest/index.html#citation) is available.
+```bibtex
+@article{Hendria2024,
+  doi = {10.21105/joss.06678},
+  url = {https://doi.org/10.21105/joss.06678},
+  year = {2024},
+  publisher = {The Open Journal},
+  volume = {9},
+  number = {102},
+  pages = {6678},
+  author = {Willy Fitra Hendria and Paul Gavrikov},
+  title = {VisualTorch: Streamlining Visualization for PyTorch Neural Network Architectures},
+  journal = {Journal of Open Source Software}
+}
+```
