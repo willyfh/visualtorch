@@ -4,7 +4,6 @@
 # Copyright (C) 2024 Willy Fitra Hendria
 # SPDX-License-Identifier: MIT
 
-from collections.abc import Generator
 from typing import Any
 
 import aggdraw
@@ -253,13 +252,6 @@ def get_rgba_tuple(color: str | int | tuple, opacity: int = 255) -> tuple:
     if len(rgba) == 3:
         rgba = (rgba[0], rgba[1], rgba[2], opacity)
     return rgba
-
-
-def get_keys_by_value(d: dict, v: int) -> Generator:
-    """Get keys from dictionary given the value."""
-    for key in d:  # reverse search the dict for the value
-        if d[key] == v:
-            yield key
 
 
 def validate_input_shape(input_shape: tuple) -> None:
