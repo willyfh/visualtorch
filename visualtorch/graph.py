@@ -68,7 +68,7 @@ def graph_view(
 
     # Attach helper layers
 
-    id_to_num_mapping, adj_matrix, model_layers = model_to_adj_matrix(
+    id_to_num_mapping, adj_matrix, model_layers, direct_input_node_ids = model_to_adj_matrix(
         model,
         input_shape,
     )
@@ -80,6 +80,7 @@ def graph_view(
         id_to_num_mapping,
         adj_matrix,
         model_layers,
+        direct_input_node_ids,
     )
 
     # Create architecture

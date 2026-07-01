@@ -82,6 +82,30 @@ def _stamp_producer_ids(obj: Any, ids: set[str]) -> None:
             _stamp_producer_ids(value, ids)
 
 
+def _wrap_and_stamp(obj: Any, ids: set[str]) -> Any:
+    """Like _stamp_producer_ids, but also converts plain (non-RecorderTensor) tensors.
+
+    A leaf module's forward can internally escape the tensor subclass (e.g. a numpy
+    round-trip), which would otherwise silently break lineage tracking for everything
+    downstream of that module. Re-wrapping at the module-call boundary re-establishes it
+    regardless of what happened inside.
+    """
+    if isinstance(obj, RecorderTensor):
+        obj._producer_ids = set(ids)  # noqa: SLF001
+        return obj
+    if isinstance(obj, torch.Tensor):
+        wrapped = obj.as_subclass(RecorderTensor)
+        wrapped._producer_ids = set(ids)  # noqa: SLF001
+        return wrapped
+    if isinstance(obj, Mapping):
+        return type(obj)({key: _wrap_and_stamp(value, ids) for key, value in obj.items()})  # type: ignore[call-arg]
+    if isinstance(obj, tuple):
+        return type(obj)(_wrap_and_stamp(value, ids) for value in obj)  # type: ignore[call-arg]
+    if isinstance(obj, list):
+        return [_wrap_and_stamp(value, ids) for value in obj]
+    return obj
+
+
 def _first_tensor_shape(obj: Any) -> tuple[int, ...]:
     """Recursively find the shape of the first tensor inside obj, or () if there isn't one."""
     if isinstance(obj, torch.Tensor):
@@ -102,10 +126,10 @@ def _first_tensor_shape(obj: Any) -> tuple[int, ...]:
 
 
 def _wrapped_module_call(
-    model: nn.Module,
     id_to_module: dict[str, nn.Module],
     id_to_output_shape: dict[str, tuple[int, ...]],
     edges: list[tuple[str, str]],
+    call_counts: dict[int, int],
 ) -> Any:
     """Build the replacement for nn.Module.__call__ used while tracing."""
 
@@ -116,14 +140,21 @@ def _wrapped_module_call(
 
         # Only leaf modules (no children) become graph nodes - containers such as
         # nn.Sequential or a custom composite block are transparent plumbing, matching the
-        # leaf definition already used by register_hook for layered_view/lenet_view.
+        # leaf definition already used by register_hook for layered_view/lenet_view. A leaf
+        # module invoked more than once (e.g. weight sharing) gets a distinct node per call,
+        # keyed by a call-index suffix, so repeat calls don't collapse into a self-referential
+        # node that can never be placed in the topological layering.
         is_leaf = len(list(mod.children())) == 0
-        if is_leaf and mod is not model:
-            node_id = str(id(mod))
+        if is_leaf:
+            base_id = id(mod)
+            call_index = call_counts.get(base_id, 0)
+            call_counts[base_id] = call_index + 1
+            node_id = f"{base_id}#{call_index}"
+
             id_to_module[node_id] = mod
             id_to_output_shape[node_id] = _first_tensor_shape(out)
             edges.extend((producer_id, node_id) for producer_id in producer_ids)
-            _stamp_producer_ids(out, {node_id})
+            out = _wrap_and_stamp(out, {node_id})
 
         return out
 
@@ -135,23 +166,23 @@ class Recorder:
 
     def __init__(
         self,
-        model: nn.Module,
         id_to_module: dict[str, nn.Module],
         id_to_output_shape: dict[str, tuple[int, ...]],
         edges: list[tuple[str, str]],
+        call_counts: dict[int, int],
     ) -> None:
-        self._model = model
         self._id_to_module = id_to_module
         self._id_to_output_shape = id_to_output_shape
         self._edges = edges
+        self._call_counts = call_counts
 
     def __enter__(self) -> "Recorder":
         """Patch nn.Module.__call__ to start tracing."""
         nn.Module.__call__ = _wrapped_module_call(  # type: ignore[method-assign]
-            self._model,
             self._id_to_module,
             self._id_to_output_shape,
             self._edges,
+            self._call_counts,
         )
         return self
 
@@ -172,7 +203,8 @@ def trace_module_graph(
 
     Returns:
         tuple: A tuple containing:
-            - id_to_module (dict): Mapping from node id (`str(id(module))`) to the leaf module.
+            - id_to_module (dict): Mapping from node id to the leaf module. A leaf module
+                called more than once gets one entry per call (`f"{id(module)}#{call_index}"`).
             - id_to_output_shape (dict): Mapping from node id to that module's output shape.
             - edges (list): `(producer_node_id, consumer_node_id)` pairs, in call order.
             - input_id (str): The synthetic node id representing the traced input tensor.
@@ -183,8 +215,9 @@ def trace_module_graph(
     id_to_module: dict[str, nn.Module] = {}
     id_to_output_shape: dict[str, tuple[int, ...]] = {}
     edges: list[tuple[str, str]] = []
+    call_counts: dict[int, int] = {}
 
-    with Recorder(model, id_to_module, id_to_output_shape, edges):
+    with Recorder(id_to_module, id_to_output_shape, edges, call_counts):
         model(dummy_input)
 
     return id_to_module, id_to_output_shape, edges, INPUT_NODE_ID

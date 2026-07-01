@@ -147,7 +147,7 @@ def test_graph_view_batchnorm_model_runs(batchnorm_model: nn.Module) -> None:
 
 def test_model_to_adj_matrix_edge_count_dense_model(dense_model: nn.Module) -> None:
     """model_to_adj_matrix should produce exactly the expected edges for a known simple chain."""
-    _, adj_matrix, model_layers = model_to_adj_matrix(dense_model, input_shape=(1, 4))
+    _, adj_matrix, model_layers, _ = model_to_adj_matrix(dense_model, input_shape=(1, 4))
 
     # 4 chained Linear layers => exactly 3 edges, one layer per column.
     assert int(adj_matrix.sum()) == 3
@@ -158,9 +158,9 @@ def test_model_to_adj_matrix_edge_count_dense_model(dense_model: nn.Module) -> N
 
 def test_model_to_adj_matrix_captures_branching(residual_model: nn.Module) -> None:
     """The merge point of a skip connection should have 2 incoming edges, not 1."""
-    id_to_index, adj_matrix, _ = model_to_adj_matrix(residual_model, input_shape=(1, 4))
+    id_to_index, adj_matrix, _, _ = model_to_adj_matrix(residual_model, input_shape=(1, 4))
 
-    out_node_id = str(id(residual_model.out))
+    out_node_id = f"{id(residual_model.out)}#0"
     in_degree = adj_matrix[:, id_to_index[out_node_id]].sum()
 
     assert in_degree == 2, "expected the merge node to have 2 incoming edges from the skip connection"
@@ -168,7 +168,80 @@ def test_model_to_adj_matrix_captures_branching(residual_model: nn.Module) -> No
 
 def test_model_to_adj_matrix_supports_untracked_layer_type(batchnorm_model: nn.Module) -> None:
     """A BatchNorm2d instance should actually appear among the traced layers."""
-    _, _, model_layers = model_to_adj_matrix(batchnorm_model, input_shape=(2, 3, 8, 8))
+    _, _, model_layers, _ = model_to_adj_matrix(batchnorm_model, input_shape=(2, 3, 8, 8))
 
     traced_types = {type(wrapper.module) for column in model_layers for wrapper in column}
     assert nn.BatchNorm2d in traced_types
+
+
+def test_graph_view_supports_weight_sharing() -> None:
+    """A leaf module invoked more than once in one forward pass should not crash."""
+
+    class SharedModel(nn.Module):
+        def __init__(self) -> None:
+            super().__init__()
+            self.fc = nn.Linear(4, 4)
+
+        def forward(self, x: torch.Tensor) -> torch.Tensor:
+            x = self.fc(x)
+            return self.fc(x)
+
+    img = graph_view(SharedModel(), input_shape=(1, 4))
+    assert img is not None
+
+
+def test_graph_view_bare_leaf_module_as_model() -> None:
+    """Passing a single leaf module (no children) directly as the model should not crash."""
+    img = graph_view(nn.Linear(4, 2), input_shape=(1, 4))
+    assert img is not None
+
+
+def test_model_to_adj_matrix_wires_deeper_direct_input_consumer() -> None:
+    """A node that reads the raw input directly, in addition to a hidden predecessor, still gets its input edge."""
+
+    class M(nn.Module):
+        def __init__(self) -> None:
+            super().__init__()
+            self.a = nn.Linear(4, 4)
+            self.b = nn.Linear(4, 4)
+
+        def forward(self, x: torch.Tensor) -> torch.Tensor:
+            a = self.a(x)
+            return self.b(x + a)
+
+    model = M()
+    _, _, _, direct_input_node_ids = model_to_adj_matrix(model, input_shape=(1, 4))
+
+    b_node_id = next(node_id for node_id in direct_input_node_ids if node_id.startswith(f"{id(model.b)}#"))
+    assert b_node_id is not None
+
+
+def test_model_to_adj_matrix_survives_subclass_escaping_op() -> None:
+    """Lineage should survive a leaf module whose forward escapes the tensor subclass internally."""
+
+    class NumpyRoundTrip(nn.Module):
+        def forward(self, x: torch.Tensor) -> torch.Tensor:
+            arr = x.detach().numpy()
+            return torch.from_numpy(arr.copy())
+
+    class M(nn.Module):
+        def __init__(self) -> None:
+            super().__init__()
+            self.a = nn.Linear(4, 4)
+            self.roundtrip = NumpyRoundTrip()
+            self.b = nn.Linear(4, 4)
+
+        def forward(self, x: torch.Tensor) -> torch.Tensor:
+            x = self.a(x)
+            x = self.roundtrip(x)
+            return self.b(x)
+
+    model = M()
+    _, adj_matrix, model_layers, _ = model_to_adj_matrix(model, input_shape=(1, 4))
+
+    assert int(adj_matrix.sum()) == 2
+    assert [type(wrapper.module).__name__ for column in model_layers for wrapper in column] == [
+        "Linear",
+        "NumpyRoundTrip",
+        "Linear",
+    ]
