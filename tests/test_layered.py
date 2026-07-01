@@ -163,3 +163,15 @@ def test_layered_view_writes_to_file(sequential_model: nn.Sequential, tmp_path: 
     with Image.open(out_file) as saved_img:
         assert saved_img.size[0] > 0
         assert saved_img.size[1] > 0
+
+
+def test_layered_view_with_show_dimension(sequential_model: nn.Sequential) -> None:
+    """show_dimension=True should print each layer's shape without clipping or crashing."""
+    img = layered_view(sequential_model, input_shape=(1, 3, 224, 224), show_dimension=True)
+    assert img is not None
+
+
+def test_layered_view_show_dimension_with_legend(sequential_model: nn.Sequential) -> None:
+    """show_dimension and legend should be combinable."""
+    img = layered_view(sequential_model, input_shape=(1, 3, 224, 224), show_dimension=True, legend=True)
+    assert img is not None

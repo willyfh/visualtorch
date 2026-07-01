@@ -51,6 +51,7 @@ def layered_view(
     font: ImageFont = None,
     font_color: str | tuple[int, ...] = "black",
     opacity: int = 255,
+    show_dimension: bool = False,
 ) -> PIL.Image:
     """Generate a layered architecture visualization for a given torch model.
 
@@ -80,6 +81,7 @@ def layered_view(
         font (PIL.ImageFont, optional): Font that will be used for the legend. If None, default font will be used.
         font_color (str or tuple, optional): Color for the font if used. Can be a string or a tuple (R, G, B, A).
         opacity (int): Transparency of the color (0 ~ 255).
+        show_dimension (bool, optional): If True, print each layer's output shape below it.
 
     Returns:
         PIL.Image: An Image object representing the generated architecture visualization.
@@ -91,7 +93,7 @@ def layered_view(
     x_off = -1
 
     img_height = 0
-    max_right = 0
+    max_right: float = 0
 
     if type_ignore is None:
         type_ignore = []
@@ -146,25 +148,75 @@ def layered_view(
         padding,
     )
 
+    if font is None and (show_dimension or legend):
+        font = ImageFont.load_default()
+
+    # Reserve a fixed-height row below the diagram for shape labels, measured up front so
+    # boxes can still be centered within just the diagram area (not the extended canvas),
+    # and so labels never clip or overlap the diagram itself.
+    label_row_height = 0
+    if show_dimension:
+        label_row_height = font.getbbox("Ag")[3] + 5
+        max_right = _fit_dimension_labels(boxes, font, x_off, max_right)
+
     # Generate image
     img_width = max_right + x_off + padding
+    diagram_height = img_height
     img = Image.new(
         "RGBA",
-        (int(ceil(img_width)), int(ceil(img_height))),
+        (int(ceil(img_width)), int(ceil(diagram_height + label_row_height))),
         background_fill,
     )
     draw = aggdraw.Draw(img)
 
-    # x, y correction (centering)
+    _center_and_draw_boxes(draw, boxes, layer_y, diagram_height, x_off, draw_funnel)
+
+    draw.flush()
+
+    # Print each layer's output shape in the reserved row below the diagram
+    if show_dimension:
+        img = _draw_dimension_labels(img, boxes, diagram_height, font, font_color)
+
+    # Create layer color legend
+    if legend:
+        if font is None:
+            font = ImageFont.load_default()
+        img = _draw_legend(
+            img,
+            layer_types,
+            _color_map,
+            font,
+            font_color,
+            draw_volume,
+            shade_step,
+            opacity,
+            spacing,
+            padding,
+            background_fill,
+        )
+
+    if to_file is not None:
+        img.save(to_file)
+
+    return img
+
+
+def _center_and_draw_boxes(
+    draw: aggdraw.Draw,
+    boxes: list[Box],
+    layer_y: list,
+    diagram_height: float,
+    x_off: int,
+    draw_funnel: bool,
+) -> None:
+    """Center each box vertically within the diagram area, then draw boxes and funnels."""
     for i, node in enumerate(boxes):
-        y_off = (img.height - layer_y[i]) / 2
+        y_off = (diagram_height - layer_y[i]) / 2
         node.y1 += y_off
         node.y2 += y_off
 
         node.x1 += x_off
         node.x2 += x_off
-
-    # Draw created boxes
 
     last_box = None
 
@@ -200,74 +252,148 @@ def layered_view(
 
         last_box = box
 
-    draw.flush()
 
-    # Create layer color legend
-    if legend:
-        if font is None:
-            font = ImageFont.load_default()
+def _draw_legend(
+    img: PIL.Image,
+    layer_types: list[type],
+    color_map: dict,
+    font: ImageFont,
+    font_color: str | tuple[int, ...],
+    draw_volume: bool,
+    shade_step: int,
+    opacity: int,
+    spacing: int,
+    padding: int,
+    background_fill: str | tuple[int, ...],
+) -> PIL.Image:
+    """Build and append a color legend, one entry per layer type, below the diagram."""
+    text_height = font.getbbox("Ag")[3]
+    cube_size = text_height
 
-        text_height = font.getbbox("Ag")[3]
-        cube_size = text_height
+    de = 0
+    if draw_volume:
+        de = cube_size // 2
 
-        de = 0
-        if draw_volume:
-            de = cube_size // 2
+    patches = []
 
-        patches = []
+    for layer_type in layer_types:
+        label = layer_type.__name__
+        text_size = font.getbbox(label)
+        label_patch_size = (cube_size + de + spacing + text_size[2], cube_size + de)
+        # this only works if cube_size is bigger than text height
 
-        for layer_type in layer_types:
-            label = layer_type.__name__
-            text_size = font.getbbox(label)
-            label_patch_size = (cube_size + de + spacing + text_size[2], cube_size + de)
-            # this only works if cube_size is bigger than text height
+        img_box = Image.new("RGBA", label_patch_size, background_fill)
+        img_text = Image.new("RGBA", label_patch_size, (0, 0, 0, 0))
+        draw_box = aggdraw.Draw(img_box)
+        draw_text = ImageDraw.Draw(img_text)
 
-            img_box = Image.new("RGBA", label_patch_size, background_fill)
-            img_text = Image.new("RGBA", label_patch_size, (0, 0, 0, 0))
-            draw_box = aggdraw.Draw(img_box)
-            draw_text = ImageDraw.Draw(img_text)
+        box = Box()
+        box.x1 = 0
+        box.x2 = box.x1 + cube_size
+        box.y1 = de
+        box.y2 = box.y1 + cube_size
+        box.de = de
+        box.shade = shade_step
+        box.set_fill(color_map.get(layer_type, {}).get("fill", "#000000"), opacity)
+        box.outline = color_map.get(layer_type, {}).get("outline", "#000000")
+        box.draw(draw_box)
 
-            box = Box()
-            box.x1 = 0
-            box.x2 = box.x1 + cube_size
-            box.y1 = de
-            box.y2 = box.y1 + cube_size
-            box.de = de
-            box.shade = shade_step
-            box.set_fill(_color_map.get(layer_type, {}).get("fill", "#000000"), opacity)
-            box.outline = _color_map.get(layer_type, {}).get("outline", "#000000")
-            box.draw(draw_box)
+        text_x = box.x2 + box.de + spacing
+        text_y = (label_patch_size[1] - text_height) / 2  # 2D center; use text_height and not the current label!
+        draw_text.text((text_x, text_y), label, font=font, fill=font_color)
 
-            text_x = box.x2 + box.de + spacing
-            text_y = (label_patch_size[1] - text_height) / 2  # 2D center; use text_height and not the current label!
-            draw_text.text((text_x, text_y), label, font=font, fill=font_color)
+        draw_box.flush()
+        img_box.paste(img_text, mask=img_text)
+        patches.append(img_box)
 
-            draw_box.flush()
-            img_box.paste(img_text, mask=img_text)
-            patches.append(img_box)
+    legend_image = linear_layout(
+        patches,
+        max_width=img.width,
+        max_height=img.height,
+        padding=padding,
+        spacing=spacing,
+        background_fill=background_fill,
+        horizontal=True,
+    )
+    return vertical_image_concat(img, legend_image, background_fill=background_fill)
 
-        legend_image = linear_layout(
-            patches,
-            max_width=img.width,
-            max_height=img.height,
-            padding=padding,
-            spacing=spacing,
-            background_fill=background_fill,
-            horizontal=True,
-        )
-        img = vertical_image_concat(img, legend_image, background_fill=background_fill)
 
-    if to_file is not None:
-        img.save(to_file)
+def _fit_dimension_labels(
+    boxes: list[Box],
+    font: ImageFont,
+    x_off: int,
+    max_right: float,
+) -> float:
+    """Reposition boxes so shape labels never overlap each other or clip the canvas edges.
 
-    return img
+    Closely packed, thin layers would otherwise smear adjacent shape labels together, so the
+    gap between boxes is widened wherever their labels would collide, and the whole diagram is
+    extended (shifted right, if necessary) so the outermost labels - which can be wider than
+    the box they belong to - never run past the left or right edge.
+
+    Returns:
+        float: The updated `max_right` bound after any widening/shifting.
+    """
+    label_widths = [font.getbbox(str(box.output_shape))[2] for box in boxes]
+
+    shift = 0.0
+    prev_center: float | None = None
+    prev_label_width = 0.0
+    for box, label_width in zip(boxes, label_widths, strict=True):
+        box.x1 += shift
+        box.x2 += shift
+        center = (box.x1 + box.x2) / 2
+        if prev_center is not None:
+            min_gap = (prev_label_width + label_width) / 2 + 5
+            if center - prev_center < min_gap:
+                extra = min_gap - (center - prev_center)
+                box.x1 += extra
+                box.x2 += extra
+                shift += extra
+                center += extra
+        prev_center = center
+        prev_label_width = label_width
+    max_right += shift
+
+    extra_left = 0.0
+    extra_right = 0.0
+    for box, label_width in zip(boxes, label_widths, strict=True):
+        center = (box.x1 + box.x2) / 2
+        extra_left = max(extra_left, label_width / 2 - (center + x_off))
+        extra_right = max(extra_right, (center + label_width / 2) - max_right)
+    if extra_left > 0:
+        for box in boxes:
+            box.x1 += extra_left
+            box.x2 += extra_left
+        max_right += extra_left
+    return max_right + max(extra_right, 0.0)
+
+
+def _draw_dimension_labels(
+    img: PIL.Image,
+    boxes: list[Box],
+    diagram_height: float,
+    font: ImageFont,
+    font_color: str | tuple[int, ...],
+) -> PIL.Image:
+    """Draw each box's output shape centered beneath it, in the reserved label row."""
+    text_img = Image.new("RGBA", img.size, (0, 0, 0, 0))
+    draw_text = ImageDraw.Draw(text_img)
+
+    for box in boxes:
+        label = str(box.output_shape)
+        text_width = font.getbbox(label)[2]
+        text_x = (box.x1 + box.x2) / 2 - text_width / 2
+        draw_text.text((text_x, diagram_height + 2), label, font=font, fill=font_color)
+
+    return Image.alpha_composite(img, text_img)
 
 
 def _create_architecture(
     layers: OrderedDict[str, Any],
     x_off: int,
     img_height: int,
-    max_right: int,
+    max_right: float,
     type_ignore: list,
     index_ignore: list,
     min_xy: int,
@@ -320,6 +446,7 @@ def _create_architecture(
                 error_msg = f"unsupported orientation: {one_dim_orientation}"
                 raise ValueError(error_msg)
 
+        ori_shape = shape
         shape = shape + (1,) * (4 - len(shape))  # expand 4D.
 
         x = min(max(shape[1] * scale_xy, x), max_xy)
@@ -327,6 +454,7 @@ def _create_architecture(
         z = min(max(int(self_multiply(shape[0:1] + shape[3:]) * scale_z), z), max_z)
 
         box = Box()
+        box.output_shape = tuple(ori_shape)
 
         box.de = 0
         if draw_volume:

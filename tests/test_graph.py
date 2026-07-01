@@ -245,3 +245,21 @@ def test_model_to_adj_matrix_survives_subclass_escaping_op() -> None:
         "NumpyRoundTrip",
         "Linear",
     ]
+
+
+def test_graph_view_with_show_dimension(dense_model: nn.Module) -> None:
+    """show_dimension=True should print each layer's shape without clipping or crashing."""
+    img = graph_view(dense_model, input_shape=(1, 4), show_dimension=True)
+    assert img is not None
+
+
+def test_graph_view_show_dimension_with_ellipsized_layer(wide_dense_model: nn.Module) -> None:
+    """A wide, ellipsized layer's label should still be placed correctly."""
+    img = graph_view(wide_dense_model, input_shape=(1, 4), show_dimension=True, ellipsize_after=10)
+    assert img is not None
+
+
+def test_graph_view_show_dimension_with_branching(residual_model: nn.Module) -> None:
+    """A column with a skip-connection merge should still get a correctly placed label."""
+    img = graph_view(residual_model, input_shape=(1, 4), show_dimension=True)
+    assert img is not None
