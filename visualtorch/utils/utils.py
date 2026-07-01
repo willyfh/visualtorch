@@ -16,10 +16,10 @@ class Shape:
     """Base class for shapes"""
 
     def __init__(self) -> None:
-        self.x1 = 0
-        self.x2 = 0
-        self.y1 = 0
-        self.y2 = 0
+        self.x1: float = 0
+        self.x2: float = 0
+        self.y1: float = 0
+        self.y2: float = 0
         self._fill = ()
         self._outline = ()
 
@@ -98,6 +98,7 @@ class Box(Shape):
 
     de: int
     shade: int
+    output_shape: tuple[int, ...]
 
     def draw(self, draw: ImageDraw) -> None:
         """Draw box shape."""

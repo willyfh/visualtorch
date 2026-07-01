@@ -11,11 +11,11 @@ from typing import Any
 import aggdraw
 import numpy as np
 import torch
-from PIL import Image
+from PIL import Image, ImageFont
 
 from .utils.layer_utils import add_input_dummy_layer, model_to_adj_matrix
 from .utils.traced_layer import TracedLayer
-from .utils.utils import Box, Circle, Ellipses, get_keys_by_value
+from .utils.utils import Box, Circle, Ellipses, ImageDraw, get_keys_by_value
 
 
 def graph_view(
@@ -33,6 +33,9 @@ def graph_view(
     ellipsize_after: int = 10,
     show_neurons: bool = True,
     opacity: int = 255,
+    show_dimension: bool = False,
+    font: ImageFont = None,
+    font_color: str | tuple[int, ...] = "black",
 ) -> Image.Image:
     """Generates an architecture visualization for a given linear PyTorch model in a graph style.
 
@@ -56,6 +59,9 @@ def graph_view(
         show_neurons (bool, optional): If True a node for each neuron in supported layers is created (constrained by
             ellipsize_after), else each layer is represented by a node.
         opacity (int, optional): Transparency of the color (0 ~ 255).
+        show_dimension (bool, optional): If True, print each layer's output shape below it.
+        font (PIL.ImageFont, optional): Font used for the shape labels. If None, default font will be used.
+        font_color (str or tuple, optional): Color for the font if used. Can be a string or a tuple (R, G, B, A).
 
     Returns:
         Image.Image: Generated architecture image.
@@ -87,7 +93,7 @@ def graph_view(
 
     current_x = padding  # + input_label_size[0] + text_padding
 
-    layers, layer_y, id_to_node_list_map = _create_architecture(
+    layers, layer_y, id_to_node_list_map, label_info = _create_architecture(
         model_layers,
         current_x,
         show_neurons,
@@ -99,10 +105,23 @@ def graph_view(
         layer_spacing,
     )
 
+    if font is None and show_dimension:
+        font = ImageFont.load_default()
+
+    # Reserve a fixed-height strip below each layer's own content for its shape label,
+    # measured up front so labels never clip the bottom of the canvas.
+    label_row_height = 0
+    if show_dimension:
+        label_row_height = font.getbbox("Ag")[3] + 5
+
     # Generate image
 
-    img_width = len(layers) * node_size + (len(layers) - 1) * layer_spacing + 2 * padding
-    img_height = max(*layer_y) + 2 * padding
+    img_width: float = len(layers) * node_size + (len(layers) - 1) * layer_spacing + 2 * padding
+    img_height = max(*layer_y) + 2 * padding + label_row_height
+
+    if show_dimension:
+        label_info, img_width = _fit_dimension_labels(layers, label_info, font, img_width)
+
     img = Image.new(
         "RGBA",
         (int(ceil(img_width)), int(ceil(img_height))),
@@ -113,11 +132,12 @@ def graph_view(
 
     # y correction (centering)
     for i, layer in enumerate(layers):
-        y_off = (img.height - layer_y[i]) / 2
+        y_off = (img.height - label_row_height - layer_y[i]) / 2
         node: Any
         for node in layer:
             node.y1 += y_off
             node.y2 += y_off
+        label_info[i] = [(label, center_x, y + y_off) for label, center_x, y in label_info[i]]
 
     for start_idx, end_idx in zip(*np.where(adj_matrix > 0), strict=False):
         start_id = next(get_keys_by_value(id_to_num_mapping, start_idx))
@@ -147,10 +167,67 @@ def graph_view(
 
     draw.flush()
 
+    # Print each layer's output shape below its own block of nodes
+    if show_dimension:
+        img = _draw_dimension_labels(img, label_info, font, font_color)
+
     if to_file is not None:
         img.save(to_file)
 
     return img
+
+
+def _fit_dimension_labels(
+    layers: list[list[Any]],
+    label_info: list[list[tuple[str, float, float]]],
+    font: ImageFont,
+    img_width: float,
+) -> tuple[list[list[tuple[str, float, float]]], float]:
+    """Extend the canvas and shift nodes so the outermost labels never clip an edge.
+
+    Extend the canvas and shift nodes right if the outermost labels are wider than their
+    column, so they never clip past the left or right edge of the canvas.
+
+    Returns:
+        tuple: The updated `label_info` and `img_width`.
+    """
+    extra_left = 0.0
+    extra_right = 0.0
+    for column_labels in label_info:
+        for label, center_x, _y in column_labels:
+            label_width = font.getbbox(label)[2]
+            extra_left = max(extra_left, label_width / 2 - center_x)
+            extra_right = max(extra_right, center_x + label_width / 2 - img_width)
+
+    if extra_left > 0:
+        for layer in layers:
+            for node in layer:
+                node.x1 += extra_left
+                node.x2 += extra_left
+        label_info = [
+            [(label, center_x + extra_left, y) for label, center_x, y in column_labels] for column_labels in label_info
+        ]
+        img_width += extra_left
+
+    return label_info, img_width + max(extra_right, 0.0)
+
+
+def _draw_dimension_labels(
+    img: Image.Image,
+    label_info: list[list[tuple[str, float, float]]],
+    font: ImageFont,
+    font_color: str | tuple[int, ...],
+) -> Image.Image:
+    """Draw each layer's output shape centered beneath its own block of nodes."""
+    text_img = Image.new("RGBA", img.size, (0, 0, 0, 0))
+    draw_text = ImageDraw.Draw(text_img)
+
+    for column_labels in label_info:
+        for label, center_x, y_bottom in column_labels:
+            text_width = font.getbbox(label)[2]
+            draw_text.text((center_x - text_width / 2, y_bottom + 2), label, font=font, fill=font_color)
+
+    return Image.alpha_composite(img, text_img)
 
 
 def _draw_connector(
@@ -201,14 +278,18 @@ def _create_architecture(
     color_map: dict[Any, Any],
     opacity: int,
     layer_spacing: int,
-) -> tuple[list, list, dict]:
+) -> tuple[list, list, dict, list[list[tuple[str, float, float]]]]:
     """Create nodes of architecture for each layers."""
     id_to_node_list_map = {}
     layers = []
     layer_y = []
+    # (label text, x center, y bottom) per layer, grouped by column - a column can hold more
+    # than one layer if multiple leaf modules share the same depth (parallel branches).
+    label_info: list[list[tuple[str, float, float]]] = []
     for layer_list in model_layers:
         current_y = 0
         nodes = []
+        column_labels: list[tuple[str, float, float]] = []
         layer: TracedLayer
         for layer in layer_list:
             is_box, units = _retrieve_isbox_units(layer, show_neurons)
@@ -246,9 +327,11 @@ def _create_architecture(
 
             id_to_node_list_map[layer.node_id] = layer_nodes
             nodes.extend(layer_nodes)
+            column_labels.append((str(layer.output_shape), current_x + node_size / 2, current_y))
             current_y += 2 * node_size
 
         layer_y.append(current_y - node_spacing - 2 * node_size)
         layers.append(nodes)
+        label_info.append(column_labels)
         current_x += node_size + layer_spacing
-    return layers, layer_y, id_to_node_list_map
+    return layers, layer_y, id_to_node_list_map, label_info
