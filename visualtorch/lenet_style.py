@@ -19,6 +19,7 @@ from .utils.utils import (
     StackedBox,
     get_rgba_tuple,
     self_multiply,
+    validate_input_shape,
 )
 
 
@@ -81,6 +82,8 @@ def lenet_view(
         PIL.Image: An Image object representing the generated architecture visualization.
     """
     # Iterate over the model to compute bounds and generate boxes
+
+    validate_input_shape(input_shape)
 
     x_off = -1
 
@@ -247,7 +250,7 @@ def _create_architecture(
         layer = layers[key]["module"]
         shape = layers[key]["output_shape"]
         # Do no render the SpacingDummyLayer, just increase the pointer
-        if type(layer) == SpacingDummyLayer:
+        if type(layer) is SpacingDummyLayer:
             current_x += layer.spacing
             continue
 
