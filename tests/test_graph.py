@@ -5,12 +5,15 @@
 
 from pathlib import Path
 
+import numpy as np
 import pytest
 import torch
 from PIL import Image
 from torch import nn
 from visualtorch import graph_view
+from visualtorch.graph import _compute_skip_levels
 from visualtorch.utils.layer_utils import model_to_adj_matrix
+from visualtorch.utils.utils import Box, Ellipses
 
 
 @pytest.fixture()
@@ -262,4 +265,159 @@ def test_graph_view_show_dimension_with_ellipsized_layer(wide_dense_model: nn.Mo
 def test_graph_view_show_dimension_with_branching(residual_model: nn.Module) -> None:
     """A column with a skip-connection merge should still get a correctly placed label."""
     img = graph_view(residual_model, input_shape=(1, 4), show_dimension=True)
+    assert img is not None
+
+
+def test_compute_skip_levels_ignores_span_le_1_edges() -> None:
+    """An edge with column span <= 1 should never be assigned a detour level."""
+    id_to_num_mapping = {"a": 0, "b": 1}
+    id_to_column_index = {"a": 0, "b": 1}
+    id_to_node_list_map = {"a": [Box()], "b": [Box()]}
+    adj_matrix = np.zeros((2, 2))
+    adj_matrix[0, 1] = 1
+
+    edge_to_level, num_levels = _compute_skip_levels(
+        adj_matrix,
+        id_to_num_mapping,
+        id_to_column_index,
+        id_to_node_list_map,
+    )
+
+    assert edge_to_level == {}
+    assert num_levels == 0
+
+
+def test_compute_skip_levels_assigns_distinct_levels_to_overlapping_skips() -> None:
+    """Two skip edges whose column spans genuinely overlap must get different levels."""
+    ids = ["a", "b", "c", "d"]
+    id_to_num_mapping = {node_id: idx for idx, node_id in enumerate(ids)}
+    id_to_column_index = {"a": 0, "b": 3, "c": 2, "d": 5}
+    id_to_node_list_map = {node_id: [Box()] for node_id in ids}
+    adj_matrix = np.zeros((4, 4))
+    adj_matrix[id_to_num_mapping["a"], id_to_num_mapping["b"]] = 1
+    adj_matrix[id_to_num_mapping["c"], id_to_num_mapping["d"]] = 1
+
+    edge_to_level, num_levels = _compute_skip_levels(
+        adj_matrix,
+        id_to_num_mapping,
+        id_to_column_index,
+        id_to_node_list_map,
+    )
+
+    assert num_levels == 2
+    assert edge_to_level[("a", "b")] != edge_to_level[("c", "d")]
+
+
+def test_compute_skip_levels_allows_touching_intervals_to_share_a_level() -> None:
+    """Two skip edges that only touch at a shared column boundary can share a level."""
+    ids = ["a", "b", "c", "d"]
+    id_to_num_mapping = {node_id: idx for idx, node_id in enumerate(ids)}
+    id_to_column_index = {"a": 0, "b": 3, "c": 3, "d": 5}
+    id_to_node_list_map = {node_id: [Box()] for node_id in ids}
+    adj_matrix = np.zeros((4, 4))
+    adj_matrix[id_to_num_mapping["a"], id_to_num_mapping["b"]] = 1
+    adj_matrix[id_to_num_mapping["c"], id_to_num_mapping["d"]] = 1
+
+    edge_to_level, num_levels = _compute_skip_levels(
+        adj_matrix,
+        id_to_num_mapping,
+        id_to_column_index,
+        id_to_node_list_map,
+    )
+
+    assert num_levels == 1
+    assert edge_to_level[("a", "b")] == edge_to_level[("c", "d")] == 0
+
+
+def test_compute_skip_levels_ignores_all_ellipses_edge() -> None:
+    """A skip edge whose only node pairs are Ellipses-gated shouldn't consume a level."""
+    id_to_num_mapping = {"a": 0, "b": 1}
+    id_to_column_index = {"a": 0, "b": 3}
+    id_to_node_list_map = {"a": [Ellipses()], "b": [Ellipses()]}
+    adj_matrix = np.zeros((2, 2))
+    adj_matrix[0, 1] = 1
+
+    edge_to_level, num_levels = _compute_skip_levels(
+        adj_matrix,
+        id_to_num_mapping,
+        id_to_column_index,
+        id_to_node_list_map,
+    )
+
+    assert edge_to_level == {}
+    assert num_levels == 0
+
+
+def test_graph_view_residual_model_routes_above_diagram(residual_model: nn.Module) -> None:
+    """The skip connection should reserve extra vertical space rather than drawing invisibly."""
+
+    class PlainChain(nn.Module):
+        """The same 4 layers as residual_model, but without the skip connection."""
+
+        def __init__(self) -> None:
+            super().__init__()
+            self.stem = nn.Linear(4, 4)
+            self.fc1 = nn.Linear(4, 4)
+            self.fc2 = nn.Linear(4, 4)
+            self.out = nn.Linear(4, 2)
+
+        def forward(self, x: torch.Tensor) -> torch.Tensor:
+            """Forward pass with no skip connection."""
+            return self.out(self.fc2(self.fc1(self.stem(x))))
+
+    img_with_skip = graph_view(residual_model, input_shape=(1, 4), show_neurons=False)
+    img_without_skip = graph_view(PlainChain(), input_shape=(1, 4), show_neurons=False)
+
+    assert img_with_skip.size[1] > img_without_skip.size[1]
+
+
+def test_graph_view_deep_repeated_residual_blocks_stays_reasonably_sized() -> None:
+    """Back-to-back, non-overlapping residual blocks should share one detour level, not stack per block."""
+
+    class ResBlock(nn.Module):
+        """A minimal residual block: two convs with a skip connection, ending in a ReLU.
+
+        The trailing ReLU matters: it's a leaf-module call, so it resets the tensor's producer
+        set to just itself. Without it, `identity = x` would keep carrying every earlier block's
+        producer forward untouched (mathematically correct - the merged tensor really is a sum
+        of both - but it makes each block's skip nest inside the previous one instead of being
+        independent, which is a different scenario than this test is after).
+        """
+
+        def __init__(self, channels: int) -> None:
+            super().__init__()
+            self.conv1 = nn.Conv2d(channels, channels, kernel_size=3, padding=1)
+            self.conv2 = nn.Conv2d(channels, channels, kernel_size=3, padding=1)
+            self.relu = nn.ReLU()
+
+        def forward(self, x: torch.Tensor) -> torch.Tensor:
+            """Forward pass with a skip connection around conv1/conv2."""
+            identity = x
+            out = self.conv2(self.conv1(x))
+            return self.relu(out + identity)
+
+    class DeepModel(nn.Module):
+        """A stack of N sequential, non-overlapping residual blocks."""
+
+        def __init__(self, channels: int, n_blocks: int) -> None:
+            super().__init__()
+            self.blocks = nn.ModuleList([ResBlock(channels) for _ in range(n_blocks)])
+
+        def forward(self, x: torch.Tensor) -> torch.Tensor:
+            """Forward pass through every block in sequence."""
+            for block in self.blocks:
+                x = block(x)
+            return x
+
+    img_2_blocks = graph_view(DeepModel(4, 2), input_shape=(1, 4, 8, 8), show_neurons=False)
+    img_6_blocks = graph_view(DeepModel(4, 6), input_shape=(1, 4, 8, 8), show_neurons=False)
+
+    # Height should stay the same regardless of block count (every block's skip shares one
+    # detour level); only width should grow as more layers are added.
+    assert img_2_blocks.size[1] == img_6_blocks.size[1]
+
+
+def test_graph_view_residual_model_show_neurons_true_runs(residual_model: nn.Module) -> None:
+    """A skip edge under show_neurons=True should collapse to one connector, not crash on a dense mesh."""
+    img = graph_view(residual_model, input_shape=(1, 4), show_neurons=True)
     assert img is not None
