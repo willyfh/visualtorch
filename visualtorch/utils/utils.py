@@ -280,7 +280,7 @@ def validate_input_shape(input_shape: tuple) -> None:
         raise ValueError(error_msg)
 
 
-def self_multiply(tensor_tuple: tuple) -> int | float:
+def self_multiply(tensor_tuple: tuple | list) -> int | float:
     """Multiplies all elements in the tuple together.
 
     Elements that are themselves a tuple/list (e.g. a nested torch.Size, which can end up here
@@ -288,7 +288,7 @@ def self_multiply(tensor_tuple: tuple) -> int | float:
     their own elements together first, so the result is always a scalar.
 
     Args:
-        tensor_tuple (tuple): A tuple containing tensors.
+        tensor_tuple (tuple or list): A tuple containing tensors.
 
     Returns:
         int or float: The result of multiplying all elements together.
@@ -298,7 +298,7 @@ def self_multiply(tensor_tuple: tuple) -> int | float:
         return 0
     s = 1
     for v in tensor_list:
-        s *= self_multiply(v) if isinstance(v, (tuple, list)) else v
+        s *= self_multiply(v) if isinstance(v, tuple | list) else v
     return s
 
 
