@@ -3,9 +3,12 @@
 # Copyright (C) 2024 Willy Fitra Hendria
 # SPDX-License-Identifier: MIT
 
+from pathlib import Path
+
 import pytest
 import torch
 import torch.nn.functional as func
+from PIL import Image
 from torch import nn
 from visualtorch import layered_view
 
@@ -78,6 +81,29 @@ def lstm_model() -> nn.Module:
     return LSTMModel(input_size=10, hidden_size=20, num_layers=2)
 
 
+@pytest.fixture()
+def classifier_model() -> nn.Module:
+    """Define a model ending in a 1D (per-sample) output, e.g. classification logits."""
+
+    class ClassifierModel(nn.Module):
+        """A cnn model that ends with a 1D output."""
+
+        def __init__(self) -> None:
+            super().__init__()
+            self.conv = nn.Conv2d(3, 8, 3, 1, 1)
+            self.pool = nn.AdaptiveAvgPool2d(1)
+            self.fc = nn.Linear(8, 5)
+
+        def forward(self, x: torch.Tensor) -> torch.Tensor:
+            """Forward pass."""
+            x = self.conv(x)
+            x = self.pool(x)
+            x = torch.flatten(x, 1)
+            return self.fc(x)
+
+    return ClassifierModel()
+
+
 def test_sequential_model_layered_view_runs(sequential_model: nn.Sequential) -> None:
     """Test layered view on sequential model."""
     _ = layered_view(sequential_model, input_shape=(1, 3, 224, 224))
@@ -96,3 +122,44 @@ def test_custom_model_layered_view_runs(custom_model: nn.Module) -> None:
 def test_lstm_model_layered_view_runs(lstm_model: nn.Module) -> None:
     """Test layered view on lstm model."""
     _ = layered_view(lstm_model, input_shape=(1, 10, 10))
+
+
+@pytest.mark.parametrize("orientation", ["x", "y", "z"])
+def test_layered_view_one_dim_orientation(classifier_model: nn.Module, orientation: str) -> None:
+    """Test layered view on a model with a 1D output, for every supported orientation."""
+    img = layered_view(classifier_model, input_shape=(1, 3, 16, 16), one_dim_orientation=orientation)
+    assert img is not None
+
+
+def test_layered_view_invalid_one_dim_orientation_raises(classifier_model: nn.Module) -> None:
+    """An unsupported one_dim_orientation should raise a clear ValueError."""
+    with pytest.raises(ValueError, match="unsupported orientation"):
+        layered_view(classifier_model, input_shape=(1, 3, 16, 16), one_dim_orientation="bad")
+
+
+def test_layered_view_with_type_and_index_ignore(sequential_model: nn.Sequential) -> None:
+    """Layers matched by type_ignore or index_ignore should be skipped without error."""
+    img = layered_view(
+        sequential_model,
+        input_shape=(1, 3, 224, 224),
+        type_ignore=[nn.ReLU],
+        index_ignore=[0],
+    )
+    assert img is not None
+
+
+def test_layered_view_with_legend(sequential_model: nn.Sequential) -> None:
+    """legend=True should append a legend without error."""
+    img = layered_view(sequential_model, input_shape=(1, 3, 224, 224), legend=True)
+    assert img is not None
+
+
+def test_layered_view_writes_to_file(sequential_model: nn.Sequential, tmp_path: Path) -> None:
+    """to_file should save a readable image to disk."""
+    out_file = tmp_path / "layered.png"
+    layered_view(sequential_model, input_shape=(1, 3, 224, 224), to_file=str(out_file))
+
+    assert out_file.exists()
+    with Image.open(out_file) as saved_img:
+        assert saved_img.size[0] > 0
+        assert saved_img.size[1] > 0
