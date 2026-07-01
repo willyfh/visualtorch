@@ -4,22 +4,14 @@
 # Copyright (C) 2024 Willy Fitra Hendria
 # SPDX-License-Identifier: MIT
 
-from collections import OrderedDict, defaultdict
-from typing import Any
+from collections import OrderedDict, deque
 
 import numpy as np
 import torch
 from torch import nn
 
-from .utils import get_keys_by_value
-
-# WARNING: currently, graph visualization relying on following operations,
-# thereby only linear and convolutional layers are supported.
-# We need to implement a more dynamic/better approach to support all layers
-TARGET_OPS = defaultdict(
-    lambda: None,
-    {"AddmmBackward0": nn.Linear, "ConvolutionBackward0": nn.Conv2d},
-)
+from .recorder import trace_module_graph
+from .traced_layer import TracedLayer
 
 
 class SpacingDummyLayer(nn.Module):
@@ -46,8 +38,12 @@ class InputDummyLayer:
 def model_to_adj_matrix(
     model: nn.Module | nn.Sequential,
     input_shape: tuple[int, ...],
-) -> tuple[dict[str, int], np.ndarray, list[list[torch.nn.Module]]]:
+) -> tuple[dict[str, int], np.ndarray, list[list[TracedLayer]], set[str]]:
     """Extract adjacency matrix representation from a pytorch model.
+
+    Traces an actual forward pass (see `visualtorch.utils.recorder.trace_module_graph`) instead of
+    walking the autograd backward graph, so any leaf module type is supported (not just a
+    hardcoded list), and branching/skip-connections are captured naturally.
 
     Args:
         model: PyTorch model.
@@ -58,82 +54,78 @@ def model_to_adj_matrix(
             - id_to_index_adj_mapping (dict): Mapping from node IDs to their corresponding index in
                 the adjacency matrix.
             - adjacency_matrix (numpy.ndarray): The adjacency matrix representing connections between
-                model operations/layers.
-            - model_layers (list): List of model layers organized by their hierarchy.
+                model layers.
+            - model_layers (list): List of `TracedLayer` wrappers organized by their hierarchy.
+            - direct_input_node_ids (set): Node ids that consume the traced input tensor directly,
+                for `add_input_dummy_layer` to wire up - not just whichever nodes end up at depth 0,
+                since a node can consume the raw input directly *and* have other predecessors (e.g.
+                the far side of a skip connection around a hidden sub-block).
     """
-    dummy_input = torch.rand(input_shape)
-    output_var = model(dummy_input)
+    id_to_module, id_to_output_shape, edges, input_id = trace_module_graph(model, input_shape)
 
-    nodes: list = []
-    edges: list = []
-    id_to_ops: dict = {}
+    nodes = list(id_to_module.keys())
+    id_to_index_adj_mapping = {node_id: idx for idx, node_id in enumerate(nodes)}
 
-    max_level = [0]
-    max_level_id = [""]
-
-    # Extract nodes and edges for the target ops
-    # Currently only the ones in the TARGET_OPS are supported.
-
-    # handle multiple outputs
-    if isinstance(output_var, tuple):
-        for v in output_var:
-            _add_base_tensor(v, id_to_ops, nodes, edges, max_level, max_level_id)
-    else:
-        _add_base_tensor(output_var, id_to_ops, nodes, edges, max_level, max_level_id)
-
-    # Create adjacency matrix
+    direct_input_node_ids: set[str] = set()
     adjacency_matrix = np.zeros((len(nodes), len(nodes)))
-    id_to_index_adj_mapping = {node: idx for idx, node in enumerate(nodes)}
-
+    successors: dict[str, list[str]] = {node_id: [] for node_id in nodes}
+    in_degree: dict[str, int] = {node_id: 0 for node_id in nodes}
     for src_id, trg_id in edges:
-        if trg_id is not None:
-            src_index = id_to_index_adj_mapping[src_id]
-            trg_index = id_to_index_adj_mapping[trg_id]
-            adjacency_matrix[src_index, trg_index] += 1
+        if src_id == input_id:
+            direct_input_node_ids.add(trg_id)
+            continue
+        adjacency_matrix[id_to_index_adj_mapping[src_id], id_to_index_adj_mapping[trg_id]] += 1
+        successors[src_id].append(trg_id)
+        in_degree[trg_id] += 1
 
-    # Retrieve layers per level
-    input_layer_id = max_level_id[0]
-    temp_model_layers = [[input_layer_id]]
+    # Longest-path-from-source layering: a node's depth is 1 + the max depth of its
+    # predecessors (0 if it has none), computed via topological order so a merge node
+    # (e.g. the far side of a skip connection) is never placed before a branch that
+    # hasn't converged yet.
+    depth: dict[str, int] = {}
+    queue: deque[str] = deque()
+    for node_id in nodes:
+        if in_degree[node_id] == 0:
+            depth[node_id] = 0
+            queue.append(node_id)
 
-    while len(temp_model_layers) < max_level[0]:
-        prev_layers = temp_model_layers[-1]
-        new_layer = []
-        for layer_id in prev_layers:
-            src_index = id_to_index_adj_mapping[layer_id]
-            for trg_idx in np.where(adjacency_matrix[src_index] > 0)[0]:
-                trg_id = next(get_keys_by_value(id_to_index_adj_mapping, trg_idx))
-                new_layer.append(trg_id)
+    while queue:
+        node_id = queue.popleft()
+        for succ_id in successors[node_id]:
+            depth[succ_id] = max(depth.get(succ_id, 0), depth[node_id] + 1)
+            in_degree[succ_id] -= 1
+            if in_degree[succ_id] == 0:
+                queue.append(succ_id)
 
-        temp_model_layers.append(list(new_layer))
+    max_depth = max(depth.values(), default=-1)
+    model_layers: list[list[TracedLayer]] = [[] for _ in range(max_depth + 1)]
+    for node_id in nodes:
+        wrapper = TracedLayer(
+            module=id_to_module[node_id],
+            output_shape=id_to_output_shape[node_id],
+            node_id=node_id,
+        )
+        model_layers[depth[node_id]].append(wrapper)
 
-    # Filter duplicate layers
-    seen = set()
-    model_layers: list[list] = []
-    for i in range(len(temp_model_layers) - 1, -1, -1):
-        new_layers = []
-        for layer_id in temp_model_layers[i]:
-            if layer_id in seen:
-                continue
-            seen.add(layer_id)
-            new_layers.append(id_to_ops[layer_id])
-        model_layers.insert(0, list(new_layers))
-
-    return id_to_index_adj_mapping, adjacency_matrix, model_layers
+    return id_to_index_adj_mapping, adjacency_matrix, model_layers, direct_input_node_ids
 
 
 def add_input_dummy_layer(
     input_shape: tuple[int, ...],
     id_to_num_mapping: dict[str, int],
     adj_matrix: np.ndarray,
-    model_layers: list[list[Any]],
-) -> tuple[dict[str, int], np.ndarray, list[list[str]]]:
+    model_layers: list[list[TracedLayer]],
+    direct_input_node_ids: set[str],
+) -> tuple[dict[str, int], np.ndarray, list[list[TracedLayer]]]:
     """Add an input dummy layer to the model layers and update the adjacency matrix accordingly.
 
     Args:
         input_shape (tuple): The shape of the input tensor.
         id_to_num_mapping (dict): Mapping from node IDs to their corresponding index in the adjacency matrix.
-        adj_matrix (numpy.ndarray): The adjacency matrix representing connections between model operations.
-        model_layers (list): List of model layers organized by their dependencies.
+        adj_matrix (numpy.ndarray): The adjacency matrix representing connections between model layers.
+        model_layers (list): List of `TracedLayer` wrappers organized by their dependencies.
+        direct_input_node_ids (set): Node ids that consume the input directly (from
+            `model_to_adj_matrix`), wired up regardless of which depth they ended up at.
 
     Returns:
         tuple: A tuple containing:
@@ -142,17 +134,23 @@ def add_input_dummy_layer(
             - adj_matrix (numpy.ndarray): Updated adjacency matrix.
             - model_layers (list): Updated list of model layers with the input dummy layer.
     """
-    first_hidden_layer = model_layers[0][0]
-    input_dummy_layer = InputDummyLayer("input", input_shape[1])
+    input_node_id = "__input_dummy__"
+    input_dummy_layer = TracedLayer(
+        module=InputDummyLayer("input", input_shape[1]),
+        output_shape=input_shape,
+        node_id=input_node_id,
+    )
     model_layers.insert(0, [input_dummy_layer])
-    id_to_num_mapping[str(id(input_dummy_layer))] = len(id_to_num_mapping.keys())
+    id_to_num_mapping[input_node_id] = len(id_to_num_mapping.keys())
     adj_matrix = np.pad(
         adj_matrix,
         ((0, 1), (0, 1)),
         mode="constant",
         constant_values=0,
     )
-    adj_matrix[-1, id_to_num_mapping[str(id(first_hidden_layer))]] += 1
+    input_index = id_to_num_mapping[input_node_id]
+    for node_id in direct_input_node_ids:
+        adj_matrix[input_index, id_to_num_mapping[node_id]] += 1
     return id_to_num_mapping, adj_matrix, model_layers
 
 
@@ -200,50 +198,3 @@ def register_hook(
     is_leaf = len(list(module.children())) == 0
     if is_leaf and module is not model:
         hooks.append(module.register_forward_hook(hook))
-
-
-def _add_nodes(
-    fn: torch.autograd.function,
-    id_to_ops: dict,
-    nodes: list,
-    edges: list,
-    max_level: list[int],
-    max_level_id: list[str],
-    source: str | None = None,
-    level: int = 0,
-) -> None:
-    assert not torch.is_tensor(fn)
-
-    if str(type(fn).__name__) in TARGET_OPS:
-        node_id = str(id(fn))
-        id_to_ops[node_id] = fn
-        if node_id not in nodes:
-            nodes.append(node_id)
-        level += 1
-        if level > max_level[0]:
-            max_level[0] = level
-            max_level_id[0] = node_id
-
-        edges.append((node_id, source))
-        source = node_id
-
-    # recurse
-    if hasattr(fn, "next_functions"):
-        for u in fn.next_functions:
-            if u[0] is not None:
-                _add_nodes(u[0], id_to_ops, nodes, edges, max_level, max_level_id, source, level)
-
-
-def _add_base_tensor(
-    var: torch.Tensor,
-    id_to_ops: dict,
-    nodes: list,
-    edges: list,
-    max_level: list[int],
-    max_level_id: list[str],
-) -> None:
-    if var.grad_fn:
-        _add_nodes(var.grad_fn, id_to_ops, nodes, edges, max_level, max_level_id)
-
-    if var._is_view():  # noqa: SLF001
-        _add_base_tensor(var._base, id_to_ops, nodes, edges, max_level, max_level_id)  # noqa: SLF001

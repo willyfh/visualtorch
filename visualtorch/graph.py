@@ -13,7 +13,8 @@ import numpy as np
 import torch
 from PIL import Image
 
-from .utils.layer_utils import TARGET_OPS, add_input_dummy_layer, model_to_adj_matrix
+from .utils.layer_utils import add_input_dummy_layer, model_to_adj_matrix
+from .utils.traced_layer import TracedLayer
 from .utils.utils import Box, Circle, Ellipses, get_keys_by_value
 
 
@@ -67,7 +68,7 @@ def graph_view(
 
     # Attach helper layers
 
-    id_to_num_mapping, adj_matrix, model_layers = model_to_adj_matrix(
+    id_to_num_mapping, adj_matrix, model_layers, direct_input_node_ids = model_to_adj_matrix(
         model,
         input_shape,
     )
@@ -79,6 +80,7 @@ def graph_view(
         id_to_num_mapping,
         adj_matrix,
         model_layers,
+        direct_input_node_ids,
     )
 
     # Create architecture
@@ -167,25 +169,30 @@ def _draw_connector(
     draw.line([x1, y1, x2, y2], pen)
 
 
-def _retrieve_isbox_units(layer: torch.autograd.Function, show_neurons: bool) -> tuple[bool, int]:
-    """Return the number of units and the flag whether to visualize using a box or not."""
+def _retrieve_isbox_units(layer: TracedLayer, show_neurons: bool) -> tuple[bool, int]:
+    """Return the number of units and the flag whether to visualize using a box or not.
+
+    Units are derived generically from the layer's already-known output shape (dropping the
+    batch dim) rather than from private autograd attributes tied to a hardcoded op list:
+    a 1D output (e.g. Linear) uses its only dim as the unit count, a 3D output (e.g. Conv,
+    channels-first) uses the channel dim, and anything else (e.g. an RNN's (seq, hidden))
+    falls back to its last dim.
+    """
     is_box = True
     units = 1
     if show_neurons:
-        if hasattr(layer, "_saved_bias_sym_sizes_opt"):
+        dims = layer.output_shape[1:]
+        if len(dims) in (1, 3):
             is_box = False
-            units = layer._saved_bias_sym_sizes_opt[0]  # noqa: SLF001
-        elif hasattr(layer, "_saved_mat2_sym_sizes"):
+            units = dims[0]
+        elif len(dims) >= 2:
             is_box = False
-            units = layer._saved_mat2_sym_sizes[1]  # noqa: SLF001
-        elif hasattr(layer, "units"):  # for dummy input layer
-            is_box = False
-            units = layer.units
+            units = dims[-1]
     return is_box, units
 
 
 def _create_architecture(
-    model_layers: list[list],
+    model_layers: list[list[TracedLayer]],
     current_x: int,
     show_neurons: bool,
     ellipsize_after: int,
@@ -202,9 +209,10 @@ def _create_architecture(
     for layer_list in model_layers:
         current_y = 0
         nodes = []
-        layer: Any
+        layer: TracedLayer
         for layer in layer_list:
             is_box, units = _retrieve_isbox_units(layer, show_neurons)
+            layer_type = type(layer.module)
 
             n = min(units, ellipsize_after)
             layer_nodes = []
@@ -226,17 +234,17 @@ def _create_architecture(
                 current_y = c.y2 + node_spacing
 
                 c.set_fill(
-                    color_map.get(TARGET_OPS[layer.name()], {}).get("fill", "#ADD8E6"),
+                    color_map.get(layer_type, {}).get("fill", "#ADD8E6"),
                     opacity,
                 )
-                c.outline = color_map.get(TARGET_OPS[layer.name()], {}).get(
+                c.outline = color_map.get(layer_type, {}).get(
                     "outline",
                     "black",
                 )
 
                 layer_nodes.append(c)
 
-            id_to_node_list_map[str(id(layer))] = layer_nodes
+            id_to_node_list_map[layer.node_id] = layer_nodes
             nodes.extend(layer_nodes)
             current_y += 2 * node_size
 

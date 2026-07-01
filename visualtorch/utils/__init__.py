@@ -4,7 +4,6 @@
 # SPDX-License-Identifier: MIT
 
 from .layer_utils import (
-    TARGET_OPS,
     InputDummyLayer,
     SpacingDummyLayer,
     add_input_dummy_layer,
@@ -39,6 +38,5 @@ __all__ = [
     "InputDummyLayer",
     "add_input_dummy_layer",
     "model_to_adj_matrix",
-    "TARGET_OPS",
     "register_hook",
 ]
