@@ -261,23 +261,44 @@ def get_keys_by_value(d: dict, v: int) -> Generator:
             yield key
 
 
-def self_multiply(tensor_tuple: tuple) -> int | float:
-    """Multiplies all elements in the tuple together.
+def validate_input_shape(input_shape: tuple) -> None:
+    """Validate that input_shape describes a single input tensor.
 
     Args:
-        tensor_tuple (tuple): A tuple containing tensors.
+        input_shape (tuple): The shape to validate.
+
+    Raises:
+        ValueError: If input_shape is not a single flat tuple of ints, e.g. when a tuple of
+            per-tensor shapes was passed for a model that takes multiple separate input tensors.
+    """
+    if not isinstance(input_shape, tuple) or not all(isinstance(dim, int) for dim in input_shape):
+        error_msg = (
+            "input_shape must be a single tuple of ints, e.g. (1, 3, 224, 224). "
+            f"Got {input_shape!r} instead. Visualizing models that take multiple separate "
+            "input tensors is not supported yet."
+        )
+        raise ValueError(error_msg)
+
+
+def self_multiply(tensor_tuple: tuple | list) -> int | float:
+    """Multiplies all elements in the tuple together.
+
+    Elements that are themselves a tuple/list (e.g. a nested torch.Size, which can end up here
+    when a layer's captured output shape wasn't a plain flat shape) are flattened by multiplying
+    their own elements together first, so the result is always a scalar.
+
+    Args:
+        tensor_tuple (tuple or list): A tuple containing tensors.
 
     Returns:
         int or float: The result of multiplying all elements together.
     """
-    tensor_list = list(tensor_tuple)
-    if None in tensor_list:
-        tensor_list.remove(None)
+    tensor_list = [v for v in tensor_tuple if v is not None]
     if len(tensor_list) == 0:
         return 0
-    s = tensor_list[0]
-    for i in range(1, len(tensor_list)):
-        s *= tensor_list[i]
+    s = 1
+    for v in tensor_list:
+        s *= self_multiply(v) if isinstance(v, tuple | list) else v
     return s
 
 
