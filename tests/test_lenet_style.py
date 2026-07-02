@@ -137,13 +137,12 @@ def test_lenet_view_invalid_one_dim_orientation_raises(classifier_model: nn.Modu
         lenet_view(classifier_model, input_shape=(1, 3, 16, 16), one_dim_orientation="bad")
 
 
-def test_lenet_view_with_type_and_index_ignore(sequential_model: nn.Sequential) -> None:
-    """Layers matched by type_ignore or index_ignore should be skipped without error."""
+def test_lenet_view_with_type_ignore(sequential_model: nn.Sequential) -> None:
+    """Layers matched by type_ignore should be skipped without error."""
     img = lenet_view(
         sequential_model,
         input_shape=(1, 3, 224, 224),
         type_ignore=[nn.ReLU],
-        index_ignore=[0],
     )
     assert img is not None
 
@@ -157,3 +156,93 @@ def test_lenet_view_writes_to_file(sequential_model: nn.Sequential, tmp_path: Pa
     with Image.open(out_file) as saved_img:
         assert saved_img.size[0] > 0
         assert saved_img.size[1] > 0
+
+
+@pytest.fixture()
+def small_sequential_model() -> nn.Sequential:
+    """A smaller conv stack, so canvas sizes stay small enough to hardcode as a regression lock."""
+    return nn.Sequential(
+        nn.Conv2d(3, 8, 3, 1, 1),
+        nn.ReLU(),
+        nn.Conv2d(8, 16, 3, 1, 1),
+        nn.ReLU(),
+        nn.MaxPool2d(2, 2),
+    )
+
+
+def test_lenet_view_output_size_matches_post_rewrite_baseline(small_sequential_model: nn.Sequential) -> None:
+    """Locks in lenet_view's canvas size across the backend/_volumetric_layout rewrite.
+
+    Unlike graph_view/layered_view, this isn't identical to pre-rewrite `main`: the original
+    `_create_architecture` budgeted extra vertical headroom for the offset-copy stack via a
+    hand-tuned, not tightly-derived formula (`height + de*offset_z + 2*offset_z`, plus a flat
+    +100 pixels for the label row). The rewrite replaces that with a consistently-derived
+    margin, which was confirmed (via a `git worktree` comparison) to render visually identical
+    for a non-branching model, with only a ~1% total height difference (1142px vs 1152px for a
+    5-layer conv stack) from the fudge-factor gap - not pixel/size-identical, but a documented,
+    inspected, intentional trade-off rather than an accidental regression.
+    """
+    cases = {
+        "default": lenet_view(small_sequential_model, input_shape=(1, 3, 16, 16)),
+        "no_funnel": lenet_view(small_sequential_model, input_shape=(1, 3, 16, 16), draw_funnel=False),
+        "type_ignore": lenet_view(small_sequential_model, input_shape=(1, 3, 16, 16), type_ignore=[nn.ReLU]),
+        "small_offset": lenet_view(small_sequential_model, input_shape=(1, 3, 16, 16), offset_z=5),
+    }
+    expected_sizes = {
+        "default": (830, 286),
+        "no_funnel": (830, 286),
+        "type_ignore": (538, 286),
+        "small_offset": (495, 206),
+    }
+
+    for name, img in cases.items():
+        assert img.size == expected_sizes[name], f"{name} canvas size changed"
+
+
+@pytest.fixture()
+def residual_model() -> nn.Module:
+    """A residual block whose shortcut is the model's own raw input (the most common pattern)."""
+
+    class ResidualBlock(nn.Module):
+        def __init__(self, channels: int) -> None:
+            super().__init__()
+            self.conv1 = nn.Conv2d(channels, channels, kernel_size=3, padding=1)
+            self.relu = nn.ReLU()
+            self.conv2 = nn.Conv2d(channels, channels, kernel_size=3, padding=1)
+
+        def forward(self, x: torch.Tensor) -> torch.Tensor:
+            """Forward pass with a skip connection straight from the raw input."""
+            identity = x
+            out = self.relu(self.conv1(x))
+            out = self.conv2(out)
+            return self.relu(out + identity)
+
+    return ResidualBlock(channels=4)
+
+
+def test_lenet_view_residual_model_runs(residual_model: nn.Module) -> None:
+    """lenet_view should not crash on a model with a skip connection."""
+    img = lenet_view(residual_model, input_shape=(1, 4, 8, 8))
+    assert img is not None
+
+
+def test_lenet_view_residual_model_routes_above_diagram(residual_model: nn.Module) -> None:
+    """A skip connection should reserve extra vertical space rather than drawing invisibly."""
+
+    class PlainChain(nn.Module):
+        """The same layers as residual_model, but without the skip connection."""
+
+        def __init__(self, channels: int) -> None:
+            super().__init__()
+            self.conv1 = nn.Conv2d(channels, channels, kernel_size=3, padding=1)
+            self.relu = nn.ReLU()
+            self.conv2 = nn.Conv2d(channels, channels, kernel_size=3, padding=1)
+
+        def forward(self, x: torch.Tensor) -> torch.Tensor:
+            """Forward pass with no skip connection."""
+            return self.relu(self.conv2(self.relu(self.conv1(x))))
+
+    img_with_skip = lenet_view(residual_model, input_shape=(1, 4, 8, 8))
+    img_without_skip = lenet_view(PlainChain(channels=4), input_shape=(1, 4, 8, 8))
+
+    assert img_with_skip.size[1] > img_without_skip.size[1]

@@ -13,7 +13,7 @@ import PIL
 from PIL import Image, ImageFont
 from torch import nn
 
-from ._volumetric_layout import ColumnLayout, layout_columns
+from ._volumetric_layout import ColumnLayout, VolumetricBox, layout_columns
 from .backend import Architecture, extract_architecture
 from .connectors import compute_skip_levels, draw_connector
 from .utils.traced_layer import TracedLayer
@@ -291,7 +291,7 @@ def _apply_centering(column_layout: ColumnLayout, top_margin_for_skips: float, b
             box.x2 += column_layout.x_off
 
 
-def _draw_funnel(draw: aggdraw.Draw, start_box: Box, end_box: Box) -> None:
+def _draw_funnel(draw: aggdraw.Draw, start_box: VolumetricBox, end_box: VolumetricBox) -> None:
     """Draw a tapered funnel connecting two boxes in adjacent columns."""
     pen = aggdraw.Pen(get_rgba_tuple(end_box.outline))
     start_de = getattr(start_box, "de", 0)
@@ -414,7 +414,7 @@ def _draw_legend(
     return vertical_image_concat(img, legend_image, background_fill=background_fill)
 
 
-def _column_label_and_center(column: list[Box]) -> tuple[str, float]:
+def _column_label_and_center(column: list[VolumetricBox]) -> tuple[str, float]:
     """A column's shape label (joined across branches) and its shared x-center."""
     label = " / ".join(str(box.output_shape) for box in column)
     center_x = (column[0].x1 + column[0].x2) / 2
@@ -422,7 +422,7 @@ def _column_label_and_center(column: list[Box]) -> tuple[str, float]:
 
 
 def _fit_dimension_labels(
-    boxes_by_column: list[list[Box]],
+    boxes_by_column: list[list[VolumetricBox]],
     font: ImageFont,
     x_off: float,
     max_right: float,
@@ -481,7 +481,7 @@ def _fit_dimension_labels(
 
 def _draw_dimension_labels(
     img: PIL.Image,
-    boxes_by_column: list[list[Box]],
+    boxes_by_column: list[list[VolumetricBox]],
     diagram_height: float,
     font: ImageFont,
     font_color: str | tuple[int, ...],
