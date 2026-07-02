@@ -1,17 +1,17 @@
-"""Residual Block
+"""Hiding Individual Neurons
 =======================================
 
-Visualization of a classic ResNet-style residual block: Conv2d + BatchNorm2d, twice, with a
-plain identity shortcut around them and a final ReLU.
+By default, ``graph_view`` draws a fully-connected mesh between every pair of adjacent layers'
+neuron circles. That's accurate for a genuinely dense layer (e.g. Linear), but misleading for a
+convolutional one - a Conv2d's real connectivity is local and shared across spatial positions,
+not "every input channel wired to every output channel." Setting ``show_neurons=False`` draws
+each layer as a single box instead, which is the more honest representation for a conv-heavy
+model.
 
-Conv2d is orange, BatchNorm2d is green, and ReLU is salmon.
-
-``show_neurons=False`` is used deliberately here, not just as a default: with it on, graph_view
-draws a fully-connected mesh between every pair of adjacent layers' neuron circles, which is
-accurate for a genuinely dense layer (e.g. Linear) but misleading for a convolutional one - a
-Conv2d's real connectivity is local and shared across spatial positions, not "every input
-channel wired to every output channel." With ``show_neurons=False``, each layer draws as a
-single box instead, which is the more honest representation for a conv-heavy model like this.
+The model used here is a classic ResNet-style residual block (Conv2d + BatchNorm2d, twice, with
+a plain identity shortcut and a final ReLU) - conv-heavy and branching, a good stress test for
+both this setting and graph_view's skip-connection routing. Conv2d is orange, BatchNorm2d is
+green, and ReLU is salmon.
 """  # noqa: D205
 
 from collections import defaultdict
