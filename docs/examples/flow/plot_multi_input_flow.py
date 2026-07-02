@@ -6,8 +6,8 @@ The same two-branch model as the ``graph`` style's multi-input example - an imag
 before a shared head - rendered in ``flow`` style instead.
 
 Pass a tuple of per-tensor shapes as ``input_shape`` instead of a single flat shape - one shape
-per positional argument of ``forward()``, in order. Each input gets its own labeled box
-(``input_0``, ``input_1``, ...) at the start of the diagram.
+per positional argument of ``forward()``, in order. Each input gets its own box at the start of
+the diagram.
 
 Conv2d is orange and Linear is sky blue.
 """  # noqa: D205

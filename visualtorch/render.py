@@ -90,6 +90,7 @@ class LenetStyleOptions:
     shade_step: int = 10
     max_channels: int = 100
     offset_z: int = 10
+    show_dimension: bool = True
 
 
 def _render_graph(
@@ -183,6 +184,7 @@ def _render_lenet(
         max_channels=options.max_channels,
         offset_z=options.offset_z,
         level_gap=common.level_gap,
+        show_dimension=options.show_dimension,
     )
 
 

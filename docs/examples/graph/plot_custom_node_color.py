@@ -1,7 +1,8 @@
 """Custom Color
 =======================================
 
-Visualization of custom color
+Visualization of custom color. The synthetic input node can be recolored too, keyed by
+``visualtorch.InputDummyLayer`` in ``color_map`` just like any real layer type.
 """  # noqa: D205
 
 from collections import defaultdict
@@ -35,6 +36,7 @@ model = SimpleDense()
 input_shape = (1, 4)
 
 color_map: dict = defaultdict(dict)
+color_map[visualtorch.InputDummyLayer]["fill"] = "#CC79A7"  # reddish purple
 color_map[nn.Linear]["fill"] = "#009E73"  # bluish green
 
 img = visualtorch.render(model, input_shape, style="graph", color_map=color_map)

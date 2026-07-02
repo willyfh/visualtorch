@@ -1,16 +1,16 @@
 """Multi-Input Model (Siamese-style)
 =======================================
 
-Visualization of a model whose ``forward()`` takes two separate input tensors instead of one -
-an image branch (Conv2d + global pooling) and a tabular-vector branch (a small MLP) - merged by
-concatenation before a shared head. This is the pattern used by siamese networks and multi-modal
-architectures.
+The same two-branch model as the ``graph`` style's multi-input example - an image branch
+(Conv2d + global pooling) and a tabular-vector branch (a small MLP) - merged by concatenation
+before a shared head, rendered in ``lenet`` style instead.
 
 Pass a tuple of per-tensor shapes as ``input_shape`` instead of a single flat shape - one shape
-per positional argument of ``forward()``, in order. Each input gets its own box at the start of
-the diagram (with ``show_dimension=True`` here, its shape is printed underneath).
+per positional argument of ``forward()``, in order.
 
-Conv2d is orange and Linear is sky blue.
+Conv2d is orange and Linear is sky blue. Shape labels are turned off here
+(``show_dimension=False``) since parallel branches share a column, which would otherwise overlap
+several labels on top of each other.
 """  # noqa: D205
 
 from collections import defaultdict
@@ -57,14 +57,7 @@ color_map: dict = defaultdict(dict)
 color_map[nn.Conv2d]["fill"] = "#E69F00"
 color_map[nn.Linear]["fill"] = "#56B4E9"
 
-img = visualtorch.render(
-    model,
-    input_shape,
-    style="graph",
-    show_neurons=False,
-    color_map=color_map,
-    show_dimension=True,
-)
+img = visualtorch.render(model, input_shape, style="lenet", color_map=color_map, scale_xy=1.5)
 
 dpi = 150  # rendered at 2x this in the final doc build (savefig.dpi=300 in conf.py)
 plt.figure(figsize=(img.width / dpi, img.height / dpi), dpi=dpi)

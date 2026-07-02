@@ -196,6 +196,14 @@ def test_lenet_view_with_type_ignore(sequential_model: nn.Sequential) -> None:
     assert img is not None
 
 
+def test_lenet_view_show_dimension_can_be_disabled(sequential_model: nn.Sequential) -> None:
+    """show_dimension=False should drop labels and the reserved label-row height."""
+    with_labels = lenet_view(sequential_model, input_shape=(1, 3, 32, 32))
+    without_labels = lenet_view(sequential_model, input_shape=(1, 3, 32, 32), show_dimension=False)
+
+    assert without_labels.height < with_labels.height
+
+
 def test_lenet_view_writes_to_file(sequential_model: nn.Sequential, tmp_path: Path) -> None:
     """to_file should save a readable image to disk."""
     out_file = tmp_path / "lenet.png"
