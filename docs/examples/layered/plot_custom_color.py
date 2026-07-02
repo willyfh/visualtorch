@@ -35,7 +35,7 @@ color_map[nn.Flatten]["fill"] = "#98FB98"  # Pale Green
 color_map[nn.Linear]["fill"] = "LightSteelBlue"  # Light Steel Blue
 
 input_shape = (1, 3, 224, 224)
-img = visualtorch.layered_view(model, input_shape=input_shape, color_map=color_map)
+img = visualtorch.render(model, input_shape=input_shape, style="layered", color_map=color_map)
 
 plt.axis("off")
 plt.tight_layout()

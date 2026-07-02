@@ -9,7 +9,8 @@ See https://github.com/willyfh/visualtorch/issues/63, /68, /69.
 import pytest
 import torch
 from torch import nn
-from visualtorch import layered_view, lenet_view
+from visualtorch.layered import layered_view
+from visualtorch.lenet_style import lenet_view
 from visualtorch.utils.utils import self_multiply
 
 

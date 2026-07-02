@@ -26,7 +26,7 @@ model = nn.Sequential(
 )
 
 input_shape = (1, 3, 224, 224)
-img = visualtorch.layered_view(model, input_shape=input_shape, draw_volume=False)
+img = visualtorch.render(model, input_shape=input_shape, style="layered", draw_volume=False)
 
 plt.axis("off")
 plt.tight_layout()

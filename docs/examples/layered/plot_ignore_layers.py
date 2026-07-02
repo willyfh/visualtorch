@@ -2,9 +2,6 @@
 =======================================
 
 Visualize some layers only
-
-.. note::
-    You can also use `index_ignore` of :func:`visualtorch.layered.layered_view` to ignore layers based on the index.
 """  # noqa: D205
 
 import matplotlib.pyplot as plt
@@ -31,9 +28,10 @@ model = nn.Sequential(
 ignored_layers = [nn.ReLU, nn.Flatten]
 
 input_shape = (1, 3, 224, 224)
-img = visualtorch.layered_view(
+img = visualtorch.render(
     model,
     input_shape=input_shape,
+    style="layered",
     type_ignore=ignored_layers,
 )
 

@@ -10,7 +10,7 @@ import torch
 import torch.nn.functional as func
 from PIL import Image
 from torch import nn
-from visualtorch import layered_view
+from visualtorch.layered import layered_view
 
 
 @pytest.fixture()

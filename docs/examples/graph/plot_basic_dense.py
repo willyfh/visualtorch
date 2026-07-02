@@ -32,7 +32,11 @@ model = SimpleDense()
 
 input_shape = (1, 4)
 
-img = visualtorch.graph_view(model, input_shape)
+img = visualtorch.render(
+    model,
+    input_shape,
+    style="graph",
+)
 
 plt.axis("off")
 plt.tight_layout()

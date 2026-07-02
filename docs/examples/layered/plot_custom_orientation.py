@@ -27,9 +27,10 @@ model = nn.Sequential(
 
 input_shape = (1, 3, 224, 224)
 
-img = visualtorch.layered_view(
+img = visualtorch.render(
     model,
     input_shape=input_shape,
+    style="layered",
     one_dim_orientation="x",
     spacing=40,
 )

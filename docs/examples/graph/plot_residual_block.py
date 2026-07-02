@@ -44,7 +44,7 @@ color_map[nn.Conv2d]["fill"] = "#FFE4B5"
 color_map[nn.BatchNorm2d]["fill"] = "#98FB98"
 color_map[nn.ReLU]["fill"] = "#FFA07A"
 
-img = visualtorch.graph_view(model, input_shape, show_neurons=False, color_map=color_map, layer_spacing=60)
+img = visualtorch.render(model, input_shape, style="graph", show_neurons=False, color_map=color_map, layer_spacing=60)
 
 plt.axis("off")
 plt.tight_layout()

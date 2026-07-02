@@ -18,7 +18,11 @@ model = nn.Sequential(
 
 input_shape = (1, 3, 128, 128)
 
-img = visualtorch.lenet_view(model, input_shape=input_shape)
+img = visualtorch.render(
+    model,
+    input_shape=input_shape,
+    style="lenet",
+)
 
 plt.axis("off")
 plt.tight_layout()

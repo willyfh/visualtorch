@@ -9,9 +9,9 @@ import pytest
 import torch
 from PIL import Image
 from torch import nn
-from visualtorch import graph_view
 from visualtorch.backend import extract_architecture
 from visualtorch.connectors import compute_skip_levels
+from visualtorch.graph import graph_view
 
 
 @pytest.fixture()

@@ -37,7 +37,7 @@ input_shape = (1, 4)
 color_map: dict = defaultdict(dict)
 color_map[nn.Linear]["fill"] = "#98FB98"
 
-img = visualtorch.graph_view(model, input_shape, color_map=color_map)
+img = visualtorch.render(model, input_shape, style="graph", color_map=color_map)
 
 plt.axis("off")
 plt.tight_layout()

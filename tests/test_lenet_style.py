@@ -10,7 +10,7 @@ import torch
 import torch.nn.functional as func
 from PIL import Image
 from torch import nn
-from visualtorch import lenet_view
+from visualtorch.lenet_style import lenet_view
 
 
 @pytest.fixture()
