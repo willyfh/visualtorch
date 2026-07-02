@@ -73,7 +73,7 @@ model = nn.Sequential(
 
 input_shape = (1, 3, 224, 224)
 
-img = visualtorch.layered_view(model, input_shape=input_shape, legend=True)
+img = visualtorch.render(model, input_shape=input_shape, style="layered", legend=True)
 
 plt.axis("off")
 plt.tight_layout()
@@ -99,7 +99,7 @@ model = nn.Sequential(
 
 input_shape = (1, 3, 128, 128)
 
-img = visualtorch.lenet_view(model, input_shape=input_shape)
+img = visualtorch.render(model, input_shape=input_shape, style="lenet")
 
 plt.axis("off")
 plt.tight_layout()
@@ -135,7 +135,7 @@ model = SimpleDense()
 
 input_shape = (1, 4)
 
-img = visualtorch.graph_view(model, input_shape)
+img = visualtorch.render(model, input_shape, style="graph")
 
 plt.axis("off")
 plt.tight_layout()
