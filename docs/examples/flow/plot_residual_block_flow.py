@@ -4,7 +4,7 @@
 Visualization of a classic ResNet-style residual block: Conv2d + BatchNorm2d, twice, with a
 plain identity shortcut around them and a final ReLU.
 
-Conv2d is orange, BatchNorm2d is green, and ReLU is salmon. The skip connection is routed
+Conv2d is orange, BatchNorm2d is green, and ReLU is sky blue. The skip connection is routed
 above the diagram as a thin line, rather than as a funnel - a funnel implies a continuous
 volume flowing between two layers, which a shortcut connection isn't.
 """  # noqa: D205
@@ -42,9 +42,9 @@ model = ResidualBlock(channels=8)
 input_shape = (1, 8, 16, 16)
 
 color_map: dict = defaultdict(dict)
-color_map[nn.Conv2d]["fill"] = "#FFE4B5"
-color_map[nn.BatchNorm2d]["fill"] = "#98FB98"
-color_map[nn.ReLU]["fill"] = "#FFA07A"
+color_map[nn.Conv2d]["fill"] = "#E69F00"
+color_map[nn.BatchNorm2d]["fill"] = "#009E73"
+color_map[nn.ReLU]["fill"] = "#56B4E9"
 
 img = visualtorch.render(model, input_shape, style="flow", color_map=color_map, legend=True)
 

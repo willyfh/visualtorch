@@ -11,7 +11,7 @@ model.
 The model used here is a classic ResNet-style residual block (Conv2d + BatchNorm2d, twice, with
 a plain identity shortcut and a final ReLU) - conv-heavy and branching, a good stress test for
 both this setting and graph_view's skip-connection routing. Conv2d is orange, BatchNorm2d is
-green, and ReLU is salmon.
+green, and ReLU is sky blue.
 """  # noqa: D205
 
 from collections import defaultdict
@@ -47,9 +47,9 @@ model = ResidualBlock(channels=8)
 input_shape = (1, 8, 16, 16)
 
 color_map: dict = defaultdict(dict)
-color_map[nn.Conv2d]["fill"] = "#FFE4B5"
-color_map[nn.BatchNorm2d]["fill"] = "#98FB98"
-color_map[nn.ReLU]["fill"] = "#FFA07A"
+color_map[nn.Conv2d]["fill"] = "#E69F00"
+color_map[nn.BatchNorm2d]["fill"] = "#009E73"
+color_map[nn.ReLU]["fill"] = "#56B4E9"
 
 img = visualtorch.render(model, input_shape, style="graph", show_neurons=False, color_map=color_map, layer_spacing=60)
 

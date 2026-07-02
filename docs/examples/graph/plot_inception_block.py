@@ -9,7 +9,7 @@ Unlike a residual block's single shortcut, this shows multiple layers stacked si
 within one column - one column per branch "depth," with as many parallel boxes in a column as
 there are branches still active at that depth.
 
-Conv2d is orange, BatchNorm2d is green, and MaxPool2d is light blue.
+Conv2d is orange, BatchNorm2d is green, and MaxPool2d is reddish purple.
 """  # noqa: D205
 
 from collections import defaultdict
@@ -59,9 +59,9 @@ model = InceptionBlock(in_channels=16, out_1x1=8, out_3x3=8, out_5x5=8, out_pool
 input_shape = (1, 16, 16, 16)
 
 color_map: dict = defaultdict(dict)
-color_map[nn.Conv2d]["fill"] = "#FFE4B5"
-color_map[nn.BatchNorm2d]["fill"] = "#98FB98"
-color_map[nn.MaxPool2d]["fill"] = "#ADD8E6"
+color_map[nn.Conv2d]["fill"] = "#E69F00"
+color_map[nn.BatchNorm2d]["fill"] = "#009E73"
+color_map[nn.MaxPool2d]["fill"] = "#CC79A7"
 
 img = visualtorch.render(model, input_shape, style="graph", show_neurons=False, color_map=color_map, layer_spacing=60)
 

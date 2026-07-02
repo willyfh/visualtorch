@@ -6,7 +6,7 @@ different ways via ``style="graph"|"flow"|"lenet"`` - so a branching model like 
 ResNet-style residual block (the same one used in each style's own residual-block example)
 renders with a correctly routed skip connection in every style, not just one.
 
-Conv2d is orange, BatchNorm2d is green, and ReLU is salmon.
+Conv2d is orange, BatchNorm2d is green, and ReLU is sky blue.
 """  # noqa: D205
 
 from collections import defaultdict
@@ -42,9 +42,9 @@ model = ResidualBlock(channels=8)
 input_shape = (1, 8, 16, 16)
 
 color_map: dict = defaultdict(dict)
-color_map[nn.Conv2d]["fill"] = "#FFE4B5"
-color_map[nn.BatchNorm2d]["fill"] = "#98FB98"
-color_map[nn.ReLU]["fill"] = "#FFA07A"
+color_map[nn.Conv2d]["fill"] = "#E69F00"
+color_map[nn.BatchNorm2d]["fill"] = "#009E73"
+color_map[nn.ReLU]["fill"] = "#56B4E9"
 
 img_graph = visualtorch.render(
     model,
