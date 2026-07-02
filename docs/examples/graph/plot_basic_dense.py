@@ -1,7 +1,9 @@
 """Basic Dense
 =======================================
 
-Visualization of basic dense model
+Visualization of basic dense model. No ``color_map`` is passed here, so each layer type is
+assigned a color automatically from a colorblind-safe default palette (see the Custom Color
+example to override this).
 """  # noqa: D205
 
 import matplotlib.pyplot as plt

@@ -17,7 +17,7 @@ from .backend import Architecture, extract_architecture
 from .connectors import compute_skip_levels, draw_connector
 from .utils.layer_utils import InputDummyLayer
 from .utils.traced_layer import TracedLayer
-from .utils.utils import ImageDraw, StackedBox, get_rgba_tuple, self_multiply
+from .utils.utils import ColorWheel, ImageDraw, StackedBox, get_rgba_tuple, self_multiply
 
 _LABEL_ROW_HEIGHT = 100
 
@@ -110,6 +110,7 @@ def lenet_view(
         opacity,
         offset_z,
         layer_types,
+        ColorWheel(),
     )
     column_layout = layout_columns(
         filtered_columns,
@@ -202,6 +203,7 @@ def _box_factory(
     opacity: int,
     offset_z: int,
     layer_types: list[type],
+    color_wheel: ColorWheel,
 ) -> Callable[[TracedLayer], StackedBox]:
     """Build a `make_box` callback: given a traced layer, return a sized, unpositioned `StackedBox`."""
 
@@ -238,7 +240,7 @@ def _box_factory(
         box.y2 = y
 
         box.set_fill(
-            color_map.get(layer_type, {}).get("fill", "#cccccc"),
+            color_map.get(layer_type, {}).get("fill", color_wheel.get_color(layer_type)),
             opacity,
         )
         box.outline = color_map.get(layer_type, {}).get("outline", "black")

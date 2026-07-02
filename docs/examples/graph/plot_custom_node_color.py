@@ -35,7 +35,7 @@ model = SimpleDense()
 input_shape = (1, 4)
 
 color_map: dict = defaultdict(dict)
-color_map[nn.Linear]["fill"] = "#98FB98"
+color_map[nn.Linear]["fill"] = "#009E73"  # bluish green
 
 img = visualtorch.render(model, input_shape, style="graph", color_map=color_map)
 

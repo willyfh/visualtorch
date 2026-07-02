@@ -28,11 +28,11 @@ model = nn.Sequential(
 )
 
 color_map: dict = defaultdict(dict)
-color_map[nn.Conv2d]["fill"] = "LightSlateGray"  # Light Slate Gray
-color_map[nn.ReLU]["fill"] = "#87CEFA"  # Light Sky Blue
-color_map[nn.MaxPool2d]["fill"] = "LightSeaGreen"  # Light Sea Green
-color_map[nn.Flatten]["fill"] = "#98FB98"  # Pale Green
-color_map[nn.Linear]["fill"] = "LightSteelBlue"  # Light Steel Blue
+color_map[nn.Conv2d]["fill"] = "#E69F00"  # orange
+color_map[nn.ReLU]["fill"] = "#56B4E9"  # sky blue
+color_map[nn.MaxPool2d]["fill"] = "#CC79A7"  # reddish purple
+color_map[nn.Flatten]["fill"] = "#009E73"  # bluish green
+color_map[nn.Linear]["fill"] = "#0072B2"  # blue
 
 input_shape = (1, 3, 224, 224)
 img = visualtorch.render(model, input_shape=input_shape, style="flow", color_map=color_map)

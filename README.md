@@ -11,7 +11,7 @@
 
 <div align="center">
 
-![VisualTorch Examples](https://github.com/willyfh/visualtorch/assets/5786636/398c3356-4de0-446b-a30b-d8ebe532d2c2)
+![VisualTorch Examples](docs/source/_static/images/banners/readme-examples.png)
 
 </div>
 
