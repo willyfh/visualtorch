@@ -75,7 +75,6 @@ markdown/get_started/installation
 :caption: Usage Examples
 :hidden:
 
-usage_examples/overview/index
 usage_examples/flow/index
 usage_examples/graph/index
 usage_examples/lenet_style/index
