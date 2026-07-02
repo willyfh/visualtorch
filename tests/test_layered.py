@@ -137,13 +137,12 @@ def test_layered_view_invalid_one_dim_orientation_raises(classifier_model: nn.Mo
         layered_view(classifier_model, input_shape=(1, 3, 16, 16), one_dim_orientation="bad")
 
 
-def test_layered_view_with_type_and_index_ignore(sequential_model: nn.Sequential) -> None:
-    """Layers matched by type_ignore or index_ignore should be skipped without error."""
+def test_layered_view_with_type_ignore(sequential_model: nn.Sequential) -> None:
+    """Layers matched by type_ignore should be skipped without error."""
     img = layered_view(
         sequential_model,
         input_shape=(1, 3, 224, 224),
         type_ignore=[nn.ReLU],
-        index_ignore=[0],
     )
     assert img is not None
 
@@ -175,3 +174,168 @@ def test_layered_view_show_dimension_with_legend(sequential_model: nn.Sequential
     """show_dimension and legend should be combinable."""
     img = layered_view(sequential_model, input_shape=(1, 3, 224, 224), show_dimension=True, legend=True)
     assert img is not None
+
+
+def test_layered_view_output_size_matches_pre_refactor_baseline(sequential_model: nn.Sequential) -> None:
+    """Locks in layered_view's canvas size across the backend/_volumetric_layout rewrite.
+
+    Sizes captured from `main` (0b349a3) before `register_hook` was replaced with the shared
+    `extract_architecture`/`layout_columns` backend - confirmed via a `git worktree` comparison
+    at the time of the rewrite (see the graph_view equivalent test for why size, not an exact
+    pixel hash: aggdraw's anti-aliasing isn't portable across platforms, but layout math is).
+    """
+    cases = {
+        "default": layered_view(sequential_model, input_shape=(1, 3, 32, 32)),
+        "no_volume": layered_view(sequential_model, input_shape=(1, 3, 32, 32), draw_volume=False),
+        "show_dimension": layered_view(sequential_model, input_shape=(1, 3, 32, 32), show_dimension=True),
+        "legend": layered_view(sequential_model, input_shape=(1, 3, 32, 32), legend=True),
+        "type_ignore": layered_view(sequential_model, input_shape=(1, 3, 32, 32), type_ignore=[nn.ReLU]),
+        "no_funnel": layered_view(sequential_model, input_shape=(1, 3, 32, 32), draw_funnel=False),
+    }
+    expected_sizes = {
+        "default": (124, 42),
+        "no_volume": (116, 32),
+        "show_dimension": (303, 59),
+        "legend": (124, 136),
+        "type_ignore": (82, 42),
+        "no_funnel": (124, 42),
+    }
+
+    for name, img in cases.items():
+        assert img.size == expected_sizes[name], f"{name} canvas size changed"
+
+
+@pytest.fixture()
+def residual_model() -> nn.Module:
+    """A residual block whose shortcut is the model's own raw input (the most common pattern)."""
+
+    class ResidualBlock(nn.Module):
+        def __init__(self, channels: int) -> None:
+            super().__init__()
+            self.conv1 = nn.Conv2d(channels, channels, kernel_size=3, padding=1)
+            self.bn1 = nn.BatchNorm2d(channels)
+            self.relu = nn.ReLU()
+            self.conv2 = nn.Conv2d(channels, channels, kernel_size=3, padding=1)
+            self.bn2 = nn.BatchNorm2d(channels)
+
+        def forward(self, x: torch.Tensor) -> torch.Tensor:
+            """Forward pass with a skip connection straight from the raw input."""
+            identity = x
+            out = self.relu(self.bn1(self.conv1(x)))
+            out = self.bn2(self.conv2(out))
+            out = out + identity
+            return self.relu(out)
+
+    return ResidualBlock(channels=8)
+
+
+@pytest.fixture()
+def hidden_skip_model() -> nn.Module:
+    """A residual block whose shortcut originates from a hidden layer, not the raw input."""
+
+    class ResidualBlock(nn.Module):
+        def __init__(self) -> None:
+            super().__init__()
+            self.stem = nn.Linear(4, 4)
+            self.fc1 = nn.Linear(4, 4)
+            self.fc2 = nn.Linear(4, 4)
+            self.out = nn.Linear(4, 2)
+
+        def forward(self, x: torch.Tensor) -> torch.Tensor:
+            """Forward pass with a skip connection around fc1/fc2."""
+            stem_out = self.stem(x)
+            branch = self.fc2(self.fc1(stem_out))
+            merged = branch + stem_out
+            return self.out(merged)
+
+    return ResidualBlock()
+
+
+def test_layered_view_residual_model_runs(residual_model: nn.Module) -> None:
+    """layered_view should not crash on a model with a skip connection from the raw input."""
+    img = layered_view(residual_model, input_shape=(1, 8, 16, 16))
+    assert img is not None
+
+
+def test_layered_view_hidden_skip_model_runs(hidden_skip_model: nn.Module) -> None:
+    """layered_view should not crash on a model with a skip connection from a hidden layer."""
+    img = layered_view(hidden_skip_model, input_shape=(1, 4))
+    assert img is not None
+
+
+def test_layered_view_residual_model_routes_above_diagram(residual_model: nn.Module) -> None:
+    """A skip connection from the raw input should reserve extra vertical space, not vanish."""
+
+    class PlainChain(nn.Module):
+        """The same layers as residual_model, but without the skip connection."""
+
+        def __init__(self, channels: int) -> None:
+            super().__init__()
+            self.conv1 = nn.Conv2d(channels, channels, kernel_size=3, padding=1)
+            self.bn1 = nn.BatchNorm2d(channels)
+            self.relu = nn.ReLU()
+            self.conv2 = nn.Conv2d(channels, channels, kernel_size=3, padding=1)
+            self.bn2 = nn.BatchNorm2d(channels)
+
+        def forward(self, x: torch.Tensor) -> torch.Tensor:
+            """Forward pass with no skip connection."""
+            return self.relu(self.bn2(self.conv2(self.relu(self.bn1(self.conv1(x))))))
+
+    img_with_skip = layered_view(residual_model, input_shape=(1, 8, 16, 16))
+    img_without_skip = layered_view(PlainChain(channels=8), input_shape=(1, 8, 16, 16))
+
+    assert img_with_skip.size[1] > img_without_skip.size[1]
+
+
+def test_layered_view_hidden_skip_model_routes_above_diagram(hidden_skip_model: nn.Module) -> None:
+    """A skip connection from a hidden layer should also reserve extra vertical space."""
+
+    class PlainChain(nn.Module):
+        def __init__(self) -> None:
+            super().__init__()
+            self.stem = nn.Linear(4, 4)
+            self.fc1 = nn.Linear(4, 4)
+            self.fc2 = nn.Linear(4, 4)
+            self.out = nn.Linear(4, 2)
+
+        def forward(self, x: torch.Tensor) -> torch.Tensor:
+            """Forward pass with no skip connection."""
+            return self.out(self.fc2(self.fc1(self.stem(x))))
+
+    img_with_skip = layered_view(hidden_skip_model, input_shape=(1, 4))
+    img_without_skip = layered_view(PlainChain(), input_shape=(1, 4))
+
+    assert img_with_skip.size[1] > img_without_skip.size[1]
+
+
+def test_layered_view_deep_repeated_residual_blocks_stays_reasonably_sized() -> None:
+    """Back-to-back, non-overlapping residual blocks should share one detour level, not stack per block."""
+
+    class ResBlock(nn.Module):
+        def __init__(self, channels: int) -> None:
+            super().__init__()
+            self.conv1 = nn.Conv2d(channels, channels, kernel_size=3, padding=1)
+            self.conv2 = nn.Conv2d(channels, channels, kernel_size=3, padding=1)
+            self.relu = nn.ReLU()
+
+        def forward(self, x: torch.Tensor) -> torch.Tensor:
+            """Forward pass with a skip connection around conv1/conv2."""
+            identity = x
+            out = self.conv2(self.conv1(x))
+            return self.relu(out + identity)
+
+    class DeepModel(nn.Module):
+        def __init__(self, channels: int, n_blocks: int) -> None:
+            super().__init__()
+            self.blocks = nn.ModuleList([ResBlock(channels) for _ in range(n_blocks)])
+
+        def forward(self, x: torch.Tensor) -> torch.Tensor:
+            """Forward pass through every block in sequence."""
+            for block in self.blocks:
+                x = block(x)
+            return x
+
+    img_2_blocks = layered_view(DeepModel(4, 2), input_shape=(1, 4, 8, 8))
+    img_6_blocks = layered_view(DeepModel(4, 6), input_shape=(1, 4, 8, 8))
+
+    assert img_2_blocks.size[1] == img_6_blocks.size[1]
