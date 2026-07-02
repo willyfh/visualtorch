@@ -7,7 +7,8 @@ before a shared head - rendered in ``flow`` style instead.
 
 Pass a tuple of per-tensor shapes as ``input_shape`` instead of a single flat shape - one shape
 per positional argument of ``forward()``, in order. Each input gets its own box at the start of
-the diagram.
+the diagram; with ``show_dimension=True``, a column with parallel boxes prints all of their
+shapes together (joined by ``/``) rather than overlapping.
 
 Conv2d is orange and Linear is sky blue.
 """  # noqa: D205
@@ -56,7 +57,15 @@ color_map: dict = defaultdict(dict)
 color_map[nn.Conv2d]["fill"] = "#E69F00"
 color_map[nn.Linear]["fill"] = "#56B4E9"
 
-img = visualtorch.render(model, input_shape, style="flow", color_map=color_map, scale_xy=3, spacing=15)
+img = visualtorch.render(
+    model,
+    input_shape,
+    style="flow",
+    color_map=color_map,
+    scale_xy=3,
+    spacing=15,
+    show_dimension=True,
+)
 
 dpi = 150  # rendered at 2x this in the final doc build (savefig.dpi=300 in conf.py)
 plt.figure(figsize=(img.width / dpi, img.height / dpi), dpi=dpi)
