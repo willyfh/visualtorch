@@ -16,6 +16,7 @@ from dataclasses import dataclass, fields
 from typing import Any, Literal
 
 from PIL import Image
+from torch import nn
 
 from .graph import graph_view
 from .layered import layered_view
@@ -90,7 +91,12 @@ class LenetStyleOptions:
     offset_z: int = 10
 
 
-def _render_graph(model: Any, input_shape: tuple[int, ...], options: Any, common: CommonOptions) -> Image.Image:
+def _render_graph(
+    model: nn.Module,
+    input_shape: tuple[int, ...],
+    options: GraphStyleOptions,
+    common: CommonOptions,
+) -> Image.Image:
     return graph_view(
         model,
         input_shape,
@@ -113,7 +119,12 @@ def _render_graph(model: Any, input_shape: tuple[int, ...], options: Any, common
     )
 
 
-def _render_layered(model: Any, input_shape: tuple[int, ...], options: Any, common: CommonOptions) -> Image.Image:
+def _render_layered(
+    model: nn.Module,
+    input_shape: tuple[int, ...],
+    options: LayeredStyleOptions,
+    common: CommonOptions,
+) -> Image.Image:
     return layered_view(
         model,
         input_shape,
@@ -142,7 +153,12 @@ def _render_layered(model: Any, input_shape: tuple[int, ...], options: Any, comm
     )
 
 
-def _render_lenet(model: Any, input_shape: tuple[int, ...], options: Any, common: CommonOptions) -> Image.Image:
+def _render_lenet(
+    model: nn.Module,
+    input_shape: tuple[int, ...],
+    options: LenetStyleOptions,
+    common: CommonOptions,
+) -> Image.Image:
     return lenet_view(
         model,
         input_shape,
@@ -179,10 +195,10 @@ _COMMON_FIELDS = {f.name for f in fields(CommonOptions)}
 
 
 def render(
-    model: Any,
+    model: nn.Module,
     input_shape: tuple[int, ...],
     style: Style = "graph",
-    **kwargs: Any,
+    **kwargs: Any,  # noqa: ANN401
 ) -> Image.Image:
     """Generate an architecture visualization for a given PyTorch model.
 
