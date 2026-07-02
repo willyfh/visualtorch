@@ -175,20 +175,8 @@ def layered_view(
 
     _apply_centering(column_layout, top_margin_for_skips, column_layout.diagram_height)
 
-    _draw_connectors(
-        draw,
-        architecture,
-        column_layout,
-        edge_to_level,
-        num_levels,
-        padding,
-        resolved_level_gap,
-        draw_funnel,
-    )
-
-    for column in column_layout.boxes_by_column:
-        for box in column:
-            box.draw(draw)
+    _draw_funnels_and_boxes(draw, architecture, column_layout, edge_to_level, draw_funnel)
+    _draw_skip_connectors(draw, architecture, column_layout, edge_to_level, num_levels, padding, resolved_level_gap)
 
     draw.flush()
 
@@ -309,7 +297,43 @@ def _draw_funnel(draw: aggdraw.Draw, start_box: VolumetricBox, end_box: Volumetr
     draw.line([start_box.x2, start_box.y1, end_box.x1, end_box.y1], pen)
 
 
-def _draw_connectors(
+def _draw_funnels_and_boxes(
+    draw: aggdraw.Draw,
+    architecture: Architecture,
+    column_layout: ColumnLayout,
+    edge_to_level: dict[tuple[str, str], int],
+    draw_funnel_flag: bool,
+) -> None:
+    """Draw each column's incoming funnels, then that column's own boxes, column by column.
+
+    This interleaving matters: a funnel is drawn *before* the box it points to (so the box's own
+    fill covers the funnel's far end, matching a real vanishing-point taper) but *after* the
+    column before it (so the funnel's near end isn't hidden by a box that's about to be
+    re-covered). Drawing every connector first and every box second - simpler, but wrong -
+    would let each box's fill blot out large parts of its own incoming funnel whenever
+    neighboring layers have a very different `de` (3D depth), which is the common case for a
+    real CNN (channel/spatial size changes a lot layer to layer).
+    """
+    if draw_funnel_flag:
+        incoming_funnels: dict[str, list[str]] = {}
+        for start_id, end_id in architecture.edges():
+            if edge_to_level.get((start_id, end_id)) is None and end_id in column_layout.id_to_box:
+                incoming_funnels.setdefault(end_id, []).append(start_id)
+        layer_id_by_box: dict[int, str] = {id(box): layer_id for layer_id, box in column_layout.id_to_box.items()}
+
+    for column in column_layout.boxes_by_column:
+        if draw_funnel_flag:
+            for box in column:
+                layer_id = layer_id_by_box[id(box)]
+                for start_id in incoming_funnels.get(layer_id, []):
+                    if start_id in column_layout.id_to_box:
+                        _draw_funnel(draw, column_layout.id_to_box[start_id], box)
+
+        for box in column:
+            box.draw(draw)
+
+
+def _draw_skip_connectors(
     draw: aggdraw.Draw,
     architecture: Architecture,
     column_layout: ColumnLayout,
@@ -317,36 +341,33 @@ def _draw_connectors(
     num_levels: int,
     padding: int,
     resolved_level_gap: int,
-    draw_funnel_flag: bool,
 ) -> None:
-    """Draw every connector: a funnel for adjacent columns, a routed line for skips.
+    """Draw every skip-connection edge, routed above the diagram.
 
-    Skip connections (spanning more than one column) always draw, regardless of `draw_funnel_flag`
-    - a funnel implies a continuous volume flowing between two layers, which a skip connection
-    isn't, and it should never become invisible just because funnels are toggled off.
+    Drawn in a separate pass after every funnel and box, so a routed line is always visible on
+    top rather than potentially hidden under a box it happens to cross over. Always drawn
+    regardless of `draw_funnel` - a funnel implies a continuous volume flowing between two
+    layers, which a skip connection isn't, and it should never become invisible just because
+    funnels are toggled off.
     """
     for start_id, end_id in architecture.edges():
-        if start_id not in column_layout.id_to_box or end_id not in column_layout.id_to_box:
-            continue  # the synthetic input node has no box in this style
+        level = edge_to_level.get((start_id, end_id))
+        if level is None or start_id not in column_layout.id_to_box or end_id not in column_layout.id_to_box:
+            continue
 
         start_box = column_layout.id_to_box[start_id]
         end_box = column_layout.id_to_box[end_id]
-        level = edge_to_level.get((start_id, end_id))
-
-        if level is not None:
-            detour_y = padding + (num_levels - 1 - level) * resolved_level_gap
-            draw_connector(
-                draw,
-                start_box.x2,
-                (start_box.y1 + start_box.y2) / 2,
-                end_box.x1,
-                (end_box.y1 + end_box.y2) / 2,
-                color=end_box.outline,
-                width=1,
-                detour_y=detour_y,
-            )
-        elif draw_funnel_flag:
-            _draw_funnel(draw, start_box, end_box)
+        detour_y = padding + (num_levels - 1 - level) * resolved_level_gap
+        draw_connector(
+            draw,
+            start_box.x2,
+            (start_box.y1 + start_box.y2) / 2,
+            end_box.x1,
+            (end_box.y1 + end_box.y2) / 2,
+            color=end_box.outline,
+            width=1,
+            detour_y=detour_y,
+        )
 
 
 def _draw_legend(

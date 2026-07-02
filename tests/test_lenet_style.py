@@ -5,6 +5,7 @@
 
 from pathlib import Path
 
+import numpy as np
 import pytest
 import torch
 import torch.nn.functional as func
@@ -246,3 +247,28 @@ def test_lenet_view_residual_model_routes_above_diagram(residual_model: nn.Modul
     img_without_skip = lenet_view(PlainChain(channels=4), input_shape=(1, 4, 8, 8))
 
     assert img_with_skip.size[1] > img_without_skip.size[1]
+
+
+def test_lenet_view_funnels_survive_large_de_differences_between_layers() -> None:
+    """A funnel between two layers with very different depth/spread must stay visible.
+
+    Regression test for the same class of bug fixed in layered_view: drawing every connector
+    first and every box second (instead of interleaving them column by column) let each box's
+    opaque fill blot out large parts of its own incoming funnel whenever neighboring layers have
+    a very different `de`/`offset_z` spread.
+    """
+    model = nn.Sequential(
+        nn.Conv2d(3, 8, kernel_size=3, padding=1),
+        nn.MaxPool2d(2, 2),
+        nn.Conv2d(8, 16, kernel_size=3, padding=1),
+        nn.MaxPool2d(2, 2),
+        nn.Conv2d(16, 32, kernel_size=3, padding=1),
+    )
+
+    img = lenet_view(model, input_shape=(1, 3, 128, 128))
+
+    # Locked in from the current (fixed) implementation.
+    assert img.size == (1348, 558)
+    non_bg = int((np.array(img.convert("RGB")) != 255).any(axis=2).sum())
+    error_msg = f"non-background pixel count {non_bg} outside expected range - funnel likely broken"
+    assert 110000 <= non_bg <= 145000, error_msg
