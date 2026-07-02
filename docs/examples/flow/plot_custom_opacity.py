@@ -1,10 +1,8 @@
-"""Custom Color
+"""Custom Opacity
 =======================================
 
-Visualization of custom color
+Change the color transparency
 """  # noqa: D205
-
-from collections import defaultdict
 
 import matplotlib.pyplot as plt
 import visualtorch
@@ -27,15 +25,9 @@ model = nn.Sequential(
     nn.Linear(256, 10),  # Assuming 10 output classes
 )
 
-color_map: dict = defaultdict(dict)
-color_map[nn.Conv2d]["fill"] = "LightSlateGray"  # Light Slate Gray
-color_map[nn.ReLU]["fill"] = "#87CEFA"  # Light Sky Blue
-color_map[nn.MaxPool2d]["fill"] = "LightSeaGreen"  # Light Sea Green
-color_map[nn.Flatten]["fill"] = "#98FB98"  # Pale Green
-color_map[nn.Linear]["fill"] = "LightSteelBlue"  # Light Steel Blue
-
 input_shape = (1, 3, 224, 224)
-img = visualtorch.render(model, input_shape=input_shape, style="layered", color_map=color_map)
+
+img = visualtorch.render(model, input_shape=input_shape, style="flow", opacity=100)
 
 plt.axis("off")
 plt.tight_layout()

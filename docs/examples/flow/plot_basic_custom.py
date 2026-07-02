@@ -45,7 +45,7 @@ model = SimpleCNN()
 
 input_shape = (1, 3, 224, 224)
 
-img = visualtorch.render(model, input_shape=input_shape, style="layered", legend=True)
+img = visualtorch.render(model, input_shape=input_shape, style="flow", legend=True)
 
 plt.axis("off")
 plt.tight_layout()

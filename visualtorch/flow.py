@@ -1,4 +1,4 @@
-"""Layered View module for pytorch model visualization."""
+"""Flow View module for pytorch model visualization."""
 
 # Copyright (C) 2020 Paul Gavrikov
 # Copyright (C) 2024 Willy Fitra Hendria
@@ -28,7 +28,7 @@ from .utils.utils import (
 )
 
 
-def layered_view(
+def flow_view(
     model: nn.Module | nn.Sequential | nn.ModuleList,
     input_shape: tuple[int, ...],
     to_file: str | None = None,
@@ -54,7 +54,7 @@ def layered_view(
     show_dimension: bool = False,
     level_gap: int | None = None,
 ) -> PIL.Image:
-    """Generate a layered architecture visualization for a given torch model.
+    """Generate a flow-style architecture visualization for a given torch model.
 
     Args:
         model (torch.nn.Module): A torch model that will be visualized.
@@ -97,7 +97,7 @@ def layered_view(
 
     architecture = extract_architecture(model, input_shape)
 
-    # The synthetic input column has no counterpart in this style (layered_view never drew an
+    # The synthetic input column has no counterpart in this style (flow_view never drew an
     # "Input" box even before the v2 backend unification), so it's dropped by default - unless
     # the input feeds more than one consumer, e.g. a residual block whose shortcut is the raw
     # input (`identity = x`): dropping the input node would silently discard that edge (it would

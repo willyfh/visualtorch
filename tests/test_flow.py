@@ -1,4 +1,4 @@
-"""Tests for layered view."""
+"""Tests for flow view."""
 
 # Copyright (C) 2024 Willy Fitra Hendria
 # SPDX-License-Identifier: MIT
@@ -11,7 +11,7 @@ import torch
 import torch.nn.functional as func
 from PIL import Image
 from torch import nn
-from visualtorch.layered import layered_view
+from visualtorch.flow import flow_view
 
 
 @pytest.fixture()
@@ -105,42 +105,42 @@ def classifier_model() -> nn.Module:
     return ClassifierModel()
 
 
-def test_sequential_model_layered_view_runs(sequential_model: nn.Sequential) -> None:
-    """Test layered view on sequential model."""
-    _ = layered_view(sequential_model, input_shape=(1, 3, 224, 224))
+def test_sequential_model_flow_view_runs(sequential_model: nn.Sequential) -> None:
+    """Test flow view on sequential model."""
+    _ = flow_view(sequential_model, input_shape=(1, 3, 224, 224))
 
 
-def test_module_list_model_layered_view_runs(module_list_model: nn.ModuleList) -> None:
-    """Test layered view on module list model."""
-    _ = layered_view(module_list_model, input_shape=(1, 3, 224, 224))
+def test_module_list_model_flow_view_runs(module_list_model: nn.ModuleList) -> None:
+    """Test flow view on module list model."""
+    _ = flow_view(module_list_model, input_shape=(1, 3, 224, 224))
 
 
-def test_custom_model_layered_view_runs(custom_model: nn.Module) -> None:
-    """Test layered view on custom model."""
-    _ = layered_view(custom_model, input_shape=(1, 3, 224, 224))
+def test_custom_model_flow_view_runs(custom_model: nn.Module) -> None:
+    """Test flow view on custom model."""
+    _ = flow_view(custom_model, input_shape=(1, 3, 224, 224))
 
 
-def test_lstm_model_layered_view_runs(lstm_model: nn.Module) -> None:
-    """Test layered view on lstm model."""
-    _ = layered_view(lstm_model, input_shape=(1, 10, 10))
+def test_lstm_model_flow_view_runs(lstm_model: nn.Module) -> None:
+    """Test flow view on lstm model."""
+    _ = flow_view(lstm_model, input_shape=(1, 10, 10))
 
 
 @pytest.mark.parametrize("orientation", ["x", "y", "z"])
-def test_layered_view_one_dim_orientation(classifier_model: nn.Module, orientation: str) -> None:
-    """Test layered view on a model with a 1D output, for every supported orientation."""
-    img = layered_view(classifier_model, input_shape=(1, 3, 16, 16), one_dim_orientation=orientation)
+def test_flow_view_one_dim_orientation(classifier_model: nn.Module, orientation: str) -> None:
+    """Test flow view on a model with a 1D output, for every supported orientation."""
+    img = flow_view(classifier_model, input_shape=(1, 3, 16, 16), one_dim_orientation=orientation)
     assert img is not None
 
 
-def test_layered_view_invalid_one_dim_orientation_raises(classifier_model: nn.Module) -> None:
+def test_flow_view_invalid_one_dim_orientation_raises(classifier_model: nn.Module) -> None:
     """An unsupported one_dim_orientation should raise a clear ValueError."""
     with pytest.raises(ValueError, match="unsupported orientation"):
-        layered_view(classifier_model, input_shape=(1, 3, 16, 16), one_dim_orientation="bad")
+        flow_view(classifier_model, input_shape=(1, 3, 16, 16), one_dim_orientation="bad")
 
 
-def test_layered_view_with_type_ignore(sequential_model: nn.Sequential) -> None:
+def test_flow_view_with_type_ignore(sequential_model: nn.Sequential) -> None:
     """Layers matched by type_ignore should be skipped without error."""
-    img = layered_view(
+    img = flow_view(
         sequential_model,
         input_shape=(1, 3, 224, 224),
         type_ignore=[nn.ReLU],
@@ -148,16 +148,16 @@ def test_layered_view_with_type_ignore(sequential_model: nn.Sequential) -> None:
     assert img is not None
 
 
-def test_layered_view_with_legend(sequential_model: nn.Sequential) -> None:
+def test_flow_view_with_legend(sequential_model: nn.Sequential) -> None:
     """legend=True should append a legend without error."""
-    img = layered_view(sequential_model, input_shape=(1, 3, 224, 224), legend=True)
+    img = flow_view(sequential_model, input_shape=(1, 3, 224, 224), legend=True)
     assert img is not None
 
 
-def test_layered_view_writes_to_file(sequential_model: nn.Sequential, tmp_path: Path) -> None:
+def test_flow_view_writes_to_file(sequential_model: nn.Sequential, tmp_path: Path) -> None:
     """to_file should save a readable image to disk."""
-    out_file = tmp_path / "layered.png"
-    layered_view(sequential_model, input_shape=(1, 3, 224, 224), to_file=str(out_file))
+    out_file = tmp_path / "flow.png"
+    flow_view(sequential_model, input_shape=(1, 3, 224, 224), to_file=str(out_file))
 
     assert out_file.exists()
     with Image.open(out_file) as saved_img:
@@ -165,20 +165,20 @@ def test_layered_view_writes_to_file(sequential_model: nn.Sequential, tmp_path: 
         assert saved_img.size[1] > 0
 
 
-def test_layered_view_with_show_dimension(sequential_model: nn.Sequential) -> None:
+def test_flow_view_with_show_dimension(sequential_model: nn.Sequential) -> None:
     """show_dimension=True should print each layer's shape without clipping or crashing."""
-    img = layered_view(sequential_model, input_shape=(1, 3, 224, 224), show_dimension=True)
+    img = flow_view(sequential_model, input_shape=(1, 3, 224, 224), show_dimension=True)
     assert img is not None
 
 
-def test_layered_view_show_dimension_with_legend(sequential_model: nn.Sequential) -> None:
+def test_flow_view_show_dimension_with_legend(sequential_model: nn.Sequential) -> None:
     """show_dimension and legend should be combinable."""
-    img = layered_view(sequential_model, input_shape=(1, 3, 224, 224), show_dimension=True, legend=True)
+    img = flow_view(sequential_model, input_shape=(1, 3, 224, 224), show_dimension=True, legend=True)
     assert img is not None
 
 
-def test_layered_view_output_size_matches_pre_refactor_baseline(sequential_model: nn.Sequential) -> None:
-    """Locks in layered_view's canvas size across the backend/_volumetric_layout rewrite.
+def test_flow_view_output_size_matches_pre_refactor_baseline(sequential_model: nn.Sequential) -> None:
+    """Locks in flow_view's canvas size across the backend/_volumetric_layout rewrite.
 
     Sizes captured from `main` (0b349a3) before `register_hook` was replaced with the shared
     `extract_architecture`/`layout_columns` backend - confirmed via a `git worktree` comparison
@@ -186,12 +186,12 @@ def test_layered_view_output_size_matches_pre_refactor_baseline(sequential_model
     pixel hash: aggdraw's anti-aliasing isn't portable across platforms, but layout math is).
     """
     cases = {
-        "default": layered_view(sequential_model, input_shape=(1, 3, 32, 32)),
-        "no_volume": layered_view(sequential_model, input_shape=(1, 3, 32, 32), draw_volume=False),
-        "show_dimension": layered_view(sequential_model, input_shape=(1, 3, 32, 32), show_dimension=True),
-        "legend": layered_view(sequential_model, input_shape=(1, 3, 32, 32), legend=True),
-        "type_ignore": layered_view(sequential_model, input_shape=(1, 3, 32, 32), type_ignore=[nn.ReLU]),
-        "no_funnel": layered_view(sequential_model, input_shape=(1, 3, 32, 32), draw_funnel=False),
+        "default": flow_view(sequential_model, input_shape=(1, 3, 32, 32)),
+        "no_volume": flow_view(sequential_model, input_shape=(1, 3, 32, 32), draw_volume=False),
+        "show_dimension": flow_view(sequential_model, input_shape=(1, 3, 32, 32), show_dimension=True),
+        "legend": flow_view(sequential_model, input_shape=(1, 3, 32, 32), legend=True),
+        "type_ignore": flow_view(sequential_model, input_shape=(1, 3, 32, 32), type_ignore=[nn.ReLU]),
+        "no_funnel": flow_view(sequential_model, input_shape=(1, 3, 32, 32), draw_funnel=False),
     }
     expected_sizes = {
         "default": (124, 42),
@@ -252,19 +252,19 @@ def hidden_skip_model() -> nn.Module:
     return ResidualBlock()
 
 
-def test_layered_view_residual_model_runs(residual_model: nn.Module) -> None:
-    """layered_view should not crash on a model with a skip connection from the raw input."""
-    img = layered_view(residual_model, input_shape=(1, 8, 16, 16))
+def test_flow_view_residual_model_runs(residual_model: nn.Module) -> None:
+    """flow_view should not crash on a model with a skip connection from the raw input."""
+    img = flow_view(residual_model, input_shape=(1, 8, 16, 16))
     assert img is not None
 
 
-def test_layered_view_hidden_skip_model_runs(hidden_skip_model: nn.Module) -> None:
-    """layered_view should not crash on a model with a skip connection from a hidden layer."""
-    img = layered_view(hidden_skip_model, input_shape=(1, 4))
+def test_flow_view_hidden_skip_model_runs(hidden_skip_model: nn.Module) -> None:
+    """flow_view should not crash on a model with a skip connection from a hidden layer."""
+    img = flow_view(hidden_skip_model, input_shape=(1, 4))
     assert img is not None
 
 
-def test_layered_view_residual_model_routes_above_diagram(residual_model: nn.Module) -> None:
+def test_flow_view_residual_model_routes_above_diagram(residual_model: nn.Module) -> None:
     """A skip connection from the raw input should reserve extra vertical space, not vanish."""
 
     class PlainChain(nn.Module):
@@ -282,13 +282,13 @@ def test_layered_view_residual_model_routes_above_diagram(residual_model: nn.Mod
             """Forward pass with no skip connection."""
             return self.relu(self.bn2(self.conv2(self.relu(self.bn1(self.conv1(x))))))
 
-    img_with_skip = layered_view(residual_model, input_shape=(1, 8, 16, 16))
-    img_without_skip = layered_view(PlainChain(channels=8), input_shape=(1, 8, 16, 16))
+    img_with_skip = flow_view(residual_model, input_shape=(1, 8, 16, 16))
+    img_without_skip = flow_view(PlainChain(channels=8), input_shape=(1, 8, 16, 16))
 
     assert img_with_skip.size[1] > img_without_skip.size[1]
 
 
-def test_layered_view_hidden_skip_model_routes_above_diagram(hidden_skip_model: nn.Module) -> None:
+def test_flow_view_hidden_skip_model_routes_above_diagram(hidden_skip_model: nn.Module) -> None:
     """A skip connection from a hidden layer should also reserve extra vertical space."""
 
     class PlainChain(nn.Module):
@@ -303,13 +303,13 @@ def test_layered_view_hidden_skip_model_routes_above_diagram(hidden_skip_model: 
             """Forward pass with no skip connection."""
             return self.out(self.fc2(self.fc1(self.stem(x))))
 
-    img_with_skip = layered_view(hidden_skip_model, input_shape=(1, 4))
-    img_without_skip = layered_view(PlainChain(), input_shape=(1, 4))
+    img_with_skip = flow_view(hidden_skip_model, input_shape=(1, 4))
+    img_without_skip = flow_view(PlainChain(), input_shape=(1, 4))
 
     assert img_with_skip.size[1] > img_without_skip.size[1]
 
 
-def test_layered_view_deep_repeated_residual_blocks_stays_reasonably_sized() -> None:
+def test_flow_view_deep_repeated_residual_blocks_stays_reasonably_sized() -> None:
     """Back-to-back, non-overlapping residual blocks should share one detour level, not stack per block."""
 
     class ResBlock(nn.Module):
@@ -336,8 +336,8 @@ def test_layered_view_deep_repeated_residual_blocks_stays_reasonably_sized() -> 
                 x = block(x)
             return x
 
-    img_2_blocks = layered_view(DeepModel(4, 2), input_shape=(1, 4, 8, 8))
-    img_6_blocks = layered_view(DeepModel(4, 6), input_shape=(1, 4, 8, 8))
+    img_2_blocks = flow_view(DeepModel(4, 2), input_shape=(1, 4, 8, 8))
+    img_6_blocks = flow_view(DeepModel(4, 6), input_shape=(1, 4, 8, 8))
 
     assert img_2_blocks.size[1] == img_6_blocks.size[1]
 
@@ -346,13 +346,13 @@ def _non_background_pixel_count(img: Image.Image) -> int:
     return int((np.array(img.convert("RGB")) != 255).any(axis=2).sum())
 
 
-def test_layered_view_funnels_survive_large_de_differences_between_layers() -> None:
+def test_flow_view_funnels_survive_large_de_differences_between_layers() -> None:
     """A funnel between two layers with very different 3D depth (`de`) must stay visible.
 
     Regression test for a real bug: drawing every connector first and every box second (instead
     of interleaving them column by column) let each box's opaque fill blot out large parts of
     its own incoming funnel whenever neighboring layers have a very different `de` - which
-    barely showed on the small, near-constant-`de` models used to verify the layered_view
+    barely showed on the small, near-constant-`de` models used to verify the flow_view
     rewrite, but was highly visible on a real CNN (found by the user manually comparing
     ReadTheDocs' `plot_basic_custom` example before/after the rewrite). Canvas *size* alone
     doesn't catch this class of bug (box positions are unaffected, only which pixels get
@@ -360,7 +360,7 @@ def test_layered_view_funnels_survive_large_de_differences_between_layers() -> N
     """
 
     class SimpleCNN(nn.Module):
-        """The exact model from docs/examples/layered/plot_basic_custom.py."""
+        """The exact model from docs/examples/flow/plot_basic_custom.py."""
 
         def __init__(self) -> None:
             super().__init__()
@@ -386,7 +386,7 @@ def test_layered_view_funnels_survive_large_de_differences_between_layers() -> N
             x = func.relu(x)
             return self.fc2(x)
 
-    img = layered_view(SimpleCNN(), input_shape=(1, 3, 224, 224), legend=True)
+    img = flow_view(SimpleCNN(), input_shape=(1, 3, 224, 224), legend=True)
 
     # Locked in from the current (fixed) implementation - confirmed pixel-identical to
     # pre-rewrite main (1ee630e) via a git-worktree comparison for this exact model. The buggy

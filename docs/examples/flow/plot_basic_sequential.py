@@ -1,7 +1,7 @@
-"""Custom Spacing
+"""Basic Sequential
 =======================================
 
-Visualization of custom spacing
+Visualization of basic sequential model
 """  # noqa: D205
 
 import matplotlib.pyplot as plt
@@ -27,7 +27,7 @@ model = nn.Sequential(
 
 input_shape = (1, 3, 224, 224)
 
-img = visualtorch.render(model, input_shape=input_shape, style="layered", spacing=50)
+img = visualtorch.render(model, input_shape=input_shape, style="flow", legend=True)
 
 plt.axis("off")
 plt.tight_layout()

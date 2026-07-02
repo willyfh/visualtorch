@@ -2,7 +2,7 @@
 =======================================
 
 VisualTorch traces a model's real structure once, then renders that same structure three
-different ways via ``style="graph"|"layered"|"lenet"`` - so a branching model like this
+different ways via ``style="graph"|"flow"|"lenet"`` - so a branching model like this
 ResNet-style residual block (the same one used in each style's own residual-block example)
 renders with a correctly routed skip connection in every style, not just one.
 
@@ -46,15 +46,22 @@ color_map[nn.Conv2d]["fill"] = "#FFE4B5"
 color_map[nn.BatchNorm2d]["fill"] = "#98FB98"
 color_map[nn.ReLU]["fill"] = "#FFA07A"
 
-img_graph = visualtorch.render(model, input_shape, style="graph", show_neurons=False, color_map=color_map, layer_spacing=60)
-img_layered = visualtorch.render(model, input_shape, style="layered", color_map=color_map, scale_xy=3, spacing=20)
+img_graph = visualtorch.render(
+    model,
+    input_shape,
+    style="graph",
+    show_neurons=False,
+    color_map=color_map,
+    layer_spacing=60,
+)
+img_flow = visualtorch.render(model, input_shape, style="flow", color_map=color_map, scale_xy=3, spacing=20)
 img_lenet = visualtorch.render(model, input_shape, style="lenet", color_map=color_map, scale_xy=1.5, padding=80)
 
 fig, axes = plt.subplots(3, 1, figsize=(9, 9))
 for ax, img, title in zip(
     axes,
-    [img_graph, img_layered, img_lenet],
-    ['style="graph"', 'style="layered"', 'style="lenet"'],
+    [img_graph, img_flow, img_lenet],
+    ['style="graph"', 'style="flow"', 'style="lenet"'],
     strict=True,
 ):
     ax.imshow(img)

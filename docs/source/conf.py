@@ -102,7 +102,7 @@ sphinx_gallery_conf = {
     "gallery_dirs": "usage_examples",  # path to where to save gallery generated output
     "min_reported_time": 10,
     "subsection_order": ExplicitOrder(
-        ["../examples/overview", "../examples/layered", "../examples/graph", "../examples/lenet_style"],
+        ["../examples/overview", "../examples/flow", "../examples/graph", "../examples/lenet_style"],
     ),
     "within_subsection_order": ExampleTitleSortKey,
 }

@@ -89,7 +89,7 @@ def lenet_view(
 
     architecture = extract_architecture(model, input_shape)
 
-    # Unlike layered_view, lenet_view has always shown an "Input" box, so every column
+    # Unlike flow_view, lenet_view has always shown an "Input" box, so every column
     # (including the synthetic input one) is kept here.
     filtered_columns = [
         [layer for layer in column if type(layer.module) not in type_ignore] for column in architecture.columns
@@ -353,7 +353,7 @@ def _draw_labels(
     font: ImageFont,
     font_color: str | tuple[int, ...],
 ) -> PIL.Image:
-    """Draw every box's label (always on, unlike layered_view's opt-in show_dimension)."""
+    """Draw every box's label (always on, unlike flow_view's opt-in show_dimension)."""
     text_img = Image.new("RGBA", img.size, (255, 255, 255, 0))
     draw_text = ImageDraw.Draw(text_img)
 

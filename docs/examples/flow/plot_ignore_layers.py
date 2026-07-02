@@ -1,7 +1,7 @@
-"""Custom Orientation
+"""Ignore Layers
 =======================================
 
-Visualization of custom orientation for 1 dim layers
+Visualize some layers only
 """  # noqa: D205
 
 import matplotlib.pyplot as plt
@@ -25,14 +25,14 @@ model = nn.Sequential(
     nn.Linear(256, 10),  # Assuming 10 output classes
 )
 
-input_shape = (1, 3, 224, 224)
+ignored_layers = [nn.ReLU, nn.Flatten]
 
+input_shape = (1, 3, 224, 224)
 img = visualtorch.render(
     model,
     input_shape=input_shape,
-    style="layered",
-    one_dim_orientation="x",
-    spacing=40,
+    style="flow",
+    type_ignore=ignored_layers,
 )
 
 plt.axis("off")

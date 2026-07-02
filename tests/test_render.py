@@ -17,7 +17,7 @@ def sequential_model() -> nn.Sequential:
     )
 
 
-@pytest.mark.parametrize("style", ["graph", "layered", "lenet"])
+@pytest.mark.parametrize("style", ["graph", "flow", "lenet"])
 def test_render_runs_for_every_style(sequential_model: nn.Sequential, style: str) -> None:
     """Every registered style should render without error using its own defaults."""
     img = render(sequential_model, input_shape=(1, 3, 16, 16), style=style)
@@ -40,7 +40,7 @@ def test_render_forwards_style_specific_kwargs(sequential_model: nn.Sequential) 
 
 def test_render_forwards_common_kwargs_across_styles(sequential_model: nn.Sequential) -> None:
     """A common kwarg (padding) should affect every style's output size."""
-    for style in ("graph", "layered", "lenet"):
+    for style in ("graph", "flow", "lenet"):
         tight = render(sequential_model, input_shape=(1, 3, 16, 16), style=style, padding=1)
         loose = render(sequential_model, input_shape=(1, 3, 16, 16), style=style, padding=100)
         assert tight.size != loose.size, f"padding had no effect for style={style!r}"

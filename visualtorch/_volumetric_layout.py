@@ -1,6 +1,6 @@
 """Shared volumetric column layout, used by every "stacked box" rendering style.
 
-Generalizes the single-cursor sequential layout `layered_view`/`lenet_view` used before the v2
+Generalizes the single-cursor sequential layout `flow_view`/`lenet_view` used before the v2
 backend unification to the same column concept `graph_view` already uses: layers grouped by
 depth, with more than one layer in a column when the model branches. Multiple boxes in a column
 stack top-to-bottom; the caller decides each box's own size/extrusion (`make_box`) and the safe

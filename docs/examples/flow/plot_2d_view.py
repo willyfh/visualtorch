@@ -1,7 +1,7 @@
-"""Basic Sequential
+"""2D View
 =======================================
 
-Visualization of basic sequential model
+Visualization of 2D view
 """  # noqa: D205
 
 import matplotlib.pyplot as plt
@@ -26,8 +26,7 @@ model = nn.Sequential(
 )
 
 input_shape = (1, 3, 224, 224)
-
-img = visualtorch.render(model, input_shape=input_shape, style="layered", legend=True)
+img = visualtorch.render(model, input_shape=input_shape, style="flow", draw_volume=False)
 
 plt.axis("off")
 plt.tight_layout()

@@ -13,11 +13,11 @@ orphan: true
 Learn more about the single `render()` entry point.
 :::
 
-:::{grid-item-card} Layered View
-:link: ./layered
+:::{grid-item-card} Flow View
+:link: ./flow
 :link-type: doc
 
-Learn more about Layered View.
+Learn more about Flow View.
 :::
 
 :::{grid-item-card} Graph View
@@ -34,6 +34,6 @@ Learn more about Graph View.
 :hidden:
 
 ./render
-./layered
+./flow
 ./graph
 ```
