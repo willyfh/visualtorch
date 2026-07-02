@@ -48,7 +48,9 @@ color_map[nn.ReLU]["fill"] = "#56B4E9"
 
 img = visualtorch.render(model, input_shape, style="lenet", color_map=color_map)
 
+dpi = 150  # rendered at 2x this in the final doc build (savefig.dpi=300 in conf.py)
+plt.figure(figsize=(img.width / dpi, img.height / dpi), dpi=dpi)
+plt.imshow(img)
 plt.axis("off")
 plt.tight_layout()
-plt.imshow(img)
 plt.show()

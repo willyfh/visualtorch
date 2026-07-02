@@ -136,14 +136,18 @@ def _wrapped_module_call(
     def wrapped(mod: nn.Module, *args: Any, **kwargs: Any) -> Any:
         producer_ids = _collect_producer_ids(args) | _collect_producer_ids(kwargs)
 
+        edge_count_before = len(edges)
         out = _orig_module_call(mod, *args, **kwargs)
 
-        # Only leaf modules (no children) become graph nodes - containers such as
-        # nn.Sequential or a custom composite block are transparent plumbing. A leaf module
-        # invoked more than once (e.g. weight sharing) gets a distinct node per call, keyed by
-        # a call-index suffix, so repeat calls don't collapse into a self-referential node that
-        # can never be placed in the topological layering.
-        is_leaf = len(list(mod.children())) == 0
+        # A module becomes a graph node either because it's a leaf (no children - e.g. Conv2d)
+        # or because it has children but none of them actually fired during this call. The
+        # latter happens for modules like nn.MultiheadAttention: it has a child (out_proj), but
+        # its forward computes attention via a fused functional call on raw parameter tensors
+        # rather than calling `self.out_proj(...)`, so no descendant call is ever traced. Without
+        # this fallback, such modules would be silently invisible - neither they nor any child
+        # would ever become a node. Ordinary containers (nn.Sequential, etc.) always have at
+        # least one descendant call recorded, so they stay transparent as before.
+        is_leaf = len(list(mod.children())) == 0 or len(edges) == edge_count_before
         if is_leaf:
             base_id = id(mod)
             call_index = call_counts.get(base_id, 0)

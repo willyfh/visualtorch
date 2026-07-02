@@ -216,6 +216,13 @@ def _box_factory(
             else:
                 error_msg = f"unsupported orientation: {one_dim_orientation}"
                 raise ValueError(error_msg)
+        elif len(shape) == 2:
+            # A 2D non-batch shape (e.g. (seq_len, hidden_size) from an RNN/attention layer)
+            # isn't a CNN feature map missing a channel dim - there's no channel axis at all.
+            # StackedBox's slice count (de, below) is driven by shape[0], so a dummy 1 goes
+            # there instead of either real dim, keeping the two real dims on the box's actual
+            # width and height instead of one of them being drawn as that many stacked slices.
+            shape = (1, *shape)
 
         ori_shape = shape
         shape = shape + (1,) * (4 - len(shape))  # expand 4D.

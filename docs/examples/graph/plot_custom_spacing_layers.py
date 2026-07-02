@@ -34,7 +34,9 @@ input_shape = (1, 4)
 
 img = visualtorch.render(model, input_shape, style="graph", layer_spacing=500)
 
+dpi = 150  # rendered at 2x this in the final doc build (savefig.dpi=300 in conf.py)
+plt.figure(figsize=(img.width / dpi, img.height / dpi), dpi=dpi)
+plt.imshow(img)
 plt.axis("off")
 plt.tight_layout()
-plt.imshow(img)
 plt.show()
