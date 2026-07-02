@@ -9,7 +9,7 @@ See https://github.com/willyfh/visualtorch/issues/63, /68, /69.
 import pytest
 import torch
 from torch import nn
-from visualtorch.layered import layered_view
+from visualtorch.flow import flow_view
 from visualtorch.lenet_style import lenet_view
 from visualtorch.utils.utils import self_multiply
 
@@ -46,9 +46,9 @@ def multi_output_container_model() -> nn.Module:
     return MultiScaleNet()
 
 
-def test_layered_view_multi_output_container(multi_output_container_model: nn.Module) -> None:
-    """layered_view should not crash on container modules that output multiple tensors."""
-    img = layered_view(multi_output_container_model, input_shape=(1, 3, 32, 32))
+def test_flow_view_multi_output_container(multi_output_container_model: nn.Module) -> None:
+    """flow_view should not crash on container modules that output multiple tensors."""
+    img = flow_view(multi_output_container_model, input_shape=(1, 3, 32, 32))
     assert img is not None
 
 

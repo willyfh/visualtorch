@@ -1,7 +1,7 @@
-# Layered View
+# Flow View
 
 ```{eval-rst}
-.. automodule:: visualtorch.layered
+.. automodule:: visualtorch.flow
    :members:
    :show-inheritance:
 ```

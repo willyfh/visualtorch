@@ -5,8 +5,8 @@
 
 from visualtorch.render import (
     CommonOptions,
+    FlowStyleOptions,
     GraphStyleOptions,
-    LayeredStyleOptions,
     LenetStyleOptions,
     render,
 )
@@ -15,6 +15,6 @@ __all__ = [
     "render",
     "CommonOptions",
     "GraphStyleOptions",
-    "LayeredStyleOptions",
+    "FlowStyleOptions",
     "LenetStyleOptions",
 ]

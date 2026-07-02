@@ -1,7 +1,7 @@
-"""Custom Opacity
+"""Custom Spacing
 =======================================
 
-Change the color transparency
+Visualization of custom spacing
 """  # noqa: D205
 
 import matplotlib.pyplot as plt
@@ -27,7 +27,7 @@ model = nn.Sequential(
 
 input_shape = (1, 3, 224, 224)
 
-img = visualtorch.render(model, input_shape=input_shape, style="layered", opacity=100)
+img = visualtorch.render(model, input_shape=input_shape, style="flow", spacing=50)
 
 plt.axis("off")
 plt.tight_layout()

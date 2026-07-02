@@ -1,11 +1,11 @@
 """Single public entry point for pytorch model visualization.
 
-`graph_view`/`layered_view`/`lenet_view` (in `visualtorch.graph`/`.layered`/`.lenet_style`)
-render the same `extract_architecture`-derived structure three different ways; this module
-consolidates them behind one function, `render(model, input_shape, style=..., **kwargs)`, so
-`style` picks the rendering style and every other parameter is style-appropriate keyword
-arguments. Kwargs are validated by constructing a per-style dataclass from them - a typo'd
-kwarg raises `TypeError` immediately, rather than being silently ignored.
+`graph_view`/`flow_view`/`lenet_view` (in `visualtorch.graph`/`.flow`/`.lenet_style`) render the
+same `extract_architecture`-derived structure three different ways; this module consolidates
+them behind one function, `render(model, input_shape, style=..., **kwargs)`, so `style` picks
+the rendering style and every other parameter is style-appropriate keyword arguments. Kwargs are
+validated by constructing a per-style dataclass from them - a typo'd kwarg raises `TypeError`
+immediately, rather than being silently ignored.
 """
 
 # Copyright (C) 2024 Willy Fitra Hendria
@@ -18,11 +18,11 @@ from typing import Any, Literal
 from PIL import Image
 from torch import nn
 
+from .flow import flow_view
 from .graph import graph_view
-from .layered import layered_view
 from .lenet_style import lenet_view
 
-Style = Literal["graph", "layered", "lenet"]
+Style = Literal["graph", "flow", "lenet"]
 
 
 @dataclass
@@ -54,8 +54,8 @@ class GraphStyleOptions:
 
 
 @dataclass
-class LayeredStyleOptions:
-    """Options specific to `style="layered"` - stacked volumetric/2D boxes, one per layer."""
+class FlowStyleOptions:
+    """Options specific to `style="flow"` - stacked volumetric/2D boxes connected by funnels."""
 
     min_z: int = 10
     min_xy: int = 10
@@ -119,13 +119,13 @@ def _render_graph(
     )
 
 
-def _render_layered(
+def _render_flow(
     model: nn.Module,
     input_shape: tuple[int, ...],
-    options: LayeredStyleOptions,
+    options: FlowStyleOptions,
     common: CommonOptions,
 ) -> Image.Image:
-    return layered_view(
+    return flow_view(
         model,
         input_shape,
         to_file=common.to_file,
@@ -187,7 +187,7 @@ def _render_lenet(
 
 _STYLE_REGISTRY: dict[str, tuple[type, Callable[..., Image.Image]]] = {
     "graph": (GraphStyleOptions, _render_graph),
-    "layered": (LayeredStyleOptions, _render_layered),
+    "flow": (FlowStyleOptions, _render_flow),
     "lenet": (LenetStyleOptions, _render_lenet),
 }
 
@@ -206,8 +206,9 @@ def render(
         model (torch.nn.Module): A PyTorch model that will be visualized.
         input_shape (tuple): The shape of the input tensor, including batch dim.
         style (str, optional): Which rendering style to use - `"graph"` (a node/edge diagram),
-            `"layered"` (stacked volumetric/2D boxes), or `"lenet"` (the classic LeNet look).
-        **kwargs: Style-specific and common options (see `GraphStyleOptions`/`LayeredStyleOptions`/
+            `"flow"` (stacked volumetric/2D boxes connected by funnels), or `"lenet"` (the
+            classic LeNet look).
+        **kwargs: Style-specific and common options (see `GraphStyleOptions`/`FlowStyleOptions`/
             `LenetStyleOptions`/`CommonOptions` for the full list per style). Forwarded into the
             relevant dataclass constructor, so an unrecognized keyword raises `TypeError` rather
             than being silently ignored.

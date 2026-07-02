@@ -15,7 +15,7 @@ from PIL import Image, ImageFont
 from .backend import Architecture, extract_architecture
 from .connectors import compute_skip_levels, draw_connector
 from .utils.traced_layer import TracedLayer
-from .utils.utils import Box, Circle, Ellipses, ImageDraw
+from .utils.utils import Box, Circle, ColorWheel, Ellipses, ImageDraw
 
 
 def graph_view(
@@ -89,6 +89,7 @@ def graph_view(
         _color_map,
         opacity,
         layer_spacing,
+        ColorWheel(),
     )
 
     # Skip connections (edges spanning more than one column) need to be routed above the
@@ -314,6 +315,7 @@ def _create_architecture(
     color_map: dict[Any, Any],
     opacity: int,
     layer_spacing: int,
+    color_wheel: ColorWheel,
 ) -> tuple[list, list, dict, list[list[tuple[str, float, float]]]]:
     """Create nodes of architecture for each layers."""
     id_to_node_list_map = {}
@@ -351,7 +353,7 @@ def _create_architecture(
                 current_y = c.y2 + node_spacing
 
                 c.set_fill(
-                    color_map.get(layer_type, {}).get("fill", "#ADD8E6"),
+                    color_map.get(layer_type, {}).get("fill", color_wheel.get_color(layer_type)),
                     opacity,
                 )
                 c.outline = color_map.get(layer_type, {}).get(

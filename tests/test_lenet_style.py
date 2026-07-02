@@ -120,8 +120,8 @@ def test_custom_model_lenet_view_runs(custom_model: nn.Module) -> None:
     _ = lenet_view(custom_model, input_shape=(1, 3, 224, 224))
 
 
-def test_lstm_model_layered_view_runs(lstm_model: nn.Module) -> None:
-    """Test layered view on lstm model."""
+def test_lstm_model_lenet_view_runs(lstm_model: nn.Module) -> None:
+    """Test lenet view on lstm model."""
     _ = lenet_view(lstm_model, input_shape=(1, 10, 10))
 
 
@@ -174,7 +174,7 @@ def small_sequential_model() -> nn.Sequential:
 def test_lenet_view_output_size_matches_post_rewrite_baseline(small_sequential_model: nn.Sequential) -> None:
     """Locks in lenet_view's canvas size across the backend/_volumetric_layout rewrite.
 
-    Unlike graph_view/layered_view, this isn't identical to pre-rewrite `main`: the original
+    Unlike graph_view/flow_view, this isn't identical to pre-rewrite `main`: the original
     `_create_architecture` budgeted extra vertical headroom for the offset-copy stack via a
     hand-tuned, not tightly-derived formula (`height + de*offset_z + 2*offset_z`, plus a flat
     +100 pixels for the label row). The rewrite replaces that with a consistently-derived
@@ -252,7 +252,7 @@ def test_lenet_view_residual_model_routes_above_diagram(residual_model: nn.Modul
 def test_lenet_view_funnels_survive_large_de_differences_between_layers() -> None:
     """A funnel between two layers with very different depth/spread must stay visible.
 
-    Regression test for the same class of bug fixed in layered_view: drawing every connector
+    Regression test for the same class of bug fixed in flow_view: drawing every connector
     first and every box second (instead of interleaving them column by column) let each box's
     opaque fill blot out large parts of its own incoming funnel whenever neighboring layers have
     a very different `de`/`offset_z` spread.

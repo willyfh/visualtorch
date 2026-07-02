@@ -1,7 +1,7 @@
-"""2D View
+"""Custom Orientation
 =======================================
 
-Visualization of 2D view
+Visualization of custom orientation for 1 dim layers
 """  # noqa: D205
 
 import matplotlib.pyplot as plt
@@ -26,7 +26,14 @@ model = nn.Sequential(
 )
 
 input_shape = (1, 3, 224, 224)
-img = visualtorch.render(model, input_shape=input_shape, style="layered", draw_volume=False)
+
+img = visualtorch.render(
+    model,
+    input_shape=input_shape,
+    style="flow",
+    one_dim_orientation="x",
+    spacing=40,
+)
 
 plt.axis("off")
 plt.tight_layout()

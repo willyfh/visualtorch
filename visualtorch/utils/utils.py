@@ -214,7 +214,21 @@ class ColorWheel:
 
     def __init__(self, colors: list | None = None) -> None:
         self._cache: dict[type, Any] = {}
-        self.colors = colors if colors is not None else ["#FFE4B5", "#ADD8E6", "#98FB98", "#FFA07A", "#D8BFD8"]
+        # Okabe-Ito: a colorblind-safe palette (Okabe & Ito, 2008) widely recommended for
+        # scientific visualization, e.g. in Nature's figure guidelines.
+        self.colors = (
+            colors
+            if colors is not None
+            else [
+                "#E69F00",  # orange
+                "#56B4E9",  # sky blue
+                "#009E73",  # bluish green
+                "#F0E442",  # yellow
+                "#0072B2",  # blue
+                "#D55E00",  # vermillion
+                "#CC79A7",  # reddish purple
+            ]
+        )
 
     def get_color(self, class_type: type) -> tuple | None:
         """Return color from cache if exist, if not, get from the list and store it to the cache."""
