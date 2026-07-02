@@ -1,17 +1,12 @@
-"""Hiding Individual Neurons
+"""Residual Block
 =======================================
 
-By default, ``graph_view`` draws a fully-connected mesh between every pair of adjacent layers'
-neuron circles. That's accurate for a genuinely dense layer (e.g. Linear), but misleading for a
-convolutional one - a Conv2d's real connectivity is local and shared across spatial positions,
-not "every input channel wired to every output channel." Setting ``show_neurons=False`` draws
-each layer as a single box instead, which is the more honest representation for a conv-heavy
-model.
+Visualization of a classic ResNet-style residual block: Conv2d + BatchNorm2d, twice, with a
+plain identity shortcut around them and a final ReLU.
 
-The model used here is a classic ResNet-style residual block (Conv2d + BatchNorm2d, twice, with
-a plain identity shortcut and a final ReLU) - conv-heavy and branching, a good stress test for
-both this setting and graph_view's skip-connection routing. Conv2d is orange, BatchNorm2d is
-green, and ReLU is salmon.
+Conv2d is orange, BatchNorm2d is green, and ReLU is salmon. The skip connection is routed
+above the diagram as a thin line, rather than as a funnel - a funnel implies a continuous
+volume flowing between two layers, which a shortcut connection isn't.
 """  # noqa: D205
 
 from collections import defaultdict
@@ -51,7 +46,7 @@ color_map[nn.Conv2d]["fill"] = "#FFE4B5"
 color_map[nn.BatchNorm2d]["fill"] = "#98FB98"
 color_map[nn.ReLU]["fill"] = "#FFA07A"
 
-img = visualtorch.render(model, input_shape, style="graph", show_neurons=False, color_map=color_map, layer_spacing=60)
+img = visualtorch.render(model, input_shape, style="layered", color_map=color_map, legend=True)
 
 plt.axis("off")
 plt.tight_layout()

@@ -5,6 +5,7 @@
 
 from pathlib import Path
 
+import numpy as np
 import pytest
 import torch
 import torch.nn.functional as func
@@ -339,3 +340,59 @@ def test_layered_view_deep_repeated_residual_blocks_stays_reasonably_sized() -> 
     img_6_blocks = layered_view(DeepModel(4, 6), input_shape=(1, 4, 8, 8))
 
     assert img_2_blocks.size[1] == img_6_blocks.size[1]
+
+
+def _non_background_pixel_count(img: Image.Image) -> int:
+    return int((np.array(img.convert("RGB")) != 255).any(axis=2).sum())
+
+
+def test_layered_view_funnels_survive_large_de_differences_between_layers() -> None:
+    """A funnel between two layers with very different 3D depth (`de`) must stay visible.
+
+    Regression test for a real bug: drawing every connector first and every box second (instead
+    of interleaving them column by column) let each box's opaque fill blot out large parts of
+    its own incoming funnel whenever neighboring layers have a very different `de` - which
+    barely showed on the small, near-constant-`de` models used to verify the layered_view
+    rewrite, but was highly visible on a real CNN (found by the user manually comparing
+    ReadTheDocs' `plot_basic_custom` example before/after the rewrite). Canvas *size* alone
+    doesn't catch this class of bug (box positions are unaffected, only which pixels get
+    painted), so this asserts on rendered content instead.
+    """
+
+    class SimpleCNN(nn.Module):
+        """The exact model from docs/examples/layered/plot_basic_custom.py."""
+
+        def __init__(self) -> None:
+            super().__init__()
+            self.conv1 = nn.Conv2d(3, 16, kernel_size=3, padding=1)
+            self.conv2 = nn.Conv2d(16, 32, kernel_size=3, padding=1)
+            self.conv3 = nn.Conv2d(32, 64, kernel_size=3, padding=1)
+            self.fc1 = nn.Linear(64 * 28 * 28, 128)
+            self.fc2 = nn.Linear(128, 10)
+
+        def forward(self, x: torch.Tensor) -> torch.Tensor:
+            """Forward pass with three shrinking conv/pool stages."""
+            x = self.conv1(x)
+            x = func.relu(x)
+            x = func.max_pool2d(x, 2, 2)
+            x = self.conv2(x)
+            x = func.relu(x)
+            x = func.max_pool2d(x, 2, 2)
+            x = self.conv3(x)
+            x = func.relu(x)
+            x = func.max_pool2d(x, 2, 2)
+            x = x.view(x.size(0), -1)
+            x = self.fc1(x)
+            x = func.relu(x)
+            return self.fc2(x)
+
+    img = layered_view(SimpleCNN(), input_shape=(1, 3, 224, 224), legend=True)
+
+    # Locked in from the current (fixed) implementation - confirmed pixel-identical to
+    # pre-rewrite main (1ee630e) via a git-worktree comparison for this exact model. The buggy
+    # intermediate version rendered thousands fewer non-background pixels here (missing funnel
+    # segments), so a wide but real tolerance still catches a regression of that class.
+    assert img.size == (153, 336)
+    non_bg = _non_background_pixel_count(img)
+    error_msg = f"non-background pixel count {non_bg} outside expected range - funnel likely broken"
+    assert 21000 <= non_bg <= 24000, error_msg

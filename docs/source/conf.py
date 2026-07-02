@@ -12,6 +12,7 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
+import matplotlib as mpl
 from sphinx_gallery.sorting import ExampleTitleSortKey, ExplicitOrder
 
 # Define the path to your module using Path
@@ -19,6 +20,15 @@ module_path = Path(__file__).parent.parent / "src"
 
 # Insert the path to sys.path
 sys.path.insert(0, str(module_path.resolve()))
+
+# Sphinx-Gallery captures each example's figure via matplotlib's savefig, at whatever DPI is
+# active during the doc build - matplotlib's own default (100) downscales anything larger than
+# 640x480 (the default figure size in inches times that DPI), which visibly blurs the thin
+# connector lines and small shape labels in the larger/more detailed generated diagrams. 300 DPI
+# matches standard print/publication figure resolution, since these diagrams are meant to be
+# usable directly in papers, not just viewed on a docs page.
+mpl.rcParams["savefig.dpi"] = 300
+mpl.rcParams["figure.dpi"] = 300
 
 project = "VisualTorch"
 copyright = "2024, Willy Fitra Hendria"  # noqa: A001
