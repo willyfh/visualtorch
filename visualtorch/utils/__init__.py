@@ -3,11 +3,7 @@
 # Copyright (C) 2024 Willy Fitra Hendria
 # SPDX-License-Identifier: MIT
 
-from .layer_utils import (
-    InputDummyLayer,
-    SpacingDummyLayer,
-    register_hook,
-)
+from .layer_utils import InputDummyLayer
 from .utils import (
     Box,
     Circle,
@@ -30,7 +26,5 @@ __all__ = [
     "linear_layout",
     "vertical_image_concat",
     "get_rgba_tuple",
-    "SpacingDummyLayer",
     "InputDummyLayer",
-    "register_hook",
 ]

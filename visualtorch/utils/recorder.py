@@ -3,8 +3,8 @@
 Traces a forward pass to recover, for every leaf module actually invoked, which other leaf
 module(s) produced its input(s) - without hardcoding supported layer types and without relying
 on private autograd attributes. Adapted from torchview's (github.com/mert-kurttutan/torchview)
-tensor-subclassing approach, stripped down to only what graph_view needs: one node per leaf
-module (mirroring the leaf definition already used by register_hook), not a node per tensor op.
+tensor-subclassing approach, stripped down to what every rendering style needs: one node per
+leaf module (a module with no children), not a node per tensor op.
 """
 
 # Copyright (C) 2024 Willy Fitra Hendria
@@ -139,11 +139,10 @@ def _wrapped_module_call(
         out = _orig_module_call(mod, *args, **kwargs)
 
         # Only leaf modules (no children) become graph nodes - containers such as
-        # nn.Sequential or a custom composite block are transparent plumbing, matching the
-        # leaf definition already used by register_hook for layered_view/lenet_view. A leaf
-        # module invoked more than once (e.g. weight sharing) gets a distinct node per call,
-        # keyed by a call-index suffix, so repeat calls don't collapse into a self-referential
-        # node that can never be placed in the topological layering.
+        # nn.Sequential or a custom composite block are transparent plumbing. A leaf module
+        # invoked more than once (e.g. weight sharing) gets a distinct node per call, keyed by
+        # a call-index suffix, so repeat calls don't collapse into a self-referential node that
+        # can never be placed in the topological layering.
         is_leaf = len(list(mod.children())) == 0
         if is_leaf:
             base_id = id(mod)
