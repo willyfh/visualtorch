@@ -17,14 +17,14 @@ from .backend import Architecture, extract_architecture
 from .connectors import compute_skip_levels, draw_connector
 from .utils.layer_utils import InputDummyLayer
 from .utils.traced_layer import TracedLayer
-from .utils.utils import ColorWheel, ImageDraw, StackedBox, get_rgba_tuple, self_multiply
+from .utils.utils import ColorWheel, ImageDraw, InputShape, StackedBox, get_rgba_tuple, self_multiply
 
 _LABEL_ROW_HEIGHT = 100
 
 
 def lenet_view(
     model: nn.Module | nn.Sequential | nn.ModuleList,
-    input_shape: tuple[int, ...],
+    input_shape: InputShape,
     to_file: str | None = None,
     min_z: int = 1,
     min_xy: int = 10,
@@ -52,7 +52,10 @@ def lenet_view(
 
     Args:
         model (torch.nn.Module): A torch model that will be visualized.
-        input_shape (tuple): The shape of the input tensor (default: (1, 3, 224, 224)).
+        input_shape (tuple): The shape of the input tensor (default: (1, 3, 224, 224)). For a
+            model whose forward() takes multiple separate input tensors, pass a tuple of
+            per-tensor shapes instead, one per positional argument in order, e.g.
+            ((1, 3, 224, 224), (1, 10)).
         to_file (str, optional): Path to the file to write the created image. Overwrite if exist.
             Image type is inferred from the file extension. Providing None will disable writing.
         min_z (int, optional): Minimum size in pixels that a layer will have along the z-axis.

@@ -83,6 +83,44 @@ def lstm_model() -> nn.Module:
 
 
 @pytest.fixture()
+def gru_model() -> nn.Module:
+    """Define a simple GRU model for testing."""
+
+    class GRUModel(nn.Module):
+        """A simple GRU model."""
+
+        def __init__(self, input_size: int, hidden_size: int, num_layers: int) -> None:
+            super().__init__()
+            self.gru = nn.GRU(input_size, hidden_size, num_layers, batch_first=True)
+
+        def forward(self, x: torch.Tensor) -> torch.Tensor:
+            """Forward pass."""
+            out, _ = self.gru(x)
+            return out
+
+    return GRUModel(input_size=10, hidden_size=20, num_layers=2)
+
+
+@pytest.fixture()
+def rnn_model() -> nn.Module:
+    """Define a simple plain RNN model for testing."""
+
+    class RNNModel(nn.Module):
+        """A simple RNN model."""
+
+        def __init__(self, input_size: int, hidden_size: int, num_layers: int) -> None:
+            super().__init__()
+            self.rnn = nn.RNN(input_size, hidden_size, num_layers, batch_first=True)
+
+        def forward(self, x: torch.Tensor) -> torch.Tensor:
+            """Forward pass."""
+            out, _ = self.rnn(x)
+            return out
+
+    return RNNModel(input_size=10, hidden_size=20, num_layers=2)
+
+
+@pytest.fixture()
 def classifier_model() -> nn.Module:
     """Define a model ending in a 1D (per-sample) output, e.g. classification logits."""
 
@@ -123,6 +161,16 @@ def test_custom_model_flow_view_runs(custom_model: nn.Module) -> None:
 def test_lstm_model_flow_view_runs(lstm_model: nn.Module) -> None:
     """Test flow view on lstm model."""
     _ = flow_view(lstm_model, input_shape=(1, 10, 10))
+
+
+def test_gru_model_flow_view_runs(gru_model: nn.Module) -> None:
+    """Test flow view on gru model."""
+    _ = flow_view(gru_model, input_shape=(1, 10, 10))
+
+
+def test_rnn_model_flow_view_runs(rnn_model: nn.Module) -> None:
+    """Test flow view on plain rnn model."""
+    _ = flow_view(rnn_model, input_shape=(1, 10, 10))
 
 
 @pytest.mark.parametrize("orientation", ["x", "y", "z"])
@@ -396,3 +444,30 @@ def test_flow_view_funnels_survive_large_de_differences_between_layers() -> None
     non_bg = _non_background_pixel_count(img)
     error_msg = f"non-background pixel count {non_bg} outside expected range - funnel likely broken"
     assert 21000 <= non_bg <= 24000, error_msg
+
+
+def test_flow_view_shows_all_input_boxes_for_multi_input_model() -> None:
+    """Unlike the single-input case, flow_view must not hide any of 2+ separate input boxes -
+    hiding one would make it ambiguous which arrow originates from which named input.
+    """  # noqa: D205
+    from visualtorch.backend import extract_architecture
+    from visualtorch.utils.layer_utils import InputDummyLayer
+
+    class TwoInputNet(nn.Module):
+        def __init__(self) -> None:
+            super().__init__()
+            self.a = nn.Linear(4, 4)
+            self.b = nn.Linear(4, 4)
+            self.head = nn.Linear(8, 2)
+
+        def forward(self, x: torch.Tensor, y: torch.Tensor) -> torch.Tensor:
+            return self.head(torch.cat([self.a(x), self.b(y)], dim=1))
+
+    architecture = extract_architecture(TwoInputNet(), ((1, 4), (1, 4)))
+    input_labels = {
+        layer.module.name() for layer in architecture.columns[0] if isinstance(layer.module, InputDummyLayer)
+    }
+    assert input_labels == {"input_0", "input_1"}
+
+    img = flow_view(TwoInputNet(), input_shape=((1, 4), (1, 4)))
+    assert img is not None

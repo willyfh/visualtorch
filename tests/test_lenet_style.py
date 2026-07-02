@@ -83,6 +83,44 @@ def lstm_model() -> nn.Module:
 
 
 @pytest.fixture()
+def gru_model() -> nn.Module:
+    """Define a simple GRU model for testing."""
+
+    class GRUModel(nn.Module):
+        """A simple GRU model."""
+
+        def __init__(self, input_size: int, hidden_size: int, num_layers: int) -> None:
+            super().__init__()
+            self.gru = nn.GRU(input_size, hidden_size, num_layers, batch_first=True)
+
+        def forward(self, x: torch.Tensor) -> torch.Tensor:
+            """Forward pass."""
+            out, _ = self.gru(x)
+            return out
+
+    return GRUModel(input_size=10, hidden_size=20, num_layers=2)
+
+
+@pytest.fixture()
+def rnn_model() -> nn.Module:
+    """Define a simple plain RNN model for testing."""
+
+    class RNNModel(nn.Module):
+        """A simple RNN model."""
+
+        def __init__(self, input_size: int, hidden_size: int, num_layers: int) -> None:
+            super().__init__()
+            self.rnn = nn.RNN(input_size, hidden_size, num_layers, batch_first=True)
+
+        def forward(self, x: torch.Tensor) -> torch.Tensor:
+            """Forward pass."""
+            out, _ = self.rnn(x)
+            return out
+
+    return RNNModel(input_size=10, hidden_size=20, num_layers=2)
+
+
+@pytest.fixture()
 def classifier_model() -> nn.Module:
     """Define a model ending in a 1D (per-sample) output, e.g. classification logits."""
 
@@ -123,6 +161,16 @@ def test_custom_model_lenet_view_runs(custom_model: nn.Module) -> None:
 def test_lstm_model_lenet_view_runs(lstm_model: nn.Module) -> None:
     """Test lenet view on lstm model."""
     _ = lenet_view(lstm_model, input_shape=(1, 10, 10))
+
+
+def test_gru_model_lenet_view_runs(gru_model: nn.Module) -> None:
+    """Test lenet view on gru model."""
+    _ = lenet_view(gru_model, input_shape=(1, 10, 10))
+
+
+def test_rnn_model_lenet_view_runs(rnn_model: nn.Module) -> None:
+    """Test lenet view on plain rnn model."""
+    _ = lenet_view(rnn_model, input_shape=(1, 10, 10))
 
 
 @pytest.mark.parametrize("orientation", ["x", "y", "z"])

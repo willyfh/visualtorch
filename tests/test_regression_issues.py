@@ -66,15 +66,6 @@ def test_self_multiply_handles_nested_shape() -> None:
     assert isinstance(result, int)
 
 
-def test_lenet_view_rejects_multi_input_shape_with_clear_error() -> None:
-    """Multi-tensor-input models aren't supported yet; the failure should be a clear ValueError."""
-    model = nn.Linear(10, 5)
-    multi_input_shape = ((1, 10), (1, 10))
-
-    with pytest.raises(ValueError, match="single"):
-        lenet_view(model, input_shape=multi_input_shape)
-
-
 def test_extract_architecture_records_multihead_attention_as_a_node() -> None:
     """nn.MultiheadAttention has a child (out_proj) but computes attention via a fused
     functional call on raw parameter tensors, never actually calling `self.out_proj(...)`.
@@ -98,23 +89,25 @@ def test_extract_architecture_records_multihead_attention_as_a_node() -> None:
     assert nn.MultiheadAttention in module_types
 
 
-def test_flow_view_lstm_sequence_length_does_not_inflate_diagram_height() -> None:
+@pytest.mark.parametrize("recurrent_cls", [nn.LSTM, nn.GRU, nn.RNN])
+def test_flow_view_recurrent_sequence_length_does_not_inflate_diagram_height(recurrent_cls: type) -> None:
     """An RNN's output shape (seq_len, hidden_size) has no channel axis. Before the fix,
     seq_len was misread as a channel/extrusion count, drawing that many stacked volume slices -
     illegible for any realistic sequence length. Diagram height must stay independent of
-    seq_len; only width should reflect it. See issue #85.
+    seq_len; only width should reflect it. See issue #85. Covers LSTM/GRU/RNN alike since all
+    three share the exact same tracer/box-sizing path.
     """  # noqa: D205
 
-    class LSTMModel(nn.Module):
+    class RecurrentModel(nn.Module):
         def __init__(self) -> None:
             super().__init__()
-            self.lstm = nn.LSTM(input_size=10, hidden_size=20, batch_first=True)
+            self.rnn = recurrent_cls(input_size=10, hidden_size=20, batch_first=True)
 
         def forward(self, x: torch.Tensor) -> torch.Tensor:
-            out, _ = self.lstm(x)
+            out, _ = self.rnn(x)
             return out
 
-    model = LSTMModel()
+    model = RecurrentModel()
     short_img = flow_view(model, input_shape=(1, 5, 10))
     long_img = flow_view(model, input_shape=(1, 200, 10))
 

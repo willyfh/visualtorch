@@ -196,13 +196,15 @@ class Recorder:
 
 def trace_module_graph(
     model: nn.Module,
-    input_shape: tuple[int, ...],
-) -> tuple[dict[str, nn.Module], dict[str, tuple[int, ...]], list[tuple[str, str]], str]:
+    input_shapes: tuple[tuple[int, ...], ...],
+) -> tuple[dict[str, nn.Module], dict[str, tuple[int, ...]], list[tuple[str, str]], list[str]]:
     """Trace a forward pass to recover the leaf-module call graph.
 
     Args:
         model (nn.Module): The model to trace.
-        input_shape (tuple): The shape of the dummy input tensor, including batch dim.
+        input_shapes (tuple): One shape tuple per input tensor (including batch dim each), in the
+            order forward() expects them positionally. A single-input model still passes a
+            length-1 tuple, e.g. `((1, 3, 224, 224),)`.
 
     Returns:
         tuple: A tuple containing:
@@ -210,10 +212,14 @@ def trace_module_graph(
                 called more than once gets one entry per call (`f"{id(module)}#{call_index}"`).
             - id_to_output_shape (dict): Mapping from node id to that module's output shape.
             - edges (list): `(producer_node_id, consumer_node_id)` pairs, in call order.
-            - input_id (str): The synthetic node id representing the traced input tensor.
+            - input_ids (list): One synthetic node id per input tensor, in the same order as
+                `input_shapes`.
     """
-    dummy_input = torch.rand(input_shape).as_subclass(RecorderTensor)
-    dummy_input._producer_ids = {INPUT_NODE_ID}  # noqa: SLF001
+    dummy_inputs = []
+    for i, shape in enumerate(input_shapes):
+        dummy = torch.rand(shape).as_subclass(RecorderTensor)
+        dummy._producer_ids = {f"{INPUT_NODE_ID}#{i}"}  # noqa: SLF001
+        dummy_inputs.append(dummy)
 
     id_to_module: dict[str, nn.Module] = {}
     id_to_output_shape: dict[str, tuple[int, ...]] = {}
@@ -224,10 +230,18 @@ def trace_module_graph(
         if isinstance(model, nn.ModuleList):
             # nn.ModuleList has no forward() of its own - it's a plain container, not meant to
             # be called directly - so drive it the same way a user would: chain each child call.
-            output: Any = dummy_input
+            # Chaining only makes sense for a single input tensor.
+            if len(dummy_inputs) != 1:
+                error_msg = (
+                    "An nn.ModuleList driven as a plain container only supports a single input "
+                    "tensor (each child layer is called on the previous child's output)."
+                )
+                raise ValueError(error_msg)
+            output: Any = dummy_inputs[0]
             for layer in model:
                 output = layer(output)
         else:
-            model(dummy_input)
+            model(*dummy_inputs)
 
-    return id_to_module, id_to_output_shape, edges, INPUT_NODE_ID
+    input_ids = [f"{INPUT_NODE_ID}#{i}" for i in range(len(input_shapes))]
+    return id_to_module, id_to_output_shape, edges, input_ids
