@@ -198,6 +198,15 @@ def test_graph_view_bare_leaf_module_as_model() -> None:
     assert img is not None
 
 
+def test_extract_architecture_supports_module_list_as_model() -> None:
+    """nn.ModuleList has no forward() of its own, so tracing must chain each child call manually."""
+    model = nn.ModuleList([nn.Linear(4, 8), nn.ReLU(), nn.Linear(8, 2)])
+    architecture = extract_architecture(model, input_shape=(1, 4))
+
+    traced_types = {type(wrapper.module) for column in architecture.columns for wrapper in column}
+    assert {nn.Linear, nn.ReLU}.issubset(traced_types)
+
+
 def test_extract_architecture_wires_deeper_direct_input_consumer() -> None:
     """A node that reads the raw input directly, in addition to a hidden predecessor, still gets its input edge."""
 

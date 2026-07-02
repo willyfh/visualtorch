@@ -218,6 +218,13 @@ def trace_module_graph(
     call_counts: dict[int, int] = {}
 
     with Recorder(id_to_module, id_to_output_shape, edges, call_counts):
-        model(dummy_input)
+        if isinstance(model, nn.ModuleList):
+            # nn.ModuleList has no forward() of its own - it's a plain container, not meant to
+            # be called directly - so drive it the same way a user would: chain each child call.
+            output: Any = dummy_input
+            for layer in model:
+                output = layer(output)
+        else:
+            model(dummy_input)
 
     return id_to_module, id_to_output_shape, edges, INPUT_NODE_ID

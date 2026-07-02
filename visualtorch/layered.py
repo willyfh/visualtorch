@@ -4,17 +4,19 @@
 # Copyright (C) 2024 Willy Fitra Hendria
 # SPDX-License-Identifier: MIT
 
-from collections import OrderedDict, defaultdict
+from collections import defaultdict
+from collections.abc import Callable
 from math import ceil
-from typing import Any
 
 import aggdraw
 import PIL
-import torch
 from PIL import Image, ImageFont
 from torch import nn
 
-from .utils.layer_utils import SpacingDummyLayer, register_hook
+from ._volumetric_layout import ColumnLayout, layout_columns
+from .backend import Architecture, extract_architecture
+from .connectors import compute_skip_levels, draw_connector
+from .utils.traced_layer import TracedLayer
 from .utils.utils import (
     Box,
     ColorWheel,
@@ -22,7 +24,6 @@ from .utils.utils import (
     get_rgba_tuple,
     linear_layout,
     self_multiply,
-    validate_input_shape,
     vertical_image_concat,
 )
 
@@ -38,7 +39,6 @@ def layered_view(
     scale_z: float = 0.1,
     scale_xy: float = 1,
     type_ignore: list | None = None,
-    index_ignore: list | None = None,
     color_map: dict | None = None,
     one_dim_orientation: str = "z",
     background_fill: str | tuple[int, ...] = "white",
@@ -52,6 +52,7 @@ def layered_view(
     font_color: str | tuple[int, ...] = "black",
     opacity: int = 255,
     show_dimension: bool = False,
+    level_gap: int | None = None,
 ) -> PIL.Image:
     """Generate a layered architecture visualization for a given torch model.
 
@@ -67,7 +68,6 @@ def layered_view(
         scale_z (float, optional): Scalar multiplier for the size of each layer along the z-axis.
         scale_xy (float, optional): Scalar multiplier for the size of each layer along the x and y axes.
         type_ignore (list, optional): List of layer types in the torch model to ignore during drawing.
-        index_ignore (list, optional): List of layer indexes in the torch model to ignore during drawing.
         color_map (dict, optional): Dictionary defining fill and outline colors for each layer by class type.
             Will fallback to default values for unspecified classes.
         one_dim_orientation (str, optional): Axis on which one-dim layers should be drawn. E.g., 'x', 'y', or 'z'.
@@ -82,71 +82,69 @@ def layered_view(
         font_color (str or tuple, optional): Color for the font if used. Can be a string or a tuple (R, G, B, A).
         opacity (int): Transparency of the color (0 ~ 255).
         show_dimension (bool, optional): If True, print each layer's output shape below it.
+        level_gap (int, optional): Vertical spacing in pixels between stacked skip-connection detour
+            routes. If None, defaults to 50.
 
     Returns:
         PIL.Image: An Image object representing the generated architecture visualization.
     """
-    # Iterate over the model to compute bounds and generate boxes
-
-    validate_input_shape(input_shape)
-
-    x_off = -1
-
-    img_height = 0
-    max_right: float = 0
-
     if type_ignore is None:
         type_ignore = []
-
-    if index_ignore is None:
-        index_ignore = []
 
     _color_map: dict = {}
     if color_map is not None:
         _color_map = defaultdict(dict, color_map)
 
-    dummy_input = torch.rand(*input_shape)
+    architecture = extract_architecture(model, input_shape)
 
-    # Get the list of layers
+    # The synthetic input column has no counterpart in this style (layered_view never drew an
+    # "Input" box even before the v2 backend unification), so it's dropped by default - unless
+    # the input feeds more than one consumer, e.g. a residual block whose shortcut is the raw
+    # input (`identity = x`): dropping the input node would silently discard that edge (it would
+    # reference a node with no box to connect), making the skip invisible rather than routed.
+    input_node_id = architecture.columns[0][0].node_id
+    input_out_degree = int(architecture.adjacency[architecture.id_to_index[input_node_id]].sum())
+    raw_columns = architecture.columns if input_out_degree > 1 else architecture.columns[1:]
 
-    layers: OrderedDict[str, Any] = OrderedDict()
-    hooks: list[Any] = []
+    filtered_columns = [[layer for layer in column if type(layer.module) not in type_ignore] for column in raw_columns]
+    filtered_columns = [column for column in filtered_columns if column]
 
-    model.apply(lambda module: register_hook(model, module, hooks, layers))
-
-    with torch.no_grad():
-        if isinstance(model, nn.ModuleList):
-            output = dummy_input
-            for layer in model:
-                output = layer(output)
-        else:
-            output = model(dummy_input)
-
-    # remove these hooks
-    for h in hooks:
-        h.remove()
-
-    layer_y, layer_types, boxes, x_off, img_height, max_right = _create_architecture(
-        layers,
-        x_off,
-        img_height,
-        max_right,
-        type_ignore,
-        index_ignore,
-        min_xy,
-        min_z,
+    layer_types: list[type] = []
+    color_wheel = ColorWheel()
+    make_box = _box_factory(
         one_dim_orientation,
         scale_xy,
+        min_xy,
         max_xy,
         scale_z,
+        min_z,
         max_z,
         draw_volume,
         shade_step,
-        spacing,
         _color_map,
         opacity,
+        color_wheel,
+        layer_types,
+    )
+    column_layout = layout_columns(
+        filtered_columns,
+        make_box,
+        lambda box: max(spacing, getattr(box, "de", 0)),
+        spacing,
         padding,
     )
+
+    edge_to_level, num_levels = compute_skip_levels(
+        (
+            edge
+            for edge in architecture.edges()
+            if edge[0] in column_layout.id_to_box and edge[1] in column_layout.id_to_box
+        ),
+        architecture.id_to_column,
+        lambda *_: True,
+    )
+    resolved_level_gap = level_gap if level_gap is not None else 50
+    top_margin_for_skips = num_levels * resolved_level_gap
 
     if font is None and (show_dimension or legend):
         font = ImageFont.load_default()
@@ -155,13 +153,19 @@ def layered_view(
     # boxes can still be centered within just the diagram area (not the extended canvas),
     # and so labels never clip or overlap the diagram itself.
     label_row_height = 0
+    img_width = column_layout.img_width
     if show_dimension:
         label_row_height = font.getbbox("Ag")[3] + 5
-        max_right = _fit_dimension_labels(boxes, font, x_off, max_right)
+        fitted_max_right = _fit_dimension_labels(
+            column_layout.boxes_by_column,
+            font,
+            column_layout.x_off,
+            column_layout.max_right,
+        )
+        img_width = fitted_max_right + column_layout.x_off + padding
 
     # Generate image
-    img_width = max_right + x_off + padding
-    diagram_height = img_height
+    diagram_height = top_margin_for_skips + column_layout.diagram_height
     img = Image.new(
         "RGBA",
         (int(ceil(img_width)), int(ceil(diagram_height + label_row_height))),
@@ -169,13 +173,28 @@ def layered_view(
     )
     draw = aggdraw.Draw(img)
 
-    _center_and_draw_boxes(draw, boxes, layer_y, diagram_height, x_off, draw_funnel)
+    _apply_centering(column_layout, top_margin_for_skips, column_layout.diagram_height)
+
+    _draw_connectors(
+        draw,
+        architecture,
+        column_layout,
+        edge_to_level,
+        num_levels,
+        padding,
+        resolved_level_gap,
+        draw_funnel,
+    )
+
+    for column in column_layout.boxes_by_column:
+        for box in column:
+            box.draw(draw)
 
     draw.flush()
 
     # Print each layer's output shape in the reserved row below the diagram
     if show_dimension:
-        img = _draw_dimension_labels(img, boxes, diagram_height, font, font_color)
+        img = _draw_dimension_labels(img, column_layout.boxes_by_column, diagram_height, font, font_color)
 
     # Create layer color legend
     if legend:
@@ -201,56 +220,133 @@ def layered_view(
     return img
 
 
-def _center_and_draw_boxes(
+def _box_factory(
+    one_dim_orientation: str,
+    scale_xy: float,
+    min_xy: int,
+    max_xy: int,
+    scale_z: float,
+    min_z: int,
+    max_z: int,
+    draw_volume: bool,
+    shade_step: int,
+    color_map: dict,
+    opacity: int,
+    color_wheel: ColorWheel,
+    layer_types: list[type],
+) -> Callable[[TracedLayer], Box]:
+    """Build a `make_box` callback: given a traced layer, return a sized, unpositioned `Box`."""
+
+    def make_box(layer: TracedLayer) -> Box:
+        shape = layer.output_shape[1:]  # drop batch size
+
+        if len(shape) == 1:
+            if one_dim_orientation in ("x", "y", "z"):
+                shape = (1,) * "cxyz".index(one_dim_orientation) + shape
+            else:
+                error_msg = f"unsupported orientation: {one_dim_orientation}"
+                raise ValueError(error_msg)
+
+        ori_shape = shape
+        shape = shape + (1,) * (4 - len(shape))  # expand 4D.
+
+        x = min(max(shape[1] * scale_xy, min_xy), max_xy)
+        y = min(max(shape[2] * scale_xy, min_xy), max_xy)
+        z = min(max(int(self_multiply(shape[0:1] + shape[3:]) * scale_z), min_z), max_z)
+
+        layer_type = type(layer.module)
+        if layer_type not in layer_types:
+            layer_types.append(layer_type)
+
+        box = Box()
+        box.output_shape = tuple(ori_shape)
+        box.de = int(x / 3) if draw_volume else 0
+
+        box.x1 = 0
+        box.y1 = 0
+        box.x2 = z
+        box.y2 = y
+
+        box.set_fill(
+            color_map.get(layer_type, {}).get("fill", color_wheel.get_color(layer_type)),
+            opacity,
+        )
+        box.outline = color_map.get(layer_type, {}).get("outline", "black")
+        color_map[layer_type] = {"fill": box.fill, "outline": box.outline}
+
+        box.shade = shade_step
+        return box
+
+    return make_box
+
+
+def _apply_centering(column_layout: ColumnLayout, top_margin_for_skips: float, band_height: float) -> None:
+    """Center each column vertically within the band below the reserved skip-detour strip."""
+    for column, column_height in zip(column_layout.boxes_by_column, column_layout.column_heights, strict=True):
+        y_off = top_margin_for_skips + (band_height - column_height) / 2
+        for box in column:
+            box.y1 += y_off
+            box.y2 += y_off
+            box.x1 += column_layout.x_off
+            box.x2 += column_layout.x_off
+
+
+def _draw_funnel(draw: aggdraw.Draw, start_box: Box, end_box: Box) -> None:
+    """Draw a tapered funnel connecting two boxes in adjacent columns."""
+    pen = aggdraw.Pen(get_rgba_tuple(end_box.outline))
+    start_de = getattr(start_box, "de", 0)
+    end_de = getattr(end_box, "de", 0)
+
+    draw.line(
+        [start_box.x2 + start_de, start_box.y1 - start_de, end_box.x1 + end_de, end_box.y1 - end_de],
+        pen,
+    )
+    draw.line(
+        [start_box.x2 + start_de, start_box.y2 - start_de, end_box.x1 + end_de, end_box.y2 - end_de],
+        pen,
+    )
+    draw.line([start_box.x2, start_box.y2, end_box.x1, end_box.y2], pen)
+    draw.line([start_box.x2, start_box.y1, end_box.x1, end_box.y1], pen)
+
+
+def _draw_connectors(
     draw: aggdraw.Draw,
-    boxes: list[Box],
-    layer_y: list,
-    diagram_height: float,
-    x_off: int,
-    draw_funnel: bool,
+    architecture: Architecture,
+    column_layout: ColumnLayout,
+    edge_to_level: dict[tuple[str, str], int],
+    num_levels: int,
+    padding: int,
+    resolved_level_gap: int,
+    draw_funnel_flag: bool,
 ) -> None:
-    """Center each box vertically within the diagram area, then draw boxes and funnels."""
-    for i, node in enumerate(boxes):
-        y_off = (diagram_height - layer_y[i]) / 2
-        node.y1 += y_off
-        node.y2 += y_off
+    """Draw every connector: a funnel for adjacent columns, a routed line for skips.
 
-        node.x1 += x_off
-        node.x2 += x_off
+    Skip connections (spanning more than one column) always draw, regardless of `draw_funnel_flag`
+    - a funnel implies a continuous volume flowing between two layers, which a skip connection
+    isn't, and it should never become invisible just because funnels are toggled off.
+    """
+    for start_id, end_id in architecture.edges():
+        if start_id not in column_layout.id_to_box or end_id not in column_layout.id_to_box:
+            continue  # the synthetic input node has no box in this style
 
-    last_box = None
+        start_box = column_layout.id_to_box[start_id]
+        end_box = column_layout.id_to_box[end_id]
+        level = edge_to_level.get((start_id, end_id))
 
-    for box in boxes:
-        pen = aggdraw.Pen(get_rgba_tuple(box.outline))
-
-        if last_box is not None and draw_funnel:
-            draw.line(
-                [
-                    last_box.x2 + last_box.de,
-                    last_box.y1 - last_box.de,
-                    box.x1 + box.de,
-                    box.y1 - box.de,
-                ],
-                pen,
+        if level is not None:
+            detour_y = padding + (num_levels - 1 - level) * resolved_level_gap
+            draw_connector(
+                draw,
+                start_box.x2,
+                (start_box.y1 + start_box.y2) / 2,
+                end_box.x1,
+                (end_box.y1 + end_box.y2) / 2,
+                color=end_box.outline,
+                width=1,
+                detour_y=detour_y,
             )
-
-            draw.line(
-                [
-                    last_box.x2 + last_box.de,
-                    last_box.y2 - last_box.de,
-                    box.x1 + box.de,
-                    box.y2 - box.de,
-                ],
-                pen,
-            )
-
-            draw.line([last_box.x2, last_box.y2, box.x1, box.y2], pen)
-
-            draw.line([last_box.x2, last_box.y1, box.x1, box.y1], pen)
-
-        box.draw(draw)
-
-        last_box = box
+        elif draw_funnel_flag:
+            _draw_funnel(draw, start_box, end_box)
 
 
 def _draw_legend(
@@ -318,37 +414,49 @@ def _draw_legend(
     return vertical_image_concat(img, legend_image, background_fill=background_fill)
 
 
+def _column_label_and_center(column: list[Box]) -> tuple[str, float]:
+    """A column's shape label (joined across branches) and its shared x-center."""
+    label = " / ".join(str(box.output_shape) for box in column)
+    center_x = (column[0].x1 + column[0].x2) / 2
+    return label, center_x
+
+
 def _fit_dimension_labels(
-    boxes: list[Box],
+    boxes_by_column: list[list[Box]],
     font: ImageFont,
-    x_off: int,
+    x_off: float,
     max_right: float,
 ) -> float:
-    """Reposition boxes so shape labels never overlap each other or clip the canvas edges.
+    """Reposition columns so shape labels never overlap each other or clip the canvas edges.
 
-    Closely packed, thin layers would otherwise smear adjacent shape labels together, so the
-    gap between boxes is widened wherever their labels would collide, and the whole diagram is
-    extended (shifted right, if necessary) so the outermost labels - which can be wider than
-    the box they belong to - never run past the left or right edge.
+    Closely packed, thin columns would otherwise smear adjacent shape labels together, so the
+    gap between columns is widened wherever their labels would collide, and the whole diagram is
+    extended (shifted right, if necessary) so the outermost labels - which can be wider than the
+    column they belong to - never run past the left or right edge. A column with more than one
+    box (a branch) gets one combined label (joined with " / "), since every box in a column
+    shares the same x-position and would otherwise draw overlapping labels.
 
     Returns:
         float: The updated `max_right` bound after any widening/shifting.
     """
-    label_widths = [font.getbbox(str(box.output_shape))[2] for box in boxes]
+    non_empty_columns = [column for column in boxes_by_column if column]
+    label_widths = [font.getbbox(_column_label_and_center(column)[0])[2] for column in non_empty_columns]
 
     shift = 0.0
     prev_center: float | None = None
     prev_label_width = 0.0
-    for box, label_width in zip(boxes, label_widths, strict=True):
-        box.x1 += shift
-        box.x2 += shift
-        center = (box.x1 + box.x2) / 2
+    for column, label_width in zip(non_empty_columns, label_widths, strict=True):
+        for box in column:
+            box.x1 += shift
+            box.x2 += shift
+        center = (column[0].x1 + column[0].x2) / 2
         if prev_center is not None:
             min_gap = (prev_label_width + label_width) / 2 + 5
             if center - prev_center < min_gap:
                 extra = min_gap - (center - prev_center)
-                box.x1 += extra
-                box.x2 += extra
+                for box in column:
+                    box.x1 += extra
+                    box.x2 += extra
                 shift += extra
                 center += extra
         prev_center = center
@@ -357,142 +465,36 @@ def _fit_dimension_labels(
 
     extra_left = 0.0
     extra_right = 0.0
-    for box, label_width in zip(boxes, label_widths, strict=True):
-        center = (box.x1 + box.x2) / 2
+    for column, label_width in zip(non_empty_columns, label_widths, strict=True):
+        center = (column[0].x1 + column[0].x2) / 2
         extra_left = max(extra_left, label_width / 2 - (center + x_off))
         extra_right = max(extra_right, (center + label_width / 2) - max_right)
     if extra_left > 0:
-        for box in boxes:
-            box.x1 += extra_left
-            box.x2 += extra_left
+        for column in non_empty_columns:
+            for box in column:
+                box.x1 += extra_left
+                box.x2 += extra_left
         max_right += extra_left
+
     return max_right + max(extra_right, 0.0)
 
 
 def _draw_dimension_labels(
     img: PIL.Image,
-    boxes: list[Box],
+    boxes_by_column: list[list[Box]],
     diagram_height: float,
     font: ImageFont,
     font_color: str | tuple[int, ...],
 ) -> PIL.Image:
-    """Draw each box's output shape centered beneath it, in the reserved label row."""
+    """Draw each column's output shape(s) centered beneath it, in the reserved label row."""
     text_img = Image.new("RGBA", img.size, (0, 0, 0, 0))
     draw_text = ImageDraw.Draw(text_img)
 
-    for box in boxes:
-        label = str(box.output_shape)
+    for column in boxes_by_column:
+        if not column:
+            continue
+        label, center_x = _column_label_and_center(column)
         text_width = font.getbbox(label)[2]
-        text_x = (box.x1 + box.x2) / 2 - text_width / 2
-        draw_text.text((text_x, diagram_height + 2), label, font=font, fill=font_color)
+        draw_text.text((center_x - text_width / 2, diagram_height + 2), label, font=font, fill=font_color)
 
     return Image.alpha_composite(img, text_img)
-
-
-def _create_architecture(
-    layers: OrderedDict[str, Any],
-    x_off: int,
-    img_height: int,
-    max_right: float,
-    type_ignore: list,
-    index_ignore: list,
-    min_xy: int,
-    min_z: int,
-    one_dim_orientation: str,
-    scale_xy: float,
-    max_xy: int,
-    scale_z: float,
-    max_z: int,
-    draw_volume: bool,
-    shade_step: int,
-    spacing: int,
-    color_map: dict,
-    opacity: int,
-    padding: int,
-) -> tuple:
-    boxes = []
-    layer_types = []
-    layer_y = []
-    color_wheel = ColorWheel()
-    current_z = padding
-
-    for index, key in enumerate(layers):
-        layer = layers[key]["module"]
-        shape = layers[key]["output_shape"]
-        # Do no render the SpacingDummyLayer, just increase the pointer
-        if type(layer) is SpacingDummyLayer:
-            current_z += layer.spacing
-            continue
-
-        # Ignore layers that the use has opted out to
-        if type(layer) in type_ignore or index in index_ignore:
-            continue
-
-        layer_type = type(layer)
-
-        if layer_type not in layer_types:
-            layer_types.append(layer_type)
-
-        x = min_xy
-        y = min_xy
-        z = min_z
-
-        shape = shape[1:]  # drop batch size
-
-        if len(shape) == 1:
-            if one_dim_orientation in ["x", "y", "z"]:
-                shape = (1,) * "cxyz".index(one_dim_orientation) + shape
-            else:
-                error_msg = f"unsupported orientation: {one_dim_orientation}"
-                raise ValueError(error_msg)
-
-        ori_shape = shape
-        shape = shape + (1,) * (4 - len(shape))  # expand 4D.
-
-        x = min(max(shape[1] * scale_xy, x), max_xy)
-        y = min(max(shape[2] * scale_xy, y), max_xy)
-        z = min(max(int(self_multiply(shape[0:1] + shape[3:]) * scale_z), z), max_z)
-
-        box = Box()
-        box.output_shape = tuple(ori_shape)
-
-        box.de = 0
-        if draw_volume:
-            box.de = int(x / 3)
-
-        if x_off == -1:
-            x_off = int(box.de / 2)
-
-        # top left coordinate
-        box.x1 = current_z - int(box.de / 2)
-        box.y1 = box.de
-
-        # bottom right coordinate
-        box.x2 = box.x1 + z
-        box.y2 = box.y1 + y
-
-        box.set_fill(
-            color_map.get(layer_type, {}).get(
-                "fill",
-                color_wheel.get_color(layer_type),
-            ),
-            opacity,
-        )
-        box.outline = color_map.get(layer_type, {}).get("outline", "black")
-        color_map[layer_type] = {"fill": box.fill, "outline": box.outline}
-
-        box.shade = shade_step
-        boxes.append(box)
-        layer_y.append(box.y2 - (box.y1 - box.de))
-
-        # Update image bounds
-        hh = box.y2 - (box.y1 - box.de)
-        if hh > img_height:
-            img_height = hh
-
-        if box.x2 + box.de > max_right:
-            max_right = box.x2 + box.de
-
-        current_z += z + spacing
-
-    return layer_y, layer_types, boxes, x_off, img_height, max_right
