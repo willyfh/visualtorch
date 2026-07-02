@@ -47,7 +47,7 @@ Originally, this project was based on the [visualkeras](https://github.com/paulg
 
 ## Citation
 
-Note: v1.0.0 has breaking API changes. For the old API, use `pip install visualtorch==0.2.5`.
+Note: `1.0.0` is a major release with breaking API changes, but with significantly better features and algorithms - upgrading is recommended. For the old API, use `0.2.5` or older.
 
 Please cite this project in your publications if it helps your research.
 
