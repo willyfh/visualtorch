@@ -1,6 +1,6 @@
 """Regression tests for shape-handling crashes reported in open GitHub issues.
 
-See https://github.com/willyfh/visualtorch/issues/63, /68, /69.
+See https://github.com/willyfh/visualtorch/issues/63, /68, /69, /84, /85.
 """
 
 # Copyright (C) 2024 Willy Fitra Hendria
@@ -9,6 +9,7 @@ See https://github.com/willyfh/visualtorch/issues/63, /68, /69.
 import pytest
 import torch
 from torch import nn
+from visualtorch.backend import extract_architecture
 from visualtorch.flow import flow_view
 from visualtorch.lenet_style import lenet_view
 from visualtorch.utils.utils import self_multiply
@@ -72,3 +73,49 @@ def test_lenet_view_rejects_multi_input_shape_with_clear_error() -> None:
 
     with pytest.raises(ValueError, match="single"):
         lenet_view(model, input_shape=multi_input_shape)
+
+
+def test_extract_architecture_records_multihead_attention_as_a_node() -> None:
+    """nn.MultiheadAttention has a child (out_proj) but computes attention via a fused
+    functional call on raw parameter tensors, never actually calling `self.out_proj(...)`.
+    Without a fallback, neither it nor its child would ever become a traced node, silently
+    dropping the attention computation from every render style. See issue #84.
+    """  # noqa: D205
+
+    class TinyTransformer(nn.Module):
+        def __init__(self) -> None:
+            super().__init__()
+            self.embed = nn.Linear(16, 32)
+            encoder_layer = nn.TransformerEncoderLayer(d_model=32, nhead=4, dim_feedforward=64, batch_first=True)
+            self.encoder = nn.TransformerEncoder(encoder_layer, num_layers=1)
+
+        def forward(self, x: torch.Tensor) -> torch.Tensor:
+            return self.encoder(self.embed(x))
+
+    architecture = extract_architecture(TinyTransformer(), (1, 10, 16))
+    module_types = {type(layer.module) for column in architecture.columns for layer in column}
+
+    assert nn.MultiheadAttention in module_types
+
+
+def test_flow_view_lstm_sequence_length_does_not_inflate_diagram_height() -> None:
+    """An RNN's output shape (seq_len, hidden_size) has no channel axis. Before the fix,
+    seq_len was misread as a channel/extrusion count, drawing that many stacked volume slices -
+    illegible for any realistic sequence length. Diagram height must stay independent of
+    seq_len; only width should reflect it. See issue #85.
+    """  # noqa: D205
+
+    class LSTMModel(nn.Module):
+        def __init__(self) -> None:
+            super().__init__()
+            self.lstm = nn.LSTM(input_size=10, hidden_size=20, batch_first=True)
+
+        def forward(self, x: torch.Tensor) -> torch.Tensor:
+            out, _ = self.lstm(x)
+            return out
+
+    model = LSTMModel()
+    short_img = flow_view(model, input_shape=(1, 5, 10))
+    long_img = flow_view(model, input_shape=(1, 200, 10))
+
+    assert long_img.height == short_img.height
