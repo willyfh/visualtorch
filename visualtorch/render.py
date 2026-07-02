@@ -21,6 +21,7 @@ from torch import nn
 from .flow import flow_view
 from .graph import graph_view
 from .lenet_style import lenet_view
+from .utils.utils import InputShape
 
 Style = Literal["graph", "flow", "lenet"]
 
@@ -89,11 +90,12 @@ class LenetStyleOptions:
     shade_step: int = 10
     max_channels: int = 100
     offset_z: int = 10
+    show_dimension: bool = True
 
 
 def _render_graph(
     model: nn.Module,
-    input_shape: tuple[int, ...],
+    input_shape: InputShape,
     options: GraphStyleOptions,
     common: CommonOptions,
 ) -> Image.Image:
@@ -121,7 +123,7 @@ def _render_graph(
 
 def _render_flow(
     model: nn.Module,
-    input_shape: tuple[int, ...],
+    input_shape: InputShape,
     options: FlowStyleOptions,
     common: CommonOptions,
 ) -> Image.Image:
@@ -155,7 +157,7 @@ def _render_flow(
 
 def _render_lenet(
     model: nn.Module,
-    input_shape: tuple[int, ...],
+    input_shape: InputShape,
     options: LenetStyleOptions,
     common: CommonOptions,
 ) -> Image.Image:
@@ -182,6 +184,7 @@ def _render_lenet(
         max_channels=options.max_channels,
         offset_z=options.offset_z,
         level_gap=common.level_gap,
+        show_dimension=options.show_dimension,
     )
 
 
@@ -196,7 +199,7 @@ _COMMON_FIELDS = {f.name for f in fields(CommonOptions)}
 
 def render(
     model: nn.Module,
-    input_shape: tuple[int, ...],
+    input_shape: InputShape,
     style: Style = "graph",
     **kwargs: Any,  # noqa: ANN401
 ) -> Image.Image:
@@ -204,7 +207,10 @@ def render(
 
     Args:
         model (torch.nn.Module): A PyTorch model that will be visualized.
-        input_shape (tuple): The shape of the input tensor, including batch dim.
+        input_shape (tuple): The shape of the input tensor, including batch dim. For a model
+            whose forward() takes multiple separate input tensors, pass a tuple of per-tensor
+            shapes instead, one per positional argument in order, e.g.
+            ((1, 3, 224, 224), (1, 10)).
         style (str, optional): Which rendering style to use - `"graph"` (a node/edge diagram),
             `"flow"` (stacked volumetric/2D boxes connected by funnels), or `"lenet"` (the
             classic LeNet look).

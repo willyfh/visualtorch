@@ -7,7 +7,13 @@
 
 **VisualTorch** aims to help visualize Torch-based neural network architectures. It currently supports generating flow-style, graph-style, and LeNet-style architectures for PyTorch Sequential and Custom models. This tool is adapted from [visualkeras](https://github.com/paulgavrikov/visualkeras), [pytorchviz](https://github.com/szagoruyko/pytorchviz), and [pytorch-summary](https://github.com/sksq96/pytorch-summary).
 
-**Note:** VisualTorch may not yet support complex models, but contributions are welcome!
+**Note:** VisualTorch traces a real forward pass to build the diagram, which has two inherent
+limitations shared by any tracing-based approach (not bugs, and not fixable without full symbolic
+execution): (1) models with **data-dependent control flow** (e.g. a branch only taken if a tensor
+value crosses some threshold) only show whichever branch the traced dummy input happened to take;
+(2) a layer that returns **multiple meaningful output tensors** (e.g. a custom multi-task head)
+only has its first tensor's shape reflected in that node's size/label - its downstream connections
+are still correct either way. Contributions are welcome!
 
 <div align="center">
 

@@ -17,14 +17,14 @@ from .backend import Architecture, extract_architecture
 from .connectors import compute_skip_levels, draw_connector
 from .utils.layer_utils import InputDummyLayer
 from .utils.traced_layer import TracedLayer
-from .utils.utils import ColorWheel, ImageDraw, StackedBox, get_rgba_tuple, self_multiply
+from .utils.utils import ColorWheel, ImageDraw, InputShape, StackedBox, get_rgba_tuple, self_multiply
 
 _LABEL_ROW_HEIGHT = 100
 
 
 def lenet_view(
     model: nn.Module | nn.Sequential | nn.ModuleList,
-    input_shape: tuple[int, ...],
+    input_shape: InputShape,
     to_file: str | None = None,
     min_z: int = 1,
     min_xy: int = 10,
@@ -45,6 +45,7 @@ def lenet_view(
     max_channels: int = 100,
     offset_z: int = 10,
     level_gap: int | None = None,
+    show_dimension: bool = True,
 ) -> PIL.Image:
     """Generate a LeNet style architecture visualization for a given torch model.
 
@@ -52,7 +53,10 @@ def lenet_view(
 
     Args:
         model (torch.nn.Module): A torch model that will be visualized.
-        input_shape (tuple): The shape of the input tensor (default: (1, 3, 224, 224)).
+        input_shape (tuple): The shape of the input tensor (default: (1, 3, 224, 224)). For a
+            model whose forward() takes multiple separate input tensors, pass a tuple of
+            per-tensor shapes instead, one per positional argument in order, e.g.
+            ((1, 3, 224, 224), (1, 10)).
         to_file (str, optional): Path to the file to write the created image. Overwrite if exist.
             Image type is inferred from the file extension. Providing None will disable writing.
         min_z (int, optional): Minimum size in pixels that a layer will have along the z-axis.
@@ -76,6 +80,10 @@ def lenet_view(
         offset_z (int): control the offset of overlapping between channels.
         level_gap (int, optional): Vertical spacing in pixels between stacked skip-connection detour
             routes. If None, defaults to 50.
+        show_dimension (bool, optional): If True (the default), print each layer's output shape
+            below it. For a model with parallel branches (e.g. multi-branch merges or multiple
+            input tensors), several boxes can share a column and their labels may overlap - set
+            this to False to drop the labels entirely in that case.
 
     Returns:
         PIL.Image: An Image object representing the generated architecture visualization.
@@ -147,11 +155,12 @@ def lenet_view(
         default=0,
     )
 
+    label_row_height = _LABEL_ROW_HEIGHT if show_dimension else 0
     img_width = column_layout.img_width
     diagram_height = top_margin_for_skips + spread_margin + column_layout.diagram_height
     img = Image.new(
         "RGBA",
-        (int(ceil(img_width)), ceil(diagram_height) + _LABEL_ROW_HEIGHT),
+        (int(ceil(img_width)), ceil(diagram_height) + label_row_height),
         background_fill,
     )
     draw = aggdraw.Draw(img)
@@ -163,7 +172,8 @@ def lenet_view(
 
     draw.flush()
 
-    img = _draw_labels(img, column_layout.boxes_by_column, font, font_color)
+    if show_dimension:
+        img = _draw_labels(img, column_layout.boxes_by_column, font, font_color)
 
     if to_file is not None:
         img.save(to_file)
@@ -362,7 +372,7 @@ def _draw_labels(
     font: ImageFont,
     font_color: str | tuple[int, ...],
 ) -> PIL.Image:
-    """Draw every box's label (always on, unlike flow_view's opt-in show_dimension)."""
+    """Draw every box's label (on by default, unlike flow_view's opt-in show_dimension)."""
     text_img = Image.new("RGBA", img.size, (255, 255, 255, 0))
     draw_text = ImageDraw.Draw(text_img)
 

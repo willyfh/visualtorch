@@ -15,12 +15,12 @@ from PIL import Image, ImageFont
 from .backend import Architecture, extract_architecture
 from .connectors import compute_skip_levels, draw_connector
 from .utils.traced_layer import TracedLayer
-from .utils.utils import Box, Circle, ColorWheel, Ellipses, ImageDraw
+from .utils.utils import Box, Circle, ColorWheel, Ellipses, ImageDraw, InputShape
 
 
 def graph_view(
     model: torch.nn.Module,
-    input_shape: tuple[int, ...],
+    input_shape: InputShape,
     to_file: str | None = None,
     color_map: dict[Any, Any] | None = None,
     node_size: int = 50,
@@ -42,7 +42,9 @@ def graph_view(
 
     Args:
         model (torch.nn.Module): A PyTorch model that will be visualized.
-        input_shape (tuple): The shape of the input tensor.
+        input_shape (tuple): The shape of the input tensor. For a model whose forward() takes
+            multiple separate input tensors, pass a tuple of per-tensor shapes instead, one per
+            positional argument in order, e.g. ((1, 3, 224, 224), (1, 10)).
         to_file (str, optional): Path to the file to write the created image to. If the image does not exist yet,
             it will be created, else overwritten. Image type is inferred from the file ending. Providing None
             will disable writing.

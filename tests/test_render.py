@@ -4,8 +4,10 @@
 # SPDX-License-Identifier: MIT
 
 import pytest
+import torch
 from torch import nn
 from visualtorch import render
+from visualtorch.backend import extract_architecture
 
 
 @pytest.fixture()
@@ -15,6 +17,32 @@ def sequential_model() -> nn.Sequential:
         nn.Conv2d(3, 8, 3, 1, 1),
         nn.ReLU(),
     )
+
+
+@pytest.fixture()
+def siamese_model() -> nn.Module:
+    """A small two-branch model: an image branch and a tabular-vector branch, merged by concat."""
+
+    class SiameseNet(nn.Module):
+        def __init__(self) -> None:
+            super().__init__()
+            self.image_branch = nn.Sequential(
+                nn.Conv2d(3, 8, 3, 1, 1),
+                nn.ReLU(),
+                nn.AdaptiveAvgPool2d(1),
+                nn.Flatten(),
+            )
+            self.vector_branch = nn.Sequential(
+                nn.Linear(10, 8),
+                nn.ReLU(),
+            )
+            self.head = nn.Linear(16, 4)
+
+        def forward(self, image: torch.Tensor, vector: torch.Tensor) -> torch.Tensor:
+            merged = torch.cat([self.image_branch(image), self.vector_branch(vector)], dim=1)
+            return self.head(merged)
+
+    return SiameseNet()
 
 
 @pytest.mark.parametrize("style", ["graph", "flow", "lenet"])
@@ -68,3 +96,55 @@ def test_render_rejects_kwarg_from_a_different_style(sequential_model: nn.Sequen
     """A kwarg valid for one style but not another should raise TypeError for the wrong style."""
     with pytest.raises(TypeError):
         render(sequential_model, input_shape=(1, 3, 16, 16), style="graph", legend=True)
+
+
+def test_render_rejects_malformed_mixed_input_shape_with_clear_error(sequential_model: nn.Sequential) -> None:
+    """A shape tuple mixing raw ints and nested shape-tuples at the top level is ambiguous and
+    should raise a clear ValueError rather than being silently misinterpreted.
+    """  # noqa: D205
+    malformed_shape = (1, (3, 4), 224, 224)
+
+    with pytest.raises(ValueError, match="input_shape must be"):
+        render(sequential_model, input_shape=malformed_shape, style="graph")
+
+
+@pytest.mark.parametrize("style", ["graph", "flow", "lenet"])
+def test_render_runs_for_multi_input_model(siamese_model: nn.Module, style: str) -> None:
+    """A model with two separate forward() input tensors should render in every style."""
+    input_shape = ((1, 3, 16, 16), (1, 10))
+    img = render(siamese_model, input_shape=input_shape, style=style)
+    assert img is not None
+
+
+def test_render_multi_input_reflects_distinct_input_shapes(siamese_model: nn.Module) -> None:
+    """Each input's own shape should reach the diagram (via extract_architecture), not just one."""
+    architecture = extract_architecture(siamese_model, ((1, 3, 16, 16), (1, 10)))
+    input_shapes_seen = {layer.output_shape for layer in architecture.columns[0]}
+    assert input_shapes_seen == {(1, 3, 16, 16), (1, 10)}
+
+
+def test_render_rejects_multi_input_shape_arity_mismatch(siamese_model: nn.Module) -> None:
+    """Passing the wrong number of input shapes for a multi-input forward() should fail clearly.
+
+    This is a plain Python TypeError from the mismatched forward() call, not a visualtorch
+    ValueError - documenting that boundary explicitly here.
+    """
+    with pytest.raises(TypeError):
+        render(siamese_model, input_shape=((1, 3, 16, 16),), style="graph")
+
+
+def test_render_handles_unused_input_tensor() -> None:
+    """An input tensor declared in input_shape but never consumed in forward() should still
+    render (as a disconnected box), not crash.
+    """  # noqa: D205
+
+    class PartiallyUnusedNet(nn.Module):
+        def __init__(self) -> None:
+            super().__init__()
+            self.linear = nn.Linear(10, 4)
+
+        def forward(self, used: torch.Tensor, unused: torch.Tensor) -> torch.Tensor:  # noqa: ARG002
+            return self.linear(used)
+
+    img = render(PartiallyUnusedNet(), input_shape=((1, 10), (1, 5)), style="graph")
+    assert img is not None

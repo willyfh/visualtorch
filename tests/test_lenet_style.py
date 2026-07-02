@@ -83,6 +83,44 @@ def lstm_model() -> nn.Module:
 
 
 @pytest.fixture()
+def gru_model() -> nn.Module:
+    """Define a simple GRU model for testing."""
+
+    class GRUModel(nn.Module):
+        """A simple GRU model."""
+
+        def __init__(self, input_size: int, hidden_size: int, num_layers: int) -> None:
+            super().__init__()
+            self.gru = nn.GRU(input_size, hidden_size, num_layers, batch_first=True)
+
+        def forward(self, x: torch.Tensor) -> torch.Tensor:
+            """Forward pass."""
+            out, _ = self.gru(x)
+            return out
+
+    return GRUModel(input_size=10, hidden_size=20, num_layers=2)
+
+
+@pytest.fixture()
+def rnn_model() -> nn.Module:
+    """Define a simple plain RNN model for testing."""
+
+    class RNNModel(nn.Module):
+        """A simple RNN model."""
+
+        def __init__(self, input_size: int, hidden_size: int, num_layers: int) -> None:
+            super().__init__()
+            self.rnn = nn.RNN(input_size, hidden_size, num_layers, batch_first=True)
+
+        def forward(self, x: torch.Tensor) -> torch.Tensor:
+            """Forward pass."""
+            out, _ = self.rnn(x)
+            return out
+
+    return RNNModel(input_size=10, hidden_size=20, num_layers=2)
+
+
+@pytest.fixture()
 def classifier_model() -> nn.Module:
     """Define a model ending in a 1D (per-sample) output, e.g. classification logits."""
 
@@ -125,6 +163,16 @@ def test_lstm_model_lenet_view_runs(lstm_model: nn.Module) -> None:
     _ = lenet_view(lstm_model, input_shape=(1, 10, 10))
 
 
+def test_gru_model_lenet_view_runs(gru_model: nn.Module) -> None:
+    """Test lenet view on gru model."""
+    _ = lenet_view(gru_model, input_shape=(1, 10, 10))
+
+
+def test_rnn_model_lenet_view_runs(rnn_model: nn.Module) -> None:
+    """Test lenet view on plain rnn model."""
+    _ = lenet_view(rnn_model, input_shape=(1, 10, 10))
+
+
 @pytest.mark.parametrize("orientation", ["x", "y", "z"])
 def test_lenet_view_one_dim_orientation(classifier_model: nn.Module, orientation: str) -> None:
     """Test lenet view on a model with a 1D output, for every supported orientation."""
@@ -146,6 +194,14 @@ def test_lenet_view_with_type_ignore(sequential_model: nn.Sequential) -> None:
         type_ignore=[nn.ReLU],
     )
     assert img is not None
+
+
+def test_lenet_view_show_dimension_can_be_disabled(sequential_model: nn.Sequential) -> None:
+    """show_dimension=False should drop labels and the reserved label-row height."""
+    with_labels = lenet_view(sequential_model, input_shape=(1, 3, 32, 32))
+    without_labels = lenet_view(sequential_model, input_shape=(1, 3, 32, 32), show_dimension=False)
+
+    assert without_labels.height < with_labels.height
 
 
 def test_lenet_view_writes_to_file(sequential_model: nn.Sequential, tmp_path: Path) -> None:

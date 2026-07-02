@@ -10,6 +10,9 @@ import aggdraw
 import PIL
 from PIL import Image, ImageColor, ImageDraw
 
+InputShape = tuple[int, ...] | tuple[tuple[int, ...], ...]
+"""A single flat shape (one input tensor) or a tuple of per-tensor shapes (multiple inputs)."""
+
 
 class Shape:
     """Base class for shapes"""
@@ -268,23 +271,42 @@ def get_rgba_tuple(color: str | int | tuple, opacity: int = 255) -> tuple:
     return rgba
 
 
-def validate_input_shape(input_shape: tuple) -> None:
-    """Validate that input_shape describes a single input tensor.
+def validate_input_shape(input_shape: tuple) -> tuple[tuple[int, ...], ...]:
+    """Validate input_shape and normalize it to a tuple of per-tensor shapes.
+
+    Accepts either a single flat tuple of ints (one input tensor, e.g. (1, 3, 224, 224)) or a
+    tuple of such tuples (multiple separate input tensors, e.g. ((1, 3, 224, 224), (1, 10))),
+    for models whose forward() takes more than one positional tensor argument.
 
     Args:
-        input_shape (tuple): The shape to validate.
+        input_shape (tuple): The shape(s) to validate.
+
+    Returns:
+        tuple: A tuple of per-tensor shapes - always length 1 for a single-input model, length N
+            for an N-input model - so every caller can treat both cases uniformly.
 
     Raises:
-        ValueError: If input_shape is not a single flat tuple of ints, e.g. when a tuple of
-            per-tensor shapes was passed for a model that takes multiple separate input tensors.
+        ValueError: If input_shape is neither a flat tuple of ints nor a tuple of tuples of ints.
     """
-    if not isinstance(input_shape, tuple) or not all(isinstance(dim, int) for dim in input_shape):
-        error_msg = (
-            "input_shape must be a single tuple of ints, e.g. (1, 3, 224, 224). "
-            f"Got {input_shape!r} instead. Visualizing models that take multiple separate "
-            "input tensors is not supported yet."
-        )
+    error_msg = (
+        "input_shape must be either a single tuple of ints, e.g. (1, 3, 224, 224), or - for "
+        "models whose forward() takes multiple separate input tensors - a tuple of per-tensor "
+        f"shape tuples, e.g. ((1, 3, 224, 224), (1, 10)). Got {input_shape!r} instead."
+    )
+    if not isinstance(input_shape, tuple) or len(input_shape) == 0:
         raise ValueError(error_msg)
+
+    if all(isinstance(dim, int) for dim in input_shape):
+        return (input_shape,)
+
+    is_well_formed_multi = all(
+        isinstance(shape, tuple) and len(shape) > 0 and all(isinstance(dim, int) for dim in shape)
+        for shape in input_shape
+    )
+    if not is_well_formed_multi:
+        raise ValueError(error_msg)
+
+    return tuple(input_shape)
 
 
 def self_multiply(tensor_tuple: tuple | list) -> int | float:

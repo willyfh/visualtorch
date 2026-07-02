@@ -21,6 +21,7 @@ from .utils.utils import (
     Box,
     ColorWheel,
     ImageDraw,
+    InputShape,
     get_rgba_tuple,
     linear_layout,
     self_multiply,
@@ -30,7 +31,7 @@ from .utils.utils import (
 
 def flow_view(
     model: nn.Module | nn.Sequential | nn.ModuleList,
-    input_shape: tuple[int, ...],
+    input_shape: InputShape,
     to_file: str | None = None,
     min_z: int = 10,
     min_xy: int = 10,
@@ -58,7 +59,10 @@ def flow_view(
 
     Args:
         model (torch.nn.Module): A torch model that will be visualized.
-        input_shape (tuple): The shape of the input tensor (default: (1, 3, 224, 224)).
+        input_shape (tuple): The shape of the input tensor (default: (1, 3, 224, 224)). For a
+            model whose forward() takes multiple separate input tensors, pass a tuple of
+            per-tensor shapes instead, one per positional argument in order, e.g.
+            ((1, 3, 224, 224), (1, 10)).
         to_file (str, optional): Path to the file to write the created image. Overwrite if exist.
             Image type is inferred from the file extension. Providing None will disable writing.
         min_z (int, optional): Minimum size in pixels that a layer will have along the z-axis.
@@ -98,13 +102,19 @@ def flow_view(
     architecture = extract_architecture(model, input_shape)
 
     # The synthetic input column has no counterpart in this style (flow_view never drew an
-    # "Input" box even before the v2 backend unification), so it's dropped by default - unless
-    # the input feeds more than one consumer, e.g. a residual block whose shortcut is the raw
-    # input (`identity = x`): dropping the input node would silently discard that edge (it would
-    # reference a node with no box to connect), making the skip invisible rather than routed.
-    input_node_id = architecture.columns[0][0].node_id
-    input_out_degree = int(architecture.adjacency[architecture.id_to_index[input_node_id]].sum())
-    raw_columns = architecture.columns if input_out_degree > 1 else architecture.columns[1:]
+    # "Input" box even before the v2 backend unification), so a single input is dropped by
+    # default - unless it feeds more than one consumer, e.g. a residual block whose shortcut is
+    # the raw input (`identity = x`): dropping the input node would silently discard that edge (it
+    # would reference a node with no box to connect), making the skip invisible rather than
+    # routed. For a model with 2+ separate input tensors, always show every input box instead -
+    # hiding any of them would make it ambiguous which arrow originates from which named input.
+    input_column = architecture.columns[0]
+    if len(input_column) == 1:
+        input_node_id = input_column[0].node_id
+        input_out_degree = int(architecture.adjacency[architecture.id_to_index[input_node_id]].sum())
+        raw_columns = architecture.columns if input_out_degree > 1 else architecture.columns[1:]
+    else:
+        raw_columns = architecture.columns
 
     filtered_columns = [[layer for layer in column if type(layer.module) not in type_ignore] for column in raw_columns]
     filtered_columns = [column for column in filtered_columns if column]
