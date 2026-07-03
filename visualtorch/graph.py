@@ -101,6 +101,7 @@ def graph_view(
         architecture.edges(),
         architecture.id_to_column,
         lambda start_id, end_id: _edge_draws_visible_content(id_to_node_list_map, start_id, end_id),
+        lambda node_id: _union_bbox(id_to_node_list_map.get(node_id, [])),
     )
     resolved_level_gap = level_gap if level_gap is not None else node_size
     top_margin_for_skips = num_levels * resolved_level_gap
@@ -175,6 +176,23 @@ def _edge_draws_visible_content(id_to_node_list_map: dict[str, list], start_id: 
         not isinstance(start_node, Ellipses) and not isinstance(end_node, Ellipses)
         for start_node in id_to_node_list_map[start_id]
         for end_node in id_to_node_list_map[end_id]
+    )
+
+
+def _union_bbox(nodes: list[Circle | Box | Ellipses]) -> tuple[float, float, float, float] | None:
+    """The union bounding box over a list of shapes, or None if the list is empty.
+
+    Includes Ellipses nodes (unlike `_edge_draws_visible_content`) - an ellipsis marker still
+    occupies screen space a connector line could cross, so it's a real obstacle for collision
+    purposes even though it wouldn't itself be a meaningful connector endpoint.
+    """
+    if not nodes:
+        return None
+    return (
+        min(node.x1 for node in nodes),
+        min(node.y1 for node in nodes),
+        max(node.x2 for node in nodes),
+        max(node.y2 for node in nodes),
     )
 
 

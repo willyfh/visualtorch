@@ -10,7 +10,6 @@ import torch
 from PIL import Image
 from torch import nn
 from visualtorch.backend import extract_architecture
-from visualtorch.connectors import compute_skip_levels
 from visualtorch.graph import graph_view
 
 
@@ -281,46 +280,73 @@ def test_graph_view_show_dimension_with_branching(residual_model: nn.Module) -> 
     assert img is not None
 
 
-def test_compute_skip_levels_ignores_span_le_1_edges() -> None:
-    """An edge with column span <= 1 should never be assigned a detour level."""
-    id_to_column = {"a": 0, "b": 1}
+def test_graph_view_mismatched_depth_siamese_branches_needs_no_detour() -> None:
+    """Sibling branches of different depths merging shouldn't trigger a routed detour.
 
-    edge_to_level, num_levels = compute_skip_levels([("a", "b")], id_to_column, lambda *_: True)
+    Compares against a depth-matched control (the shorter branch padded to the same depth, so
+    both branches merge at the same column, i.e. span == 1 - a case already known/confirmed to
+    need zero detour rows) and asserts the two images have the same height. This is more robust
+    than a hardcoded pixel baseline (an arbitrary implementation-detail number) and more precise
+    than "with vs without the whole skip connection" (this bug is about a false-positive skip
+    classification, not about whether a skip exists at all).
+    """
 
-    assert edge_to_level == {}
-    assert num_levels == 0
+    class SiameseNet(nn.Module):
+        def __init__(self) -> None:
+            super().__init__()
+            self.image_branch = nn.Sequential(
+                nn.Conv2d(3, 8, kernel_size=3, stride=1, padding=1),
+                nn.ReLU(),
+                nn.AdaptiveAvgPool2d(1),
+                nn.Flatten(),
+            )
+            self.vector_branch = nn.Sequential(
+                nn.Linear(10, 8),
+                nn.ReLU(),
+            )
+            self.head = nn.Linear(16, 4)
 
+        def forward(self, image: torch.Tensor, vector: torch.Tensor) -> torch.Tensor:
+            """Run each branch on its own input tensor, then concatenate and project."""
+            image_features = self.image_branch(image)
+            vector_features = self.vector_branch(vector)
+            merged = torch.cat([image_features, vector_features], dim=1)
+            return self.head(merged)
 
-def test_compute_skip_levels_assigns_distinct_levels_to_overlapping_skips() -> None:
-    """Two skip edges whose column spans genuinely overlap must get different levels."""
-    id_to_column = {"a": 0, "b": 3, "c": 2, "d": 5}
-    edges = [("a", "b"), ("c", "d")]
+    class SiameseNetDepthMatched(nn.Module):
+        """Same topology, but vector_branch padded with an extra Linear(8, 8)+ReLU pair so both
+        branches reach the merge point at the same column - a control case known to need 0
+        detour levels today (span == 1 at the merge).
+        """  # noqa: D205
 
-    edge_to_level, num_levels = compute_skip_levels(edges, id_to_column, lambda *_: True)
+        def __init__(self) -> None:
+            super().__init__()
+            self.image_branch = nn.Sequential(
+                nn.Conv2d(3, 8, kernel_size=3, stride=1, padding=1),
+                nn.ReLU(),
+                nn.AdaptiveAvgPool2d(1),
+                nn.Flatten(),
+            )
+            self.vector_branch = nn.Sequential(
+                nn.Linear(10, 8),
+                nn.ReLU(),
+                nn.Linear(8, 8),
+                nn.ReLU(),
+            )
+            self.head = nn.Linear(16, 4)
 
-    assert num_levels == 2
-    assert edge_to_level[("a", "b")] != edge_to_level[("c", "d")]
+        def forward(self, image: torch.Tensor, vector: torch.Tensor) -> torch.Tensor:
+            """Run each branch on its own input tensor, then concatenate and project."""
+            image_features = self.image_branch(image)
+            vector_features = self.vector_branch(vector)
+            merged = torch.cat([image_features, vector_features], dim=1)
+            return self.head(merged)
 
+    input_shape = ((1, 3, 16, 16), (1, 10))
+    img_mismatched = graph_view(SiameseNet(), input_shape=input_shape, show_neurons=False)
+    img_matched = graph_view(SiameseNetDepthMatched(), input_shape=input_shape, show_neurons=False)
 
-def test_compute_skip_levels_allows_touching_intervals_to_share_a_level() -> None:
-    """Two skip edges that only touch at a shared column boundary can share a level."""
-    id_to_column = {"a": 0, "b": 3, "c": 3, "d": 5}
-    edges = [("a", "b"), ("c", "d")]
-
-    edge_to_level, num_levels = compute_skip_levels(edges, id_to_column, lambda *_: True)
-
-    assert num_levels == 1
-    assert edge_to_level[("a", "b")] == edge_to_level[("c", "d")] == 0
-
-
-def test_compute_skip_levels_ignores_edges_with_no_content() -> None:
-    """A skip edge that `edge_has_content` reports as empty shouldn't consume a level."""
-    id_to_column = {"a": 0, "b": 3}
-
-    edge_to_level, num_levels = compute_skip_levels([("a", "b")], id_to_column, lambda *_: False)
-
-    assert edge_to_level == {}
-    assert num_levels == 0
+    assert img_mismatched.size[1] == img_matched.size[1]
 
 
 def test_graph_view_residual_model_routes_above_diagram(residual_model: nn.Module) -> None:

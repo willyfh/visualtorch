@@ -33,6 +33,13 @@ class ColumnLayout:
     img_width: float
     x_off: float
 
+    def bbox_for(self, node_id: str) -> tuple[float, float, float, float] | None:
+        """A node's `(x1, y1, x2, y2)` bounding box, or None if it has no box (e.g. type_ignore'd)."""
+        box = self.id_to_box.get(node_id)
+        if box is None:
+            return None
+        return box.x1, box.y1, box.x2, box.y2
+
 
 def _default_top_offset(box: VolumetricBox) -> float:
     return getattr(box, "de", 0)

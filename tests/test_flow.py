@@ -471,3 +471,59 @@ def test_flow_view_shows_all_input_boxes_for_multi_input_model() -> None:
 
     img = flow_view(TwoInputNet(), input_shape=((1, 4), (1, 4)))
     assert img is not None
+
+
+def test_flow_view_mismatched_depth_siamese_branches_needs_no_detour() -> None:
+    """Sibling branches of different depths merging shouldn't trigger a routed detour."""
+
+    class SiameseNet(nn.Module):
+        def __init__(self) -> None:
+            super().__init__()
+            self.image_branch = nn.Sequential(
+                nn.Conv2d(3, 8, kernel_size=3, stride=1, padding=1),
+                nn.ReLU(),
+                nn.AdaptiveAvgPool2d(1),
+                nn.Flatten(),
+            )
+            self.vector_branch = nn.Sequential(
+                nn.Linear(10, 8),
+                nn.ReLU(),
+            )
+            self.head = nn.Linear(16, 4)
+
+        def forward(self, image: torch.Tensor, vector: torch.Tensor) -> torch.Tensor:
+            """Run each branch on its own input tensor, then concatenate and project."""
+            image_features = self.image_branch(image)
+            vector_features = self.vector_branch(vector)
+            merged = torch.cat([image_features, vector_features], dim=1)
+            return self.head(merged)
+
+    class SiameseNetDepthMatched(nn.Module):
+        def __init__(self) -> None:
+            super().__init__()
+            self.image_branch = nn.Sequential(
+                nn.Conv2d(3, 8, kernel_size=3, stride=1, padding=1),
+                nn.ReLU(),
+                nn.AdaptiveAvgPool2d(1),
+                nn.Flatten(),
+            )
+            self.vector_branch = nn.Sequential(
+                nn.Linear(10, 8),
+                nn.ReLU(),
+                nn.Linear(8, 8),
+                nn.ReLU(),
+            )
+            self.head = nn.Linear(16, 4)
+
+        def forward(self, image: torch.Tensor, vector: torch.Tensor) -> torch.Tensor:
+            """Run each branch on its own input tensor, then concatenate and project."""
+            image_features = self.image_branch(image)
+            vector_features = self.vector_branch(vector)
+            merged = torch.cat([image_features, vector_features], dim=1)
+            return self.head(merged)
+
+    input_shape = ((1, 3, 16, 16), (1, 10))
+    img_mismatched = flow_view(SiameseNet(), input_shape=input_shape)
+    img_matched = flow_view(SiameseNetDepthMatched(), input_shape=input_shape)
+
+    assert img_mismatched.size[1] == img_matched.size[1]
