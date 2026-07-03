@@ -152,6 +152,7 @@ def flow_view(
         ),
         architecture.id_to_column,
         lambda *_: True,
+        column_layout.bbox_for,
     )
     resolved_level_gap = level_gap if level_gap is not None else 50
     top_margin_for_skips = num_levels * resolved_level_gap
