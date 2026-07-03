@@ -2,6 +2,12 @@
 
 Published research that has used VisualTorch to visualize model architectures.
 
+| Paper                                                                                                                                                                                                                                                                                     | Venue (Year)                        |
+| ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------- |
+| [Deep learning-based high-information-content graph representation of early stage bacterial biofilms](#deep-learning-based-high-information-content-graph-representation-of-early-stage-bacterial-biofilms)                                                                               | npj Biofilms and Microbiomes (2026) |
+| [Energy-Efficient Epileptic Seizure Prediction Using Spiking Neural Networks](#energy-efficient-epileptic-seizure-prediction-using-spiking-neural-networks)                                                                                                                               | IEEE ISCAS (2026)                   |
+| [Failure Evaluation of Steel Plate Shear Walls in Multi-Storey Steel Buildings Under Seismic Excitation Using Convolutional Neural Networks](#failure-evaluation-of-steel-plate-shear-walls-in-multi-storey-steel-buildings-under-seismic-excitation-using-convolutional-neural-networks) | Materials, MDPI (2026)              |
+
 ---
 
 ## Deep learning-based high-information-content graph representation of early stage bacterial biofilms
