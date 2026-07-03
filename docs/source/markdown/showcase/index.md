@@ -9,7 +9,8 @@ Published research that has used VisualTorch to visualize model architectures.
 **Venue:** Nature - _npj Biofilms and Microbiomes_
 **Link:** https://www.nature.com/articles/s41522-026-00971-3
 
-Uses VisualTorch to visualize the CNN architecture used for biofilm image analysis.
+Visualizes the CNN used to convert microscopy images of early-stage biofilms into
+high-information-content graph representations for downstream analysis.
 
 ---
 
@@ -18,7 +19,8 @@ Uses VisualTorch to visualize the CNN architecture used for biofilm image analys
 **Venue:** IEEE
 **Link:** https://ieeexplore.ieee.org/document/11562867
 
-Uses VisualTorch to visualize a spiking neural network architecture for seizure prediction.
+Visualizes the spiking neural network architecture designed to predict epileptic seizures at
+low energy cost, for deployment on resource-constrained hardware.
 
 ---
 
@@ -27,7 +29,8 @@ Uses VisualTorch to visualize a spiking neural network architecture for seizure 
 **Venue:** MDPI - _Materials_
 **Link:** https://www.mdpi.com/1996-1944/19/5/878
 
-Uses VisualTorch to visualize the CNN architecture used for structural failure prediction.
+Visualizes the CNN used to predict failure modes of steel plate shear walls in multi-storey
+buildings under seismic loading.
 
 ---
 
