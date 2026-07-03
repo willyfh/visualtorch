@@ -30,6 +30,11 @@ VisualTorch can be installed using the following commands:
 
 :::::
 
+Note: `1.0.0` is a major release with breaking API changes, but with significantly better
+features and algorithms - upgrading is recommended. For the old API, use `0.2.5` or older
+(`pip install visualtorch==0.2.5`), with docs at
+[readthedocs.io/en/v0.2.5](https://visualtorch.readthedocs.io/en/v0.2.5/).
+
 The following dependencies will also be installed if you run the above command:
 
 ```{literalinclude} ../../snippets/install/requirements.txt

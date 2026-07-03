@@ -33,6 +33,12 @@ The docs include [usage examples](https://visualtorch.readthedocs.io/en/latest/u
 
 See the [Installation page](https://visualtorch.readthedocs.io/en/latest/markdown/get_started/installation.html).
 
+## Used in Research
+
+VisualTorch has been used in published research, including works published in Nature, IEEE, and MDPI.
+
+👉 See the full Research Showcase: https://visualtorch.readthedocs.io/en/latest/markdown/showcase/index.html
+
 ## Examples
 
 See the [Usage Examples page](https://visualtorch.readthedocs.io/en/latest/usage_examples/index.html).

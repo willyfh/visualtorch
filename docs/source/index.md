@@ -43,6 +43,19 @@ API references of VisualTorch.
 
 ::::
 
+## {octicon}`mortar-board` Research Showcase
+
+::::{grid}
+
+:::{grid-item-card} Used in Research
+:link: markdown/showcase/index
+:link-type: doc
+
+Published research that has used VisualTorch.
+:::
+
+::::
+
 ## {octicon}`book` Developer Guides
 
 ::::{grid}
@@ -89,6 +102,13 @@ markdown/api_references/flow
 markdown/api_references/graph
 markdown/api_references/lenet_style
 
+```
+
+```{toctree}
+:caption: Research Showcase
+:hidden:
+
+markdown/showcase/index
 ```
 
 ```{toctree}
