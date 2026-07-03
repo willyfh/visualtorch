@@ -2,32 +2,55 @@
 
 Published research that has used VisualTorch to visualize model architectures.
 
+| Paper                                                                                                                                                                                                                                                                                     | Venue (Year)                        |
+| ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------- |
+| [Deep learning-based high-information-content graph representation of early stage bacterial biofilms](#deep-learning-based-high-information-content-graph-representation-of-early-stage-bacterial-biofilms)                                                                               | npj Biofilms and Microbiomes (2026) |
+| [Energy-Efficient Epileptic Seizure Prediction Using Spiking Neural Networks](#energy-efficient-epileptic-seizure-prediction-using-spiking-neural-networks)                                                                                                                               | IEEE ISCAS (2026)                   |
+| [Failure Evaluation of Steel Plate Shear Walls in Multi-Storey Steel Buildings Under Seismic Excitation Using Convolutional Neural Networks](#failure-evaluation-of-steel-plate-shear-walls-in-multi-storey-steel-buildings-under-seismic-excitation-using-convolutional-neural-networks) | Materials, MDPI (2026)              |
+
 ---
 
 ## Deep learning-based high-information-content graph representation of early stage bacterial biofilms
 
-**Venue:** Nature - _npj Biofilms and Microbiomes_
+**Authors:** Nersesyan, L. E., Boiko, D. A., Kurbanalieva, S., Dzhemileva, L. U., Kozlov, K. S., Ananikov, V. P. (2026)
+**Venue:** _npj Biofilms and Microbiomes_
 **Link:** https://www.nature.com/articles/s41522-026-00971-3
 
-Uses VisualTorch to visualize the CNN architecture used for biofilm image analysis.
+Models early-stage bacterial biofilms as interaction graphs (cells as vertices, predicted
+intercellular interactions as edges), combining Mask R-CNN for cell segmentation with a custom
+network (BINet) for interaction prediction - enabling classification of developmental stage and
+substrate type from image-derived graph features.
+
+![BINet architecture](../../_static/images/showcase/nature-biofilm.png)
 
 ---
 
 ## Energy-Efficient Epileptic Seizure Prediction Using Spiking Neural Networks
 
-**Venue:** IEEE
+**Authors:** Brady, A., Moore-Hill, D., Khan, F., Daoud, H. (2026)
+**Venue:** IEEE International Symposium on Circuits and Systems (ISCAS)
 **Link:** https://ieeexplore.ieee.org/document/11562867
 
-Uses VisualTorch to visualize a spiking neural network architecture for seizure prediction.
+A patient-specific model, trained on the CHB-MIT scalp EEG dataset, that combines convolutional
+layers with Leaky Integrate-and-Fire spiking neurons and a recurrent network to detect pre-ictal
+(pre-seizure) brain states - the low energy consumption of spiking neurons targets
+power-constrained, on-device seizure prediction for wearable/IoT devices.
+
+![Spiking neural network + LSTM architecture](../../_static/images/showcase/ieee-seizure.png)
 
 ---
 
 ## Failure Evaluation of Steel Plate Shear Walls in Multi-Storey Steel Buildings Under Seismic Excitation Using Convolutional Neural Networks
 
-**Venue:** MDPI - _Materials_
+**Authors:** Bonfini, P., Schetakis, N., Sukhnandan, J., Drosopoulos, G. A., Stavroulakis, G. E. (2026)
+**Venue:** _Materials_ (MDPI)
 **Link:** https://www.mdpi.com/1996-1944/19/5/878
 
-Uses VisualTorch to visualize the CNN architecture used for structural failure prediction.
+Trains a CNN on physics-based finite element simulations to predict equivalent plastic strain
+(failure distribution) on steel plate shear walls from building geometry and seismic intensity,
+for use in structural digital twins.
+
+![CNN architecture](../../_static/images/showcase/mdpi-shear-wall.png)
 
 ---
 
