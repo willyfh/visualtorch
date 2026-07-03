@@ -68,7 +68,10 @@ def test_compute_skip_levels_keeps_level_when_intervening_box_collides() -> None
     }
 
     edge_to_level, num_levels = compute_skip_levels(
-        [("a", "b")], id_to_column, lambda *_: True, lambda node_id: bboxes[node_id]
+        [("a", "b")],
+        id_to_column,
+        lambda *_: True,
+        lambda node_id: bboxes[node_id],
     )
 
     assert num_levels == 1
@@ -85,7 +88,10 @@ def test_compute_skip_levels_drops_level_when_intervening_box_is_a_different_row
     }
 
     edge_to_level, num_levels = compute_skip_levels(
-        [("a", "b")], id_to_column, lambda *_: True, lambda node_id: bboxes[node_id]
+        [("a", "b")],
+        id_to_column,
+        lambda *_: True,
+        lambda node_id: bboxes[node_id],
     )
 
     assert edge_to_level == {}
@@ -98,7 +104,10 @@ def test_compute_skip_levels_missing_bbox_conservatively_assumes_collision() -> 
     bboxes = {"a": (0.0, 0.0, 10.0, 10.0), "b": (40.0, 0.0, 50.0, 10.0)}
 
     edge_to_level, num_levels = compute_skip_levels(
-        [("a", "b")], id_to_column, lambda *_: True, lambda node_id: bboxes.get(node_id)
+        [("a", "b")],
+        id_to_column,
+        lambda *_: True,
+        lambda node_id: bboxes.get(node_id),
     )
 
     assert num_levels == 1
@@ -119,48 +128,60 @@ def test_compute_skip_levels_missing_endpoint_bbox_conservatively_assumes_collis
 
 
 def test_segment_intersects_rect_segment_fully_inside() -> None:
+    """A segment entirely within the rect counts as intersecting."""
     assert _segment_intersects_rect(2, 2, 8, 8, 0, 0, 10, 10) is True
 
 
 def test_segment_intersects_rect_segment_crosses_through_middle() -> None:
+    """A segment passing straight through the rect's interior intersects."""
     assert _segment_intersects_rect(-5, 5, 15, 5, 0, 0, 10, 10) is True
 
 
 def test_segment_intersects_rect_segment_passes_above() -> None:
+    """A segment entirely above the rect doesn't intersect."""
     assert _segment_intersects_rect(-5, -20, 15, -20, 0, 0, 10, 10) is False
 
 
 def test_segment_intersects_rect_segment_passes_below() -> None:
+    """A segment entirely below the rect doesn't intersect."""
     assert _segment_intersects_rect(-5, 50, 15, 50, 0, 0, 10, 10) is False
 
 
 def test_segment_intersects_rect_touches_one_corner() -> None:
+    """Touching exactly one corner counts as intersecting (conservative)."""
     assert _segment_intersects_rect(-5, -5, 0, 0, 0, 0, 10, 10) is True
 
 
 def test_segment_intersects_rect_touches_one_edge() -> None:
+    """Touching exactly one edge counts as intersecting (conservative)."""
     assert _segment_intersects_rect(-5, 5, 0, 5, 0, 0, 10, 10) is True
 
 
 def test_segment_intersects_rect_horizontal_segment_clear() -> None:
+    """A horizontal segment clear of the rect doesn't intersect."""
     assert _segment_intersects_rect(-5, -5, 15, -5, 0, 0, 10, 10) is False
 
 
 def test_segment_intersects_rect_horizontal_segment_through_rect() -> None:
+    """A horizontal segment passing through the rect intersects."""
     assert _segment_intersects_rect(-5, 5, 15, 5, 0, 0, 10, 10) is True
 
 
 def test_segment_intersects_rect_vertical_segment_through_rect() -> None:
+    """A vertical segment passing through the rect intersects."""
     assert _segment_intersects_rect(5, -5, 5, 15, 0, 0, 10, 10) is True
 
 
 def test_segment_intersects_rect_vertical_segment_clear() -> None:
+    """A vertical segment clear of the rect doesn't intersect."""
     assert _segment_intersects_rect(50, -5, 50, 15, 0, 0, 10, 10) is False
 
 
 def test_segment_intersects_rect_degenerate_point_inside() -> None:
+    """A zero-length segment (a point) inside the rect counts as intersecting."""
     assert _segment_intersects_rect(5, 5, 5, 5, 0, 0, 10, 10) is True
 
 
 def test_segment_intersects_rect_degenerate_point_outside() -> None:
+    """A zero-length segment (a point) outside the rect doesn't intersect."""
     assert _segment_intersects_rect(50, 50, 50, 50, 0, 0, 10, 10) is False
