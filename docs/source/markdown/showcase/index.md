@@ -15,6 +15,8 @@ intercellular interactions as edges), combining Mask R-CNN for cell segmentation
 network (BINet) for interaction prediction - enabling classification of developmental stage and
 substrate type from image-derived graph features.
 
+![BINet architecture](../../_static/images/showcase/nature-biofilm.png)
+
 ---
 
 ## Energy-Efficient Epileptic Seizure Prediction Using Spiking Neural Networks
@@ -25,6 +27,8 @@ substrate type from image-derived graph features.
 
 Uses a spiking neural network on EEG data to predict pre-ictal (pre-seizure) states, targeting
 energy-efficient, low-power hardware deployment for epilepsy monitoring.
+
+![Spiking neural network + LSTM architecture](../../_static/images/showcase/ieee-seizure.png)
 
 ---
 
@@ -37,6 +41,8 @@ energy-efficient, low-power hardware deployment for epilepsy monitoring.
 Trains a CNN on physics-based finite element simulations to predict equivalent plastic strain
 (failure distribution) on steel plate shear walls from building geometry and seismic intensity,
 for use in structural digital twins.
+
+![CNN architecture](../../_static/images/showcase/mdpi-shear-wall.png)
 
 ---
 
