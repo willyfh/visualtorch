@@ -25,8 +25,10 @@ substrate type from image-derived graph features.
 **Venue:** IEEE International Symposium on Circuits and Systems (ISCAS)
 **Link:** https://ieeexplore.ieee.org/document/11562867
 
-Uses a spiking neural network on EEG data to predict pre-ictal (pre-seizure) states, targeting
-energy-efficient, low-power hardware deployment for epilepsy monitoring.
+A patient-specific model, trained on the CHB-MIT scalp EEG dataset, that combines convolutional
+layers with Leaky Integrate-and-Fire spiking neurons and a recurrent network to detect pre-ictal
+(pre-seizure) brain states - the low energy consumption of spiking neurons targets
+power-constrained, on-device seizure prediction for wearable/IoT devices.
 
 ![Spiking neural network + LSTM architecture](../../_static/images/showcase/ieee-seizure.png)
 
