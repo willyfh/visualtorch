@@ -15,7 +15,7 @@ from functools import cached_property
 import numpy as np
 from torch import nn
 
-from .utils.layer_utils import InputDummyLayer
+from .utils.layer_utils import Input
 from .utils.recorder import trace_module_graph
 from .utils.traced_layer import TracedLayer
 from .utils.utils import InputShape, validate_input_shape
@@ -144,7 +144,7 @@ def _add_input_dummy_layers(
     input_dummy_node_ids = [f"{_INPUT_NODE_ID}#{i}" for i in range(n_inputs)]
     input_column = [
         TracedLayer(
-            module=InputDummyLayer(_input_label(i, n_inputs), shape[1] if len(shape) > 1 else None),
+            module=Input(_input_label(i, n_inputs), shape[1] if len(shape) > 1 else None),
             output_shape=shape,
             node_id=input_dummy_node_ids[i],
         )

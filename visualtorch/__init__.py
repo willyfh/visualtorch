@@ -10,7 +10,7 @@ from visualtorch.render import (
     LenetStyleOptions,
     render,
 )
-from visualtorch.utils.layer_utils import InputDummyLayer
+from visualtorch.utils.layer_utils import Input
 
 __all__ = [
     "render",
@@ -18,5 +18,5 @@ __all__ = [
     "GraphStyleOptions",
     "FlowStyleOptions",
     "LenetStyleOptions",
-    "InputDummyLayer",
+    "Input",
 ]

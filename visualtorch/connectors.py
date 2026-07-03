@@ -38,6 +38,12 @@ def compute_skip_levels(
     residual blocks - can safely share the same level. Edges that would draw nothing (per
     `edge_has_content`) don't consume a level.
 
+    Narrower spans are processed before wider ones, so that when one skip's span encloses
+    another's (e.g. a U-Net's outer encoder/decoder skip wrapping a narrower bottleneck skip), the
+    wider, enclosing skip is pushed to a farther-out level than the one it encloses, rather than
+    the two being ordered by arbitrary encounter order (which can otherwise draw the narrower skip
+    farther out than the wider one it's nested inside, looking visually backwards).
+
     Args:
         edges (Iterable): The model's `(start_id, end_id)` edges, e.g. from `Architecture.edges()`.
         id_to_column (dict): Mapping from node IDs to their column index.
@@ -71,7 +77,7 @@ def compute_skip_levels(
         if _skip_edge_collides(start_id, end_id, start_col, end_col, column_to_ids, get_bbox):
             intervals.append((start_col, end_col, (start_id, end_id)))
 
-    intervals.sort(key=lambda interval: interval[0])
+    intervals.sort(key=lambda interval: (interval[1] - interval[0], interval[0]))
 
     levels: list[list[tuple[int, int]]] = []
     edge_to_level: dict[tuple[str, str], int] = {}

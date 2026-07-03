@@ -52,6 +52,7 @@ class GraphStyleOptions:
     ellipsize_after: int = 10
     show_neurons: bool = True
     show_dimension: bool = False
+    show_input: bool = True
 
 
 @dataclass
@@ -72,6 +73,7 @@ class FlowStyleOptions:
     shade_step: int = 10
     legend: bool = False
     show_dimension: bool = False
+    show_input: bool = True
 
 
 @dataclass
@@ -91,6 +93,7 @@ class LenetStyleOptions:
     max_channels: int = 100
     offset_z: int = 10
     show_dimension: bool = True
+    show_input: bool = True
 
 
 def _render_graph(
@@ -118,6 +121,7 @@ def _render_graph(
         font=common.font,
         font_color=common.font_color,
         level_gap=common.level_gap,
+        show_input=options.show_input,
     )
 
 
@@ -152,6 +156,7 @@ def _render_flow(
         opacity=common.opacity,
         show_dimension=options.show_dimension,
         level_gap=common.level_gap,
+        show_input=options.show_input,
     )
 
 
@@ -185,6 +190,7 @@ def _render_lenet(
         offset_z=options.offset_z,
         level_gap=common.level_gap,
         show_dimension=options.show_dimension,
+        show_input=options.show_input,
     )
 
 

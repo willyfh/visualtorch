@@ -12,7 +12,7 @@ import aggdraw
 import torch
 from PIL import Image, ImageFont
 
-from .backend import Architecture, extract_architecture
+from .backend import extract_architecture
 from .connectors import compute_skip_levels, draw_connector
 from .utils.traced_layer import TracedLayer
 from .utils.utils import Box, Circle, ColorWheel, Ellipses, ImageDraw, InputShape
@@ -37,6 +37,7 @@ def graph_view(
     font: ImageFont = None,
     font_color: str | tuple[int, ...] = "black",
     level_gap: int | None = None,
+    show_input: bool = True,
 ) -> Image.Image:
     """Generates an architecture visualization for a given linear PyTorch model in a graph style.
 
@@ -67,6 +68,13 @@ def graph_view(
         font_color (str or tuple, optional): Color for the font if used. Can be a string or a tuple (R, G, B, A).
         level_gap (int, optional): Vertical spacing in pixels between stacked skip-connection detour
             routes. If None, defaults to `node_size`.
+        show_input (bool, optional): For a single-input model, whether to draw the synthetic
+            "Input" node. Defaults to True. Set False to hide it - e.g. if you're overlaying your
+            own custom input illustration instead. Has no effect on a multi-input model, where
+            every input is always shown (omitting any of them would make it ambiguous which
+            arrow belongs to which named input). Ignored (input always kept) when the input feeds
+            more than one consumer, e.g. a residual shortcut, since dropping it would silently
+            discard that edge.
 
     Returns:
         Image.Image: Generated architecture image.
@@ -77,12 +85,24 @@ def graph_view(
 
     architecture = extract_architecture(model, input_shape)
 
+    # Hiding is only honored when it's safe to: an input feeding more than one consumer (e.g. a
+    # residual block's raw-input shortcut) must stay visible regardless of show_input, since
+    # dropping it would silently discard that edge. Has no effect on a multi-input model (2+
+    # nodes in the input column), which is always shown in full.
+    input_column = architecture.columns[0]
+    if len(input_column) == 1 and not show_input:
+        input_node_id = input_column[0].node_id
+        input_out_degree = int(architecture.adjacency[architecture.id_to_index[input_node_id]].sum())
+        raw_columns = architecture.columns if input_out_degree > 1 else architecture.columns[1:]
+    else:
+        raw_columns = architecture.columns
+
     # Create architecture
 
     current_x = padding  # + input_label_size[0] + text_padding
 
     layers, layer_y, id_to_node_list_map, label_info = _create_architecture(
-        architecture.columns,
+        raw_columns,
         current_x,
         show_neurons,
         ellipsize_after,
@@ -94,11 +114,15 @@ def graph_view(
         ColorWheel(),
     )
 
+    # An edge whose endpoint was just dropped above (a hidden input's own edges) can no longer
+    # be drawn - filter those out rather than leaving a dangling id_to_node_list_map lookup.
+    edges = [edge for edge in architecture.edges() if edge[0] in id_to_node_list_map and edge[1] in id_to_node_list_map]
+
     # Skip connections (edges spanning more than one column) need to be routed above the
     # diagram, or they'd draw collinear with - and hidden under - the ordinary adjacent-column
     # edges beneath them. Compute this before img_height so the canvas can reserve the room.
     edge_to_level, num_levels = compute_skip_levels(
-        architecture.edges(),
+        edges,
         architecture.id_to_column,
         lambda start_id, end_id: _edge_draws_visible_content(id_to_node_list_map, start_id, end_id),
         lambda node_id: _union_bbox(id_to_node_list_map.get(node_id, [])),
@@ -143,7 +167,7 @@ def graph_view(
 
     _draw_connectors(
         draw,
-        architecture,
+        edges,
         id_to_node_list_map,
         edge_to_level,
         num_levels,
@@ -198,7 +222,7 @@ def _union_bbox(nodes: list[Circle | Box | Ellipses]) -> tuple[float, float, flo
 
 def _draw_connectors(
     draw: aggdraw.Draw,
-    architecture: Architecture,
+    edges: list[tuple[str, str]],
     id_to_node_list_map: dict[str, list],
     edge_to_level: dict[tuple[str, str], int],
     num_levels: int,
@@ -209,7 +233,7 @@ def _draw_connectors(
     connector_width: int,
 ) -> None:
     """Draw every connector, routing skip-connection edges above the diagram."""
-    for start_id, end_id in architecture.edges():
+    for start_id, end_id in edges:
         start_layer_list = id_to_node_list_map[start_id]
         end_layer_list = id_to_node_list_map[end_id]
 
