@@ -37,7 +37,7 @@ See the [Installation page](https://visualtorch.readthedocs.io/en/latest/markdow
 
 VisualTorch has been used in published research, including works published in Nature, IEEE, and MDPI.
 
-👉 See the full Research Showcase: https://visualtorch.readthedocs.io/en/latest/markdown/showcase/index.html
+See the [Research Showcase page](https://visualtorch.readthedocs.io/en/latest/markdown/showcase/index.html) for the full list.
 
 ## Examples
 
