@@ -255,7 +255,7 @@ def test_extract_architecture_survives_subclass_escaping_op() -> None:
     # input->a, a->roundtrip, roundtrip->b.
     assert int(architecture.adjacency.sum()) == 3
     assert [type(wrapper.module).__name__ for column in architecture.columns for wrapper in column] == [
-        "InputDummyLayer",
+        "Input",
         "Linear",
         "NumpyRoundTrip",
         "Linear",

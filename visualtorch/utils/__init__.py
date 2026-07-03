@@ -3,7 +3,7 @@
 # Copyright (C) 2024 Willy Fitra Hendria
 # SPDX-License-Identifier: MIT
 
-from .layer_utils import InputDummyLayer
+from .layer_utils import Input
 from .utils import (
     Box,
     Circle,
@@ -26,5 +26,5 @@ __all__ = [
     "linear_layout",
     "vertical_image_concat",
     "get_rgba_tuple",
-    "InputDummyLayer",
+    "Input",
 ]

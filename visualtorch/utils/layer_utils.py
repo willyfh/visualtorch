@@ -5,8 +5,8 @@
 # SPDX-License-Identifier: MIT
 
 
-class InputDummyLayer:
-    """A dummy layer for input."""
+class Input:
+    """A placeholder standing in for the raw input tensor, before any real computation."""
 
     def __init__(self, name: str, units: int | None = None) -> None:
         if units:

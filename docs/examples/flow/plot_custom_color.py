@@ -1,7 +1,10 @@
 """Custom Color
 =======================================
 
-Visualization of custom color
+Visualization of custom color. The synthetic input box can be recolored too, keyed by
+``visualtorch.Input`` in ``color_map`` just like any real layer type - left
+uncustomized, it would default to the same color as ``Conv2d`` here, since both would otherwise
+claim the same slot in the color wheel.
 """  # noqa: D205
 
 from collections import defaultdict
@@ -28,6 +31,7 @@ model = nn.Sequential(
 )
 
 color_map: dict = defaultdict(dict)
+color_map[visualtorch.Input]["fill"] = "#D55E00"  # vermillion
 color_map[nn.Conv2d]["fill"] = "#E69F00"  # orange
 color_map[nn.ReLU]["fill"] = "#56B4E9"  # sky blue
 color_map[nn.MaxPool2d]["fill"] = "#CC79A7"  # reddish purple

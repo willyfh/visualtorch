@@ -232,6 +232,13 @@ def test_flow_view_output_size_matches_pre_refactor_baseline(sequential_model: n
     `extract_architecture`/`layout_columns` backend - confirmed via a `git worktree` comparison
     at the time of the rewrite (see the graph_view equivalent test for why size, not an exact
     pixel hash: aggdraw's anti-aliasing isn't portable across platforms, but layout math is).
+
+    Updated after `show_input` defaulted to True (an intentional, deliberate visual change - a
+    single-consumer input box is now shown by default, unlike flow_view's original look), so
+    these sizes are no longer literally pre-refactor but reflect the new intended default.
+
+    "legend" was updated again after the synthetic input class was renamed from `InputDummyLayer`
+    to `Input`, changing that legend patch's text width by 1px.
     """
     cases = {
         "default": flow_view(sequential_model, input_shape=(1, 3, 32, 32)),
@@ -242,12 +249,12 @@ def test_flow_view_output_size_matches_pre_refactor_baseline(sequential_model: n
         "no_funnel": flow_view(sequential_model, input_shape=(1, 3, 32, 32), draw_funnel=False),
     }
     expected_sizes = {
-        "default": (124, 42),
-        "no_volume": (116, 32),
-        "show_dimension": (303, 59),
-        "legend": (124, 136),
-        "type_ignore": (82, 42),
-        "no_funnel": (124, 42),
+        "default": (144, 42),
+        "no_volume": (136, 32),
+        "show_dimension": (353, 59),
+        "legend": (148, 136),
+        "type_ignore": (102, 42),
+        "no_funnel": (144, 42),
     }
 
     for name, img in cases.items():
@@ -440,10 +447,13 @@ def test_flow_view_funnels_survive_large_de_differences_between_layers() -> None
     # pre-rewrite main (1ee630e) via a git-worktree comparison for this exact model. The buggy
     # intermediate version rendered thousands fewer non-background pixels here (missing funnel
     # segments), so a wide but real tolerance still catches a regression of that class.
-    assert img.size == (153, 336)
+    #
+    # Updated after `show_input` defaulted to True - the input box is now shown, adding a
+    # consistent amount of extra canvas/content on top of the original baseline above.
+    assert img.size == (171, 364)
     non_bg = _non_background_pixel_count(img)
     error_msg = f"non-background pixel count {non_bg} outside expected range - funnel likely broken"
-    assert 21000 <= non_bg <= 24000, error_msg
+    assert 27000 <= non_bg <= 31000, error_msg
 
 
 def test_flow_view_shows_all_input_boxes_for_multi_input_model() -> None:
@@ -451,7 +461,7 @@ def test_flow_view_shows_all_input_boxes_for_multi_input_model() -> None:
     hiding one would make it ambiguous which arrow originates from which named input.
     """  # noqa: D205
     from visualtorch.backend import extract_architecture
-    from visualtorch.utils.layer_utils import InputDummyLayer
+    from visualtorch.utils.layer_utils import Input
 
     class TwoInputNet(nn.Module):
         def __init__(self) -> None:
@@ -464,9 +474,7 @@ def test_flow_view_shows_all_input_boxes_for_multi_input_model() -> None:
             return self.head(torch.cat([self.a(x), self.b(y)], dim=1))
 
     architecture = extract_architecture(TwoInputNet(), ((1, 4), (1, 4)))
-    input_labels = {
-        layer.module.name() for layer in architecture.columns[0] if isinstance(layer.module, InputDummyLayer)
-    }
+    input_labels = {layer.module.name() for layer in architecture.columns[0] if isinstance(layer.module, Input)}
     assert input_labels == {"input_0", "input_1"}
 
     img = flow_view(TwoInputNet(), input_shape=((1, 4), (1, 4)))

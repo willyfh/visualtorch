@@ -1,7 +1,9 @@
 """Ignore Layers
 =======================================
 
-Visualize some layers only
+Visualize some layers only. ``type_ignore`` hides layer types you don't care about (here, ReLU
+and Flatten); ``show_input=False`` is the same idea applied to the synthetic input box itself -
+both trim the diagram down to just the layers worth looking at.
 """  # noqa: D205
 
 import matplotlib.pyplot as plt
@@ -33,6 +35,7 @@ img = visualtorch.render(
     input_shape=input_shape,
     style="flow",
     type_ignore=ignored_layers,
+    show_input=False,
 )
 
 dpi = 150  # rendered at 2x this in the final doc build (savefig.dpi=300 in conf.py)

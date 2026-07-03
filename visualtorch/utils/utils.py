@@ -94,6 +94,19 @@ class StackedBox(Shape):
         else:
             draw.rectangle([self.x1, self.y1, self.x2, self.y2], pen, brush)
 
+    def front_offset(self) -> float:
+        """The offset of the last (frontmost, fully unoccluded) slice drawn by `draw`.
+
+        Every other slice is either drawn before it (and thus at least partly covered by it or
+        by a slice drawn later still) or shares this same offset when there's only one slice, so
+        this is the only offset a connector can attach to without appearing to run through a
+        slice drawn on top of it.
+        """
+        if getattr(self, "de", 0) <= 0:
+            return 0.0
+        initial_offset = -self.offset_z * self.de // 2
+        return initial_offset + self.offset_z * (self.de - 1)
+
 
 class Box(Shape):
     """Box shape class."""

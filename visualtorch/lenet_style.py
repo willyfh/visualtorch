@@ -15,7 +15,7 @@ from torch import nn
 from ._volumetric_layout import ColumnLayout, VolumetricBox, layout_columns
 from .backend import Architecture, extract_architecture
 from .connectors import compute_skip_levels, draw_connector
-from .utils.layer_utils import InputDummyLayer
+from .utils.layer_utils import Input
 from .utils.traced_layer import TracedLayer
 from .utils.utils import ColorWheel, ImageDraw, InputShape, StackedBox, get_rgba_tuple, self_multiply
 
@@ -46,6 +46,7 @@ def lenet_view(
     offset_z: int = 10,
     level_gap: int | None = None,
     show_dimension: bool = True,
+    show_input: bool = True,
 ) -> PIL.Image:
     """Generate a LeNet style architecture visualization for a given torch model.
 
@@ -84,6 +85,13 @@ def lenet_view(
             below it. For a model with parallel branches (e.g. multi-branch merges or multiple
             input tensors), several boxes can share a column and their labels may overlap - set
             this to False to drop the labels entirely in that case.
+        show_input (bool, optional): For a single-input model, whether to draw the synthetic
+            "Input" box. Defaults to True. Set False to hide it - e.g. if you're overlaying your
+            own custom input illustration instead. Has no effect on a multi-input model, where
+            every input is always shown (omitting any of them would make it ambiguous which
+            arrow belongs to which named input). Ignored (input always kept) when the input feeds
+            more than one consumer, e.g. a residual shortcut, since dropping it would silently
+            discard that edge.
 
     Returns:
         PIL.Image: An Image object representing the generated architecture visualization.
@@ -97,11 +105,19 @@ def lenet_view(
 
     architecture = extract_architecture(model, input_shape)
 
-    # Unlike flow_view, lenet_view has always shown an "Input" box, so every column
-    # (including the synthetic input one) is kept here.
-    filtered_columns = [
-        [layer for layer in column if type(layer.module) not in type_ignore] for column in architecture.columns
-    ]
+    # Hiding is only honored when it's safe to: an input feeding more than one consumer (e.g. a
+    # residual block's raw-input shortcut) must stay visible regardless of show_input, since
+    # dropping it would silently discard that edge. Has no effect on a multi-input model (2+
+    # nodes in the input column), which is always shown in full.
+    input_column = architecture.columns[0]
+    if len(input_column) == 1 and not show_input:
+        input_node_id = input_column[0].node_id
+        input_out_degree = int(architecture.adjacency[architecture.id_to_index[input_node_id]].sum())
+        raw_columns = architecture.columns if input_out_degree > 1 else architecture.columns[1:]
+    else:
+        raw_columns = architecture.columns
+
+    filtered_columns = [[layer for layer in column if type(layer.module) not in type_ignore] for column in raw_columns]
     filtered_columns = [column for column in filtered_columns if column]
 
     layer_types: list[type] = []
@@ -248,7 +264,7 @@ def _box_factory(
 
         box = StackedBox()
         box.offset_z = offset_z
-        box.label = layer.module.name() if isinstance(layer.module, InputDummyLayer) else layer_type.__name__
+        box.label = layer.module.name() if isinstance(layer.module, Input) else layer_type.__name__
         box.output_shape = tuple(ori_shape)
         box.de = z
 
@@ -346,6 +362,12 @@ def _draw_skip_connectors(
     regardless of `draw_funnel` - a funnel implies a continuous volume flowing between two
     layers, which a skip connection isn't, and it should never become invisible just because
     funnels are toggled off.
+
+    Each endpoint is anchored at the top corner of the frontmost of the box's stacked slices
+    (`front_offset`), not the unshifted, centered reference coordinates - the center slice sits
+    behind several slices stacked in front of it, so a line anchored there would appear to run
+    through them. The top corner (rather than that slice's mid-height) matches the line's own
+    always-straight-up-first routing and mirrors flow_view's equivalent ridge-point anchor.
     """
     for start_id, end_id in architecture.edges():
         level = edge_to_level.get((start_id, end_id))
@@ -355,12 +377,14 @@ def _draw_skip_connectors(
         start_box = column_layout.id_to_box[start_id]
         end_box = column_layout.id_to_box[end_id]
         detour_y = padding + (num_levels - 1 - level) * resolved_level_gap
+        start_front = start_box.front_offset() if isinstance(start_box, StackedBox) else 0
+        end_front = end_box.front_offset() if isinstance(end_box, StackedBox) else 0
         draw_connector(
             draw,
-            start_box.x2,
-            (start_box.y1 + start_box.y2) / 2,
-            end_box.x1,
-            (end_box.y1 + end_box.y2) / 2,
+            start_box.x2 + start_front,
+            start_box.y1 + start_front,
+            end_box.x1 + end_front,
+            end_box.y1 + end_front,
             color=end_box.outline,
             width=1,
             detour_y=detour_y,

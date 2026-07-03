@@ -54,6 +54,7 @@ def flow_view(
     opacity: int = 255,
     show_dimension: bool = False,
     level_gap: int | None = None,
+    show_input: bool = True,
 ) -> PIL.Image:
     """Generate a flow-style architecture visualization for a given torch model.
 
@@ -88,6 +89,12 @@ def flow_view(
         show_dimension (bool, optional): If True, print each layer's output shape below it.
         level_gap (int, optional): Vertical spacing in pixels between stacked skip-connection detour
             routes. If None, defaults to 50.
+        show_input (bool, optional): For a single-input model, whether to draw the synthetic
+            "Input" box. Defaults to True - e.g. so an autoencoder's or U-Net's output shape has
+            a visible size-matched partner on the input side. Set False to hide it - e.g. if
+            you're overlaying your own custom input illustration instead. Has no effect on a
+            multi-input model, where every input is always shown (omitting any of them would
+            make it ambiguous which arrow belongs to which named input).
 
     Returns:
         PIL.Image: An Image object representing the generated architecture visualization.
@@ -110,9 +117,14 @@ def flow_view(
     # hiding any of them would make it ambiguous which arrow originates from which named input.
     input_column = architecture.columns[0]
     if len(input_column) == 1:
+        # Hiding is only honored when it's safe to: an input feeding more than one consumer
+        # (e.g. a residual block's raw-input shortcut) must stay visible regardless of
+        # show_input, since dropping it would silently discard that edge rather than just
+        # tidying up the look of a plain single-consumer chain.
         input_node_id = input_column[0].node_id
         input_out_degree = int(architecture.adjacency[architecture.id_to_index[input_node_id]].sum())
-        raw_columns = architecture.columns if input_out_degree > 1 else architecture.columns[1:]
+        keep_input = show_input or input_out_degree > 1
+        raw_columns = architecture.columns if keep_input else architecture.columns[1:]
     else:
         raw_columns = architecture.columns
 
@@ -367,6 +379,13 @@ def _draw_skip_connectors(
     regardless of `draw_funnel` - a funnel implies a continuous volume flowing between two
     layers, which a skip connection isn't, and it should never become invisible just because
     funnels are toggled off.
+
+    Each endpoint is anchored at the midpoint of the box's top ridge (the boundary between its
+    top face and its side face) rather than the flat front corner, so the line reflects the box's
+    3D depth instead of looking like it's attached to a flat 2D rectangle. This midpoint is
+    specifically on the box's own outline, not inside either face - anchoring anywhere else on a
+    slanted side face would make the line cross back over that face's own fill on its way up to
+    the detour, since it always travels straight up first.
     """
     for start_id, end_id in architecture.edges():
         level = edge_to_level.get((start_id, end_id))
@@ -376,12 +395,14 @@ def _draw_skip_connectors(
         start_box = column_layout.id_to_box[start_id]
         end_box = column_layout.id_to_box[end_id]
         detour_y = padding + (num_levels - 1 - level) * resolved_level_gap
+        start_de = getattr(start_box, "de", 0)
+        end_de = getattr(end_box, "de", 0)
         draw_connector(
             draw,
-            start_box.x2,
-            (start_box.y1 + start_box.y2) / 2,
-            end_box.x1,
-            (end_box.y1 + end_box.y2) / 2,
+            start_box.x2 + start_de / 2,
+            start_box.y1 - start_de / 2,
+            end_box.x1 + end_de / 2,
+            end_box.y1 - end_de / 2,
             color=end_box.outline,
             width=1,
             detour_y=detour_y,
