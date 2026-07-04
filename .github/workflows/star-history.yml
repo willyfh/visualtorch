@@ -1,0 +1,40 @@
+name: Update Star History Chart
+
+on:
+  schedule:
+    - cron: "0 0 * * *" # daily, midnight UTC
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+jobs:
+  update-chart:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: "3.10"
+
+      - name: Install dependencies
+        run: pip install matplotlib numpy pillow
+
+      - name: Generate chart
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: python scripts/generate_star_history.py
+
+      - name: Push chart to assets branch
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git checkout --orphan assets-tmp
+          git rm -rf --cached . > /dev/null
+          git add docs/source/_static/images/star-history-light.png docs/source/_static/images/star-history-dark.png
+          git commit -m "Update star history chart"
+          git push origin assets-tmp:assets --force
