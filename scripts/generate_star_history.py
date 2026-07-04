@@ -141,8 +141,8 @@ def _render_theme(
 
         fig.suptitle(
             "Star History",
-            x=0.58,
-            y=0.945,
+            x=0.59,
+            y=0.94,
             va="center",
             fontsize=18,
             fontweight="bold",
@@ -151,7 +151,7 @@ def _render_theme(
         imagebox = OffsetImage(logo, zoom=0.5)
         ab = AnnotationBbox(
             imagebox,
-            (0.42, 0.945),
+            (0.41, 0.945),
             xycoords="figure fraction",
             frameon=False,
             box_alignment=(0.5, 0.5),
