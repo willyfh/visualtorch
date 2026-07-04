@@ -1,7 +1,8 @@
 """Custom Orientation
 =======================================
 
-Visualization of custom orientation for 1 dim layers
+Visualization of custom orientation for layers without real spatial/channel structure (a 1D
+shape, or a 2D shape like an RNN/attention layer's ``(seq_len, hidden_size)``).
 """  # noqa: D205
 
 import matplotlib.pyplot as plt
@@ -31,7 +32,7 @@ img = visualtorch.render(
     model,
     input_shape=input_shape,
     style="flow",
-    one_dim_orientation="x",
+    low_dim_orientation="x",
     spacing=40,
 )
 

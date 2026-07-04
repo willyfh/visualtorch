@@ -67,7 +67,7 @@ class FlowStyleOptions:
     scale_z: float = 0.1
     scale_xy: float = 1
     type_ignore: list[type] | None = None
-    one_dim_orientation: str = "z"
+    low_dim_orientation: str = "z"
     draw_volume: bool = True
     spacing: int = 10
     draw_funnel: bool = True
@@ -87,7 +87,7 @@ class LenetStyleOptions:
     scale_z: float = 1
     scale_xy: float = 1
     type_ignore: list[type] | None = None
-    one_dim_orientation: str = "z"
+    low_dim_orientation: str = "z"
     spacing: int = 10
     draw_funnel: bool = True
     shade_step: int = 10
@@ -146,7 +146,7 @@ def _render_flow(
         type_ignore=options.type_ignore,
         color_map=common.color_map,
         palette=common.palette,
-        one_dim_orientation=options.one_dim_orientation,
+        low_dim_orientation=options.low_dim_orientation,
         background_fill=common.background_fill,
         draw_volume=options.draw_volume,
         padding=common.padding,
@@ -181,7 +181,7 @@ def _render_lenet(
         type_ignore=options.type_ignore,
         color_map=common.color_map,
         palette=common.palette,
-        one_dim_orientation=options.one_dim_orientation,
+        low_dim_orientation=options.low_dim_orientation,
         background_fill=common.background_fill,
         padding=common.padding,
         spacing=options.spacing,

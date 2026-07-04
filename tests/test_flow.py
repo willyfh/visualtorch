@@ -174,16 +174,16 @@ def test_rnn_model_flow_view_runs(rnn_model: nn.Module) -> None:
 
 
 @pytest.mark.parametrize("orientation", ["x", "y", "z"])
-def test_flow_view_one_dim_orientation(classifier_model: nn.Module, orientation: str) -> None:
+def test_flow_view_low_dim_orientation(classifier_model: nn.Module, orientation: str) -> None:
     """Test flow view on a model with a 1D output, for every supported orientation."""
-    img = flow_view(classifier_model, input_shape=(1, 3, 16, 16), one_dim_orientation=orientation)
+    img = flow_view(classifier_model, input_shape=(1, 3, 16, 16), low_dim_orientation=orientation)
     assert img is not None
 
 
-def test_flow_view_invalid_one_dim_orientation_raises(classifier_model: nn.Module) -> None:
-    """An unsupported one_dim_orientation should raise a clear ValueError."""
+def test_flow_view_invalid_low_dim_orientation_raises(classifier_model: nn.Module) -> None:
+    """An unsupported low_dim_orientation should raise a clear ValueError."""
     with pytest.raises(ValueError, match="unsupported orientation"):
-        flow_view(classifier_model, input_shape=(1, 3, 16, 16), one_dim_orientation="bad")
+        flow_view(classifier_model, input_shape=(1, 3, 16, 16), low_dim_orientation="bad")
 
 
 def test_flow_view_with_type_ignore(sequential_model: nn.Sequential) -> None:
@@ -535,3 +535,54 @@ def test_flow_view_mismatched_depth_siamese_branches_needs_no_detour() -> None:
     img_matched = flow_view(SiameseNetDepthMatched(), input_shape=input_shape)
 
     assert img_mismatched.size[1] == img_matched.size[1]
+
+
+def test_flow_view_low_dim_orientation_affects_2d_shapes() -> None:
+    """A 2D shape (e.g. an RNN's (seq_len, hidden_size)) should now respond to
+    low_dim_orientation too, not just genuine 1D shapes.
+    """  # noqa: D205
+
+    class SequenceClassifier(nn.Module):
+        def __init__(self, hidden_size: int) -> None:
+            super().__init__()
+            self.lstm = nn.LSTM(input_size=8, hidden_size=hidden_size, batch_first=True)
+
+        def forward(self, x: torch.Tensor) -> torch.Tensor:
+            out, _ = self.lstm(x)
+            return out
+
+    model = SequenceClassifier(hidden_size=64)
+    input_shape = (1, 5, 8)
+
+    sizes = {
+        orientation: flow_view(model, input_shape=input_shape, low_dim_orientation=orientation).size
+        for orientation in ("x", "y", "z")
+    }
+
+    assert len(set(sizes.values())) == 3, f"expected all 3 orientations to differ, got {sizes}"
+
+
+def test_flow_view_2d_shape_seq_len_is_discarded() -> None:
+    """The positional-like dim (e.g. seq_len) of a 2D shape shouldn't affect box size -
+    only the feature-like dim (e.g. hidden_size) should.
+    """  # noqa: D205
+
+    class SequenceClassifier(nn.Module):
+        def __init__(self, hidden_size: int) -> None:
+            super().__init__()
+            self.lstm = nn.LSTM(input_size=8, hidden_size=hidden_size, batch_first=True)
+
+        def forward(self, x: torch.Tensor) -> torch.Tensor:
+            out, _ = self.lstm(x)
+            return out
+
+    model = SequenceClassifier(hidden_size=64)
+    img_short_seq = flow_view(model, input_shape=(1, 5, 8))
+    img_long_seq = flow_view(model, input_shape=(1, 50, 8))
+
+    assert img_short_seq.tobytes() == img_long_seq.tobytes()
+
+    model_bigger_hidden = SequenceClassifier(hidden_size=256)
+    img_bigger_hidden = flow_view(model_bigger_hidden, input_shape=(1, 5, 8))
+
+    assert img_short_seq.tobytes() != img_bigger_hidden.tobytes()

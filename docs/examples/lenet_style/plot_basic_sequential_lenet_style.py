@@ -1,7 +1,7 @@
 """LeNet Style Basic Sequential
 =======================================
 
-Visualization of basic custom model. No ``color_map`` is passed here, so each layer type is
+Visualization of basic sequential model. No ``color_map`` is passed here, so each layer type is
 assigned a color automatically from a colorblind-safe default palette (see the Custom Color
 example to override this).
 """  # noqa: D205

@@ -57,7 +57,7 @@ color_map: dict = defaultdict(dict)
 color_map[nn.Conv2d]["fill"] = "#E69F00"
 color_map[nn.Linear]["fill"] = "#56B4E9"
 
-img = visualtorch.render(model, input_shape, style="lenet", color_map=color_map, scale_xy=1.5)
+img = visualtorch.render(model, input_shape, style="lenet", color_map=color_map, scale_xy=1.5, show_dimension=False)
 
 dpi = 150  # rendered at 2x this in the final doc build (savefig.dpi=300 in conf.py)
 plt.figure(figsize=(img.width / dpi, img.height / dpi), dpi=dpi)

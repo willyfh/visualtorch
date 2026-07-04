@@ -43,7 +43,7 @@ def lenet_view(
     type_ignore: list | None = None,
     color_map: dict | None = None,
     palette: str = "okabe_ito",
-    one_dim_orientation: str = "z",
+    low_dim_orientation: str = "z",
     background_fill: str | tuple[int, ...] = "white",
     padding: int = 10,
     spacing: int = 10,
@@ -83,7 +83,9 @@ def lenet_view(
             given an explicit override via `color_map`. One of `"okabe_ito"` (default,
             colorblind-safe), `"tol_bright"`, `"tol_muted"`, `"tab10"`, `"grayscale"`, `"nord"`,
             `"dracula"`, `"gruvbox"`, `"solarized"`, `"material"`, `"catppuccin"`.
-        one_dim_orientation (str, optional): Axis on which one-dim layers should be drawn. E.g., 'x', 'y', or 'z'.
+        low_dim_orientation (str, optional): Axis on which a layer without real spatial/channel
+            structure (a 1D shape, or a 2D shape like an RNN/attention layer's
+            `(seq_len, hidden_size)`) should be drawn. One of `'x'`, `'y'`, or `'z'`.
         background_fill (str or tuple, optional): Background color for the image. A string or a tuple (R, G, B, A).
         padding (int, optional): Distance in pixels before the first and after the last layer.
         spacing (int, optional): Spacing in pixels between two layers.
@@ -136,7 +138,7 @@ def lenet_view(
 
     layer_types: list[type] = []
     make_box = _box_factory(
-        one_dim_orientation,
+        low_dim_orientation,
         scale_xy,
         min_xy,
         max_xy,
@@ -232,7 +234,7 @@ def _right_extent_for(box: VolumetricBox) -> float:
 
 
 def _box_factory(
-    one_dim_orientation: str,
+    low_dim_orientation: str,
     scale_xy: float,
     min_xy: int,
     max_xy: int,
@@ -251,19 +253,20 @@ def _box_factory(
     def make_box(layer: TracedLayer) -> StackedBox:
         shape = layer.output_shape[1:]  # drop batch size
 
-        if len(shape) == 1:
-            if one_dim_orientation in ("x", "y", "z"):
-                shape = (1,) * "cxyz".index(one_dim_orientation) + shape
+        if len(shape) in (1, 2):
+            # Neither a 1D nor a 2D shape has real spatial/channel structure - there's nothing
+            # to distinguish "channel" from "spatial" the way a genuine (C, H, W) feature map
+            # does. Take the last value (for 2D, e.g. an RNN/attention layer's
+            # (seq_len, hidden_size), this is the feature/channel-like one, matching PyTorch's
+            # (..., seq, feature) convention for sequence data; for 1D it's the only value) and
+            # let the user place it on whichever axis they choose, same as any 1D value - the
+            # positional-like dim, if any, is discarded either way.
+            value = shape[-1]
+            if low_dim_orientation in ("x", "y", "z"):
+                shape = (1,) * "cxyz".index(low_dim_orientation) + (value,)
             else:
-                error_msg = f"unsupported orientation: {one_dim_orientation}"
+                error_msg = f"unsupported orientation: {low_dim_orientation}"
                 raise ValueError(error_msg)
-        elif len(shape) == 2:
-            # A 2D non-batch shape (e.g. (seq_len, hidden_size) from an RNN/attention layer)
-            # isn't a CNN feature map missing a channel dim - there's no channel axis at all.
-            # StackedBox's slice count (de, below) is driven by shape[0], so a dummy 1 goes
-            # there instead of either real dim, keeping the two real dims on the box's actual
-            # width and height instead of one of them being drawn as that many stacked slices.
-            shape = (1, *shape)
 
         ori_shape = shape
         shape = shape + (1,) * (4 - len(shape))  # expand 4D.
