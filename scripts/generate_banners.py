@@ -307,7 +307,11 @@ def render_readme_panels() -> list[tuple[Image.Image, str]]:
         ),
         (
             visualtorch.render(
-                InceptionBlock(16, 8, 8, 8, 8), (1, 16, 16, 16), style="graph", show_neurons=False, layer_spacing=60
+                InceptionBlock(16, 8, 8, 8, 8),
+                (1, 16, 16, 16),
+                style="graph",
+                show_neurons=False,
+                layer_spacing=60,
             ),
             "Multi-Branch Merge",
         ),
@@ -317,13 +321,22 @@ def render_readme_panels() -> list[tuple[Image.Image, str]]:
         ),
         (
             visualtorch.render(
-                cnn_sequential(), (1, 3, 224, 224), style="flow", type_ignore=[nn.ReLU, nn.Flatten], show_input=False
+                cnn_sequential(),
+                (1, 3, 224, 224),
+                style="flow",
+                type_ignore=[nn.ReLU, nn.Flatten],
+                show_input=False,
             ),
             "Hide Layers",
         ),
         (
             visualtorch.render(
-                small_cnn(), (1, 3, 16, 16), style="graph", show_neurons=False, show_dimension=True, layer_spacing=60
+                small_cnn(),
+                (1, 3, 16, 16),
+                style="graph",
+                show_neurons=False,
+                show_dimension=True,
+                layer_spacing=60,
             ),
             "Output Shapes",
         ),
@@ -344,7 +357,11 @@ def render_preview_panels() -> list[tuple[Image.Image, str]]:
         (visualtorch.render(SimpleDense(), (1, 4), style="graph"), "Neuron-Level Detail"),
         (
             visualtorch.render(
-                InceptionBlock(16, 8, 8, 8, 8), (1, 16, 16, 16), style="graph", show_neurons=False, layer_spacing=60
+                InceptionBlock(16, 8, 8, 8, 8),
+                (1, 16, 16, 16),
+                style="graph",
+                show_neurons=False,
+                layer_spacing=60,
             ),
             "Block Style",
         ),
@@ -358,18 +375,32 @@ def main() -> None:
     BANNER_DIR.mkdir(parents=True, exist_ok=True)
 
     readme_banner = build_grid(
-        render_readme_panels(), cols=4, card_w=380, card_h=320, img_area_h=250, margin=24, gap=22, font_size=20
+        render_readme_panels(),
+        cols=4,
+        card_w=380,
+        card_h=320,
+        img_area_h=250,
+        margin=24,
+        gap=22,
+        font_size=20,
     )
     readme_path = BANNER_DIR / "readme-examples.png"
     readme_banner.save(readme_path)
-    print(readme_path, readme_banner.size)  # noqa: T201
+    print(readme_path, readme_banner.size)
 
     preview_banner = build_grid(
-        render_preview_panels(), cols=4, card_w=380, card_h=380, img_area_h=380, margin=24, gap=22, font_size=1
+        render_preview_panels(),
+        cols=4,
+        card_w=380,
+        card_h=380,
+        img_area_h=380,
+        margin=24,
+        gap=22,
+        font_size=1,
     )
     preview_path = BANNER_DIR / "visualizations-preview.png"
     preview_banner.save(preview_path)
-    print(preview_path, preview_banner.size)  # noqa: T201
+    print(preview_path, preview_banner.size)
 
 
 if __name__ == "__main__":
