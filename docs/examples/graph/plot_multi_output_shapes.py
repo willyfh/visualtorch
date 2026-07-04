@@ -23,8 +23,8 @@ class SequenceClassifier(nn.Module):
 
     def __init__(self) -> None:
         super().__init__()
-        self.lstm = nn.LSTM(input_size=10, hidden_size=20, batch_first=True)
-        self.fc = nn.Linear(20, 5)
+        self.lstm = nn.LSTM(input_size=64, hidden_size=128, batch_first=True)
+        self.fc = nn.Linear(128, 10)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """Run the LSTM, then classify from its final hidden state (h_n), not its full sequence output."""
@@ -34,7 +34,7 @@ class SequenceClassifier(nn.Module):
 
 model = SequenceClassifier()
 
-input_shape = (1, 7, 10)
+input_shape = (1, 7, 64)
 
 color_map: dict = defaultdict(dict)
 color_map[nn.LSTM]["fill"] = "#56B4E9"
