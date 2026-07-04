@@ -17,7 +17,15 @@ from .backend import Architecture, extract_architecture
 from .connectors import compute_skip_levels, draw_connector
 from .utils.layer_utils import Input
 from .utils.traced_layer import TracedLayer
-from .utils.utils import ColorWheel, ImageDraw, InputShape, StackedBox, get_rgba_tuple, self_multiply
+from .utils.utils import (
+    ColorWheel,
+    ImageDraw,
+    InputShape,
+    StackedBox,
+    format_shape_label,
+    get_rgba_tuple,
+    self_multiply,
+)
 
 _LABEL_ROW_HEIGHT = 100
 
@@ -266,6 +274,7 @@ def _box_factory(
         box.offset_z = offset_z
         box.label = layer.module.name() if isinstance(layer.module, Input) else layer_type.__name__
         box.output_shape = tuple(ori_shape)
+        box.extra_output_shapes = layer.extra_output_shapes
         box.de = z
 
         box.x1 = 0
@@ -405,6 +414,7 @@ def _draw_labels(
         for box in column:
             loc_x = box.x1 + (box.x2 - box.x1) // 4
             label = getattr(box, "label", type(box).__name__)
-            draw_text.text((loc_x, img.height - 50), f"{label} {box.output_shape}", font=font, fill=font_color)
+            shape_label = format_shape_label(box.output_shape, box.extra_output_shapes)
+            draw_text.text((loc_x, img.height - 50), f"{label} {shape_label}", font=font, fill=font_color)
 
     return Image.alpha_composite(img, text_img)

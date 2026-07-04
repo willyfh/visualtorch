@@ -15,7 +15,7 @@ from PIL import Image, ImageFont
 from .backend import extract_architecture
 from .connectors import compute_skip_levels, draw_connector
 from .utils.traced_layer import TracedLayer
-from .utils.utils import Box, Circle, ColorWheel, Ellipses, ImageDraw, InputShape
+from .utils.utils import Box, Circle, ColorWheel, Ellipses, ImageDraw, InputShape, format_shape_label
 
 
 def graph_view(
@@ -409,7 +409,8 @@ def _create_architecture(
 
             id_to_node_list_map[layer.node_id] = layer_nodes
             nodes.extend(layer_nodes)
-            column_labels.append((str(layer.output_shape), current_x + node_size / 2, current_y))
+            label = format_shape_label(layer.output_shape, layer.extra_output_shapes)
+            column_labels.append((label, current_x + node_size / 2, current_y))
             current_y += 2 * node_size
 
         layer_y.append(current_y - node_spacing - 2 * node_size)

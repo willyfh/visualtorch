@@ -20,3 +20,9 @@ class TracedLayer:
     module: nn.Module
     output_shape: tuple[int, ...]
     node_id: str
+    extra_output_shapes: tuple[tuple[int, ...], ...] = ()
+    """Shapes of any additional output tensors beyond `output_shape` (e.g. `nn.LSTM`'s hidden and
+    cell state, returned alongside its main sequence output) - empty for a module that returns
+    just one tensor. `output_shape` alone still drives box sizing; this is only ever read to
+    extend the `show_dimension` label so those extra tensors aren't silently unaccounted for.
+    """

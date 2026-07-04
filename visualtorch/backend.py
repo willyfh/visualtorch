@@ -67,7 +67,10 @@ def extract_architecture(model: nn.Module, input_shape: InputShape) -> Architect
     """
     input_shapes = validate_input_shape(input_shape)
 
-    id_to_module, id_to_output_shape, edges, input_ids = trace_module_graph(model, input_shapes)
+    id_to_module, id_to_output_shape, id_to_extra_output_shapes, edges, input_ids = trace_module_graph(
+        model,
+        input_shapes,
+    )
 
     nodes = list(id_to_module.keys())
     id_to_index = {node_id: idx for idx, node_id in enumerate(nodes)}
@@ -114,6 +117,7 @@ def extract_architecture(model: nn.Module, input_shape: InputShape) -> Architect
             module=id_to_module[node_id],
             output_shape=id_to_output_shape[node_id],
             node_id=node_id,
+            extra_output_shapes=id_to_extra_output_shapes.get(node_id, ()),
         )
         columns[depth[node_id]].append(wrapper)
 

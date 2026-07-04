@@ -106,28 +106,34 @@ def _wrap_and_stamp(obj: Any, ids: set[str]) -> Any:
     return obj
 
 
-def _first_tensor_shape(obj: Any) -> tuple[int, ...]:
-    """Recursively find the shape of the first tensor inside obj, or () if there isn't one."""
+def _all_tensor_shapes(obj: Any) -> list[tuple[int, ...]]:
+    """Recursively collect the shape of every tensor inside obj, in encounter order.
+
+    A module's return value isn't always a single tensor - `nn.LSTM` returns
+    `(output, (h_n, c_n))`, `nn.MultiheadAttention` returns `(attn_output, attn_weights)`, and a
+    custom module can return any tuple/list/dict of tensors. Collecting all of them (rather than
+    just the first) is what lets a caller show every output shape instead of silently dropping
+    every tensor after the first.
+    """
     if isinstance(obj, torch.Tensor):
-        return tuple(obj.shape)
+        return [tuple(obj.shape)]
     if isinstance(obj, Mapping):
+        shapes = []
         for value in obj.values():
-            shape = _first_tensor_shape(value)
-            if shape:
-                return shape
-        return ()
+            shapes.extend(_all_tensor_shapes(value))
+        return shapes
     if isinstance(obj, list | tuple):
+        shapes = []
         for value in obj:
-            shape = _first_tensor_shape(value)
-            if shape:
-                return shape
-        return ()
-    return ()
+            shapes.extend(_all_tensor_shapes(value))
+        return shapes
+    return []
 
 
 def _wrapped_module_call(
     id_to_module: dict[str, nn.Module],
     id_to_output_shape: dict[str, tuple[int, ...]],
+    id_to_extra_output_shapes: dict[str, tuple[tuple[int, ...], ...]],
     edges: list[tuple[str, str]],
     call_counts: dict[int, int],
 ) -> Any:
@@ -154,8 +160,11 @@ def _wrapped_module_call(
             call_counts[base_id] = call_index + 1
             node_id = f"{base_id}#{call_index}"
 
+            shapes = _all_tensor_shapes(out)
             id_to_module[node_id] = mod
-            id_to_output_shape[node_id] = _first_tensor_shape(out)
+            id_to_output_shape[node_id] = shapes[0] if shapes else ()
+            if len(shapes) > 1:
+                id_to_extra_output_shapes[node_id] = tuple(shapes[1:])
             edges.extend((producer_id, node_id) for producer_id in producer_ids)
             out = _wrap_and_stamp(out, {node_id})
 
@@ -171,11 +180,13 @@ class Recorder:
         self,
         id_to_module: dict[str, nn.Module],
         id_to_output_shape: dict[str, tuple[int, ...]],
+        id_to_extra_output_shapes: dict[str, tuple[tuple[int, ...], ...]],
         edges: list[tuple[str, str]],
         call_counts: dict[int, int],
     ) -> None:
         self._id_to_module = id_to_module
         self._id_to_output_shape = id_to_output_shape
+        self._id_to_extra_output_shapes = id_to_extra_output_shapes
         self._edges = edges
         self._call_counts = call_counts
 
@@ -184,6 +195,7 @@ class Recorder:
         nn.Module.__call__ = _wrapped_module_call(  # type: ignore[method-assign]
             self._id_to_module,
             self._id_to_output_shape,
+            self._id_to_extra_output_shapes,
             self._edges,
             self._call_counts,
         )
@@ -197,7 +209,13 @@ class Recorder:
 def trace_module_graph(
     model: nn.Module,
     input_shapes: tuple[tuple[int, ...], ...],
-) -> tuple[dict[str, nn.Module], dict[str, tuple[int, ...]], list[tuple[str, str]], list[str]]:
+) -> tuple[
+    dict[str, nn.Module],
+    dict[str, tuple[int, ...]],
+    dict[str, tuple[tuple[int, ...], ...]],
+    list[tuple[str, str]],
+    list[str],
+]:
     """Trace a forward pass to recover the leaf-module call graph.
 
     Args:
@@ -210,7 +228,11 @@ def trace_module_graph(
         tuple: A tuple containing:
             - id_to_module (dict): Mapping from node id to the leaf module. A leaf module
                 called more than once gets one entry per call (`f"{id(module)}#{call_index}"`).
-            - id_to_output_shape (dict): Mapping from node id to that module's output shape.
+            - id_to_output_shape (dict): Mapping from node id to that module's *first* output
+                tensor's shape (the one used for box sizing).
+            - id_to_extra_output_shapes (dict): Mapping from node id to the shapes of any
+                *additional* output tensors beyond the first (e.g. `nn.LSTM`'s `(h_n, c_n)`) -
+                only present for nodes that return more than one tensor.
             - edges (list): `(producer_node_id, consumer_node_id)` pairs, in call order.
             - input_ids (list): One synthetic node id per input tensor, in the same order as
                 `input_shapes`.
@@ -223,10 +245,11 @@ def trace_module_graph(
 
     id_to_module: dict[str, nn.Module] = {}
     id_to_output_shape: dict[str, tuple[int, ...]] = {}
+    id_to_extra_output_shapes: dict[str, tuple[tuple[int, ...], ...]] = {}
     edges: list[tuple[str, str]] = []
     call_counts: dict[int, int] = {}
 
-    with Recorder(id_to_module, id_to_output_shape, edges, call_counts):
+    with Recorder(id_to_module, id_to_output_shape, id_to_extra_output_shapes, edges, call_counts):
         if isinstance(model, nn.ModuleList):
             # nn.ModuleList has no forward() of its own - it's a plain container, not meant to
             # be called directly - so drive it the same way a user would: chain each child call.
@@ -244,4 +267,4 @@ def trace_module_graph(
             model(*dummy_inputs)
 
     input_ids = [f"{INPUT_NODE_ID}#{i}" for i in range(len(input_shapes))]
-    return id_to_module, id_to_output_shape, edges, input_ids
+    return id_to_module, id_to_output_shape, id_to_extra_output_shapes, edges, input_ids
