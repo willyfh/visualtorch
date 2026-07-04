@@ -166,3 +166,5 @@ docs/source/sg_execution_times.rst
 
 # scratch folder for previewing generated visualizations during development
 .preview/
+
+.DS_Store

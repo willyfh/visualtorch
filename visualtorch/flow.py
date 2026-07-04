@@ -22,6 +22,7 @@ from .utils.utils import (
     ColorWheel,
     ImageDraw,
     InputShape,
+    format_shape_label,
     get_rgba_tuple,
     linear_layout,
     self_multiply,
@@ -278,6 +279,7 @@ def _box_factory(
 
         box = Box()
         box.output_shape = tuple(ori_shape)
+        box.extra_output_shapes = layer.extra_output_shapes
         box.de = int(x / 3) if draw_volume else 0
 
         box.x1 = 0
@@ -476,7 +478,7 @@ def _draw_legend(
 
 def _column_label_and_center(column: list[VolumetricBox]) -> tuple[str, float]:
     """A column's shape label (joined across branches) and its shared x-center."""
-    label = " / ".join(str(box.output_shape) for box in column)
+    label = " / ".join(format_shape_label(box.output_shape, box.extra_output_shapes) for box in column)
     center_x = (column[0].x1 + column[0].x2) / 2
     return label, center_x
 

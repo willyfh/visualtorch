@@ -11,8 +11,9 @@ import torch
 from torch import nn
 from visualtorch.backend import extract_architecture
 from visualtorch.flow import flow_view
+from visualtorch.graph import graph_view
 from visualtorch.lenet_style import lenet_view
-from visualtorch.utils.utils import self_multiply
+from visualtorch.utils.utils import format_shape_label, self_multiply
 
 
 @pytest.fixture()
@@ -112,3 +113,48 @@ def test_flow_view_recurrent_sequence_length_does_not_inflate_diagram_height(rec
     long_img = flow_view(model, input_shape=(1, 200, 10))
 
     assert long_img.height == short_img.height
+
+
+@pytest.fixture()
+def lstm_using_hidden_state_model() -> nn.Module:
+    """A model that consumes `nn.LSTM`'s hidden state (h_n), not its sequence output.
+
+    `nn.LSTM.forward()` returns `(output, (h_n, c_n))` - three tensors, not one. Before the fix,
+    only `output`'s shape was ever recorded, even when (as here) the model actually uses `h_n`
+    instead - silently dropping the shape of the tensor that matters, with nothing shown to
+    indicate more than one tensor even exists.
+    """
+
+    class Model(nn.Module):
+        def __init__(self) -> None:
+            super().__init__()
+            self.lstm = nn.LSTM(input_size=10, hidden_size=20, batch_first=True)
+            self.fc = nn.Linear(20, 5)
+
+        def forward(self, x: torch.Tensor) -> torch.Tensor:
+            _output, (h_n, _c_n) = self.lstm(x)
+            return self.fc(h_n.squeeze(0))
+
+    return Model()
+
+
+def test_extract_architecture_records_every_output_tensor_shape(lstm_using_hidden_state_model: nn.Module) -> None:
+    """A multi-output leaf module's TracedLayer should record all three of its output shapes."""
+    architecture = extract_architecture(lstm_using_hidden_state_model, (1, 7, 10))
+    lstm_layer = next(layer for column in architecture.columns for layer in column if isinstance(layer.module, nn.LSTM))
+
+    assert lstm_layer.output_shape == (1, 7, 20)
+    assert lstm_layer.extra_output_shapes == ((1, 1, 20), (1, 1, 20))
+
+
+def test_format_shape_label_appends_extra_shapes() -> None:
+    """format_shape_label should append every extra shape, and omit the `+` entirely when there are none."""
+    assert format_shape_label((1, 7, 20), ()) == "(1, 7, 20)"
+    assert format_shape_label((1, 7, 20), ((1, 1, 20), (1, 1, 20))) == "(1, 7, 20) + (1, 1, 20) + (1, 1, 20)"
+
+
+@pytest.mark.parametrize("view", [graph_view, flow_view, lenet_view])
+def test_show_dimension_includes_every_output_shape(lstm_using_hidden_state_model: nn.Module, view: object) -> None:
+    """show_dimension=True shouldn't crash, and should still work, for a multi-output leaf module."""
+    img = view(lstm_using_hidden_state_model, input_shape=(1, 7, 10), show_dimension=True)  # type: ignore[operator]
+    assert img is not None

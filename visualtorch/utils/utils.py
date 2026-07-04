@@ -66,6 +66,7 @@ class StackedBox(Shape):
     offset_z: int
     label: str
     output_shape: tuple
+    extra_output_shapes: tuple[tuple[int, ...], ...] = ()
 
     def draw(self, draw: ImageDraw) -> None:
         """Draw box shape."""
@@ -114,6 +115,7 @@ class Box(Shape):
     de: int
     shade: int
     output_shape: tuple[int, ...]
+    extra_output_shapes: tuple[tuple[int, ...], ...] = ()
 
     def draw(self, draw: ImageDraw) -> None:
         """Draw box shape."""
@@ -342,6 +344,22 @@ def self_multiply(tensor_tuple: tuple | list) -> int | float:
     for v in tensor_list:
         s *= self_multiply(v) if isinstance(v, tuple | list) else v
     return s
+
+
+def format_shape_label(output_shape: tuple[int, ...], extra_output_shapes: tuple[tuple[int, ...], ...]) -> str:
+    """Format an output shape for display, appending any extra output shapes if present.
+
+    A module that returns more than one meaningful tensor (e.g. `nn.LSTM`'s `(output, (h_n,
+    c_n))`) would otherwise only ever show `output_shape` (the first tensor found, also the one
+    driving box size) with no indication the other tensors exist at all. `+` is used rather than
+    `visualtorch`'s existing `/` convention (already used to join sibling branches within one
+    column) so this doesn't read as an alternative/branch - these are all real outputs of this
+    same node, not one of several options.
+    """
+    label = str(output_shape)
+    if extra_output_shapes:
+        label += " + " + " + ".join(str(shape) for shape in extra_output_shapes)
+    return label
 
 
 def vertical_image_concat(

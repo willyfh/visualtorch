@@ -9,13 +9,14 @@
 
 **Note:** `1.0+` is a major release with breaking API changes, but with significantly better features and algorithms - upgrading is recommended. For the old API, use `0.2.5` or older.
 
-**Limitation:** VisualTorch traces a real forward pass to build the diagram, which has two inherent
-limitations shared by any tracing-based approach (not bugs, and not fixable without full symbolic
-execution): (1) models with **data-dependent control flow** (e.g. a branch only taken if a tensor
-value crosses some threshold) only show whichever branch the traced dummy input happened to take;
-(2) a layer that returns **multiple meaningful output tensors** (e.g. a custom multi-task head)
-only has its first tensor's shape reflected in that node's size/label - its downstream connections
-are still correct either way. Contributions are welcome!
+**Limitation:** VisualTorch traces a real forward pass to build the diagram, which has an inherent
+limitation shared by any tracing-based approach (not a bug, and not fixable without full symbolic
+execution): models with **data-dependent control flow** (e.g. a branch only taken if a tensor
+value crosses some threshold) only show whichever branch the traced dummy input happened to take.
+Separately, a layer that returns **multiple meaningful output tensors** (e.g. a custom multi-task
+head, or `nn.LSTM`'s `(output, (h_n, c_n))`) still has its node's size based on only its first
+tensor; with `show_dimension=True`, every output tensor's shape is shown in the label, not just
+the first. Downstream connections are correct either way. Contributions are welcome!
 
 <div align="center">
 
