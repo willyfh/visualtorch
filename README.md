@@ -5,7 +5,7 @@
 
 </div>
 
-**VisualTorch** aims to help visualize Torch-based neural network architectures. It currently supports generating flow-style, graph-style, and LeNet-style architectures for PyTorch Sequential and Custom models. This tool is adapted from [visualkeras](https://github.com/paulgavrikov/visualkeras), [pytorchviz](https://github.com/szagoruyko/pytorchviz), and [pytorch-summary](https://github.com/sksq96/pytorch-summary).
+**VisualTorch** aims to help visualize Torch-based neural network architectures. It currently supports generating flow-style, graph-style, and LeNet-style architectures for PyTorch Sequential and Custom models. Its original visual styles were inspired by [visualkeras](https://github.com/paulgavrikov/visualkeras), [pytorchviz](https://github.com/szagoruyko/pytorchviz), [pytorch-summary](https://github.com/sksq96/pytorch-summary), and [torchview](https://github.com/mert-kurttutan/torchview); since then, it has grown its own unified tracing backend and architecture-handling logic well beyond its origins.
 
 **Note:** `1.0+` is a major release with breaking API changes, but with significantly better features and algorithms - upgrading is recommended. For the old API, use `0.2.5` or older.
 
@@ -52,16 +52,16 @@ Please feel free to send a pull request to contribute to this project by followi
 
 This poject is available as open source under the terms of the [MIT License](https://github.com/willyfh/visualtorch/blob/main/LICENSE).
 
-Originally, this project was based on the [visualkeras](https://github.com/paulgavrikov/visualkeras) (under the MIT license), with additional modifications inspired by [pytorchviz](https://github.com/szagoruyko/pytorchviz), and [pytorch-summary](https://github.com/sksq96/pytorch-summary), both of which are also licensed under the MIT license.
+Originally, this project was based on the [visualkeras](https://github.com/paulgavrikov/visualkeras) (under the MIT license), with additional modifications inspired by [pytorchviz](https://github.com/szagoruyko/pytorchviz), [pytorch-summary](https://github.com/sksq96/pytorch-summary), and [torchview](https://github.com/mert-kurttutan/torchview), all of which are also licensed under the MIT license.
 
 ## Citation
 
 Please cite this project in your publications if it helps your research.
 
-**Note:** the paper below describes the API as of its publication date (2024). VisualTorch has
-since had breaking API changes (see the [documentation](https://visualtorch.readthedocs.io/en/latest/)
-for the current API) - the DOI always resolves to what was actually reviewed and published, so
-it isn't updated to match.
+**Note:** the paper below describes VisualTorch as of its publication date (2024). The project has
+since been substantially refactored, including breaking API changes (see the
+[documentation](https://visualtorch.readthedocs.io/en/latest/) for the current API) - the DOI
+always resolves to what was actually reviewed and published.
 
 ```bibtex
 @article{Hendria2024,
