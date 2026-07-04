@@ -7,9 +7,9 @@ states. With ``show_dimension=True``, every one of those output tensors' shapes 
 just the first, so a downstream layer that consumes ``h_n`` instead of ``output`` (as this model
 does) doesn't leave its actual input shape unaccounted for.
 
-``min_xy=60`` is set here since this model's boxes have no real spatial extent to draw from (an
+``min_xy=150`` is set here since this model's boxes have no real spatial extent to draw from (an
 LSTM/Linear's shapes aren't a CNN feature map) - without it, the default floor (``10``) draws
-each box as a barely-visible sliver.
+each box, and its shape label, at too low a resolution to read comfortably.
 
 LSTM is sky blue and Linear is bluish green.
 """  # noqa: D205
@@ -50,8 +50,8 @@ img = visualtorch.render(
     style="flow",
     color_map=color_map,
     show_dimension=True,
-    spacing=60,
-    min_xy=60,
+    spacing=100,
+    min_xy=150,
 )
 
 dpi = 150  # rendered at 2x this in the final doc build (savefig.dpi=300 in conf.py)
