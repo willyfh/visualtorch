@@ -7,9 +7,11 @@ states. ``show_dimension`` defaults to ``True`` for this style, and every one of
 tensors' shapes is printed, not just the first, so a downstream layer that consumes ``h_n``
 instead of ``output`` (as this model does) doesn't leave its actual input shape unaccounted for.
 
-``low_dim_orientation="x"`` is set here since the default (``"z"``) stacks a layer's feature
-count as individual depth slices - fine for a small count, but the ``Linear`` layer's 10 output
-units would otherwise draw as a tall staircase of thin slices instead of a single block.
+``low_dim_orientation="x"`` is set here purely for a more compact, easier-to-read illustration -
+the default (``"z"``) stacks a layer's feature count as individual depth slices, which for
+``hidden_size=128``/``64`` here draws as a long diagonal chain rather than a compact block. Both
+are equally valid, correct renderings of the same shapes; this is a legibility choice, the same as
+this example's ``spacing``/``padding`` values below.
 
 LSTM is sky blue and Linear is bluish green.
 """  # noqa: D205
