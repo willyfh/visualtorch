@@ -11,7 +11,7 @@ import torch
 import torch.nn.functional as func
 from PIL import Image
 from torch import nn
-from visualtorch.flow import flow_view
+from visualtorch.flow import flow_view, layered_view
 
 
 @pytest.fixture()
@@ -184,6 +184,14 @@ def test_flow_view_invalid_low_dim_orientation_raises(classifier_model: nn.Modul
     """An unsupported low_dim_orientation should raise a clear ValueError."""
     with pytest.raises(ValueError, match="unsupported orientation"):
         flow_view(classifier_model, input_shape=(1, 3, 16, 16), low_dim_orientation="bad")
+
+
+def test_flow_view_one_dim_orientation_still_works(classifier_model: nn.Module) -> None:
+    """The deprecated one_dim_orientation kwarg should still work and warn, not crash."""
+    with pytest.warns(DeprecationWarning, match="one_dim_orientation"):
+        deprecated_img = flow_view(classifier_model, input_shape=(1, 3, 16, 16), one_dim_orientation="x")
+    current_img = flow_view(classifier_model, input_shape=(1, 3, 16, 16), low_dim_orientation="x")
+    assert deprecated_img.tobytes() == current_img.tobytes()
 
 
 def test_flow_view_with_type_ignore(sequential_model: nn.Sequential) -> None:
@@ -586,3 +594,18 @@ def test_flow_view_2d_shape_seq_len_is_discarded() -> None:
     img_bigger_hidden = flow_view(model_bigger_hidden, input_shape=(1, 5, 8))
 
     assert img_short_seq.tobytes() != img_bigger_hidden.tobytes()
+
+
+def test_layered_view_still_works(sequential_model: nn.Sequential) -> None:
+    """The deprecated layered_view should still work, warn, and match flow_view's output."""
+    with pytest.warns(DeprecationWarning, match="layered_view"):
+        deprecated_img = layered_view(sequential_model, input_shape=(1, 3, 224, 224))
+    current_img = flow_view(sequential_model, input_shape=(1, 3, 224, 224))
+    assert deprecated_img.tobytes() == current_img.tobytes()
+
+
+def test_layered_view_drops_index_ignore(sequential_model: nn.Sequential) -> None:
+    """The removed index_ignore kwarg should be silently accepted, not raise."""
+    with pytest.warns(DeprecationWarning, match="layered_view"):
+        img = layered_view(sequential_model, input_shape=(1, 3, 224, 224), index_ignore=[0])
+    assert img is not None

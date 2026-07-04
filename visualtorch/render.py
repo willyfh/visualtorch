@@ -75,6 +75,7 @@ class FlowStyleOptions:
     legend: bool = False
     show_dimension: bool = False
     show_input: bool = True
+    one_dim_orientation: str | None = None  # deprecated, use low_dim_orientation
 
 
 @dataclass
@@ -95,6 +96,7 @@ class LenetStyleOptions:
     offset_z: int = 10
     show_dimension: bool = True
     show_input: bool = True
+    one_dim_orientation: str | None = None  # deprecated, use low_dim_orientation
 
 
 def _render_graph(
@@ -160,6 +162,7 @@ def _render_flow(
         show_dimension=options.show_dimension,
         level_gap=common.level_gap,
         show_input=options.show_input,
+        one_dim_orientation=options.one_dim_orientation,
     )
 
 
@@ -195,6 +198,7 @@ def _render_lenet(
         level_gap=common.level_gap,
         show_dimension=options.show_dimension,
         show_input=options.show_input,
+        one_dim_orientation=options.one_dim_orientation,
     )
 
 

@@ -4,6 +4,7 @@
 # Copyright (C) 2024 Willy Fitra Hendria
 # SPDX-License-Identifier: MIT
 
+import warnings
 from collections import defaultdict
 from collections.abc import Callable
 from math import ceil
@@ -58,6 +59,7 @@ def flow_view(
     show_dimension: bool = False,
     level_gap: int | None = None,
     show_input: bool = True,
+    one_dim_orientation: str | None = None,
 ) -> PIL.Image:
     """Generate a flow-style architecture visualization for a given torch model.
 
@@ -104,10 +106,20 @@ def flow_view(
             you're overlaying your own custom input illustration instead. Has no effect on a
             multi-input model, where every input is always shown (omitting any of them would
             make it ambiguous which arrow belongs to which named input).
+        one_dim_orientation (str, optional): Deprecated, use `low_dim_orientation` instead.
 
     Returns:
         PIL.Image: An Image object representing the generated architecture visualization.
     """
+    if one_dim_orientation is not None:
+        warnings.warn(
+            "`one_dim_orientation` is deprecated and will be removed in a future release, "
+            "use `low_dim_orientation` instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        low_dim_orientation = one_dim_orientation
+
     if type_ignore is None:
         type_ignore = []
 
@@ -569,3 +581,26 @@ def _draw_dimension_labels(
         draw_text.text((center_x - text_width / 2, diagram_height + 2), label, font=font, fill=font_color)
 
     return Image.alpha_composite(img, text_img)
+
+
+def layered_view(*args: object, **kwargs: object) -> PIL.Image:
+    """Pre-1.0 alias for `flow_view`.
+
+    Accepts the same arguments as `flow_view`, plus the removed `index_ignore` (silently
+    dropped - it has no equivalent under the topology-based layout) and the renamed
+    `one_dim_orientation` (mapped to `low_dim_orientation`). Positional calls using the old
+    pre-1.0 argument order (which had `index_ignore` where `flow_view` now has `color_map`)
+    will not be translated correctly - use keyword arguments to migrate safely.
+
+    Deprecated:
+        Since version 1.0.0. Use `flow_view` instead.
+    """
+    warnings.warn(
+        "`layered_view` is deprecated and will be removed in a future release, use `flow_view` instead.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
+    kwargs.pop("index_ignore", None)
+    if "one_dim_orientation" in kwargs:
+        kwargs["low_dim_orientation"] = kwargs.pop("one_dim_orientation")
+    return flow_view(*args, **kwargs)  # type: ignore[arg-type]
