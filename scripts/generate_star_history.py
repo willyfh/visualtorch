@@ -173,6 +173,7 @@ def _plot(timestamps: list[datetime]) -> None:
 def main() -> None:
     """Fetch stargazer history from GitHub and write both theme variants of the chart."""
     timestamps = _fetch_stargazer_timestamps()
+    print(f"{REPO}: {len(timestamps)} stars as of {timestamps[-1].isoformat()}")
     _plot(timestamps)
 
 

@@ -80,10 +80,8 @@ always resolves to what was actually reviewed and published.
 
 ## Star History
 
-<a href="https://www.star-history.com/?repos=willyfh%2Fvisualtorch&type=date&legend=top-left">
- <picture>
-   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/willyfh/visualtorch/assets/docs/source/_static/images/star-history-dark.png" />
-   <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/willyfh/visualtorch/assets/docs/source/_static/images/star-history-light.png" />
-   <img alt="Star History Chart" src="https://raw.githubusercontent.com/willyfh/visualtorch/assets/docs/source/_static/images/star-history-light.png" />
- </picture>
-</a>
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/willyfh/visualtorch/assets/docs/source/_static/images/star-history-dark.png" />
+  <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/willyfh/visualtorch/assets/docs/source/_static/images/star-history-light.png" />
+  <img alt="Star History Chart" src="https://raw.githubusercontent.com/willyfh/visualtorch/assets/docs/source/_static/images/star-history-light.png" />
+</picture>
