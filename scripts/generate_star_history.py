@@ -105,6 +105,11 @@ def _render_theme(
         # background, but a stark halo on a dark one) - re-point it at this theme's own
         # background so the stroke blends in instead, on both themes.
         plt.rcParams["path.effects"] = [patheffects.withStroke(linewidth=4, foreground=theme["figure"])]
+        # xkcd() also picks whichever comic-style font happens to be installed (e.g. "Comic Sans
+        # MS" on macOS), silently falling back to a plain sans-serif elsewhere (e.g. CI's Ubuntu
+        # runner has none of them) - pin to a font bundled with matplotlib itself so local and CI
+        # renders match.
+        plt.rcParams["font.family"] = ["DejaVu Sans"]
 
         fig, ax = plt.subplots(figsize=(6.5, 5), dpi=150)
         fig.patch.set_facecolor(theme["figure"])
