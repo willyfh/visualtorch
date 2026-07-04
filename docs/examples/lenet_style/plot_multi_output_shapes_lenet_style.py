@@ -7,9 +7,9 @@ states. ``show_dimension`` defaults to ``True`` for this style, and every one of
 tensors' shapes is printed, not just the first, so a downstream layer that consumes ``h_n``
 instead of ``output`` (as this model does) doesn't leave its actual input shape unaccounted for.
 
-``one_dim_orientation="x"`` is set here since the default (``"z"``) stacks a 1D layer's units as
-individual depth slices - fine for a small unit count, but the ``Linear`` layer's 10 output units
-would otherwise draw as a tall staircase of thin slices instead of a single block.
+``low_dim_orientation="x"`` is set here since the default (``"z"``) stacks a layer's feature
+count as individual depth slices - fine for a small count, but the ``Linear`` layer's 10 output
+units would otherwise draw as a tall staircase of thin slices instead of a single block.
 
 LSTM is sky blue and Linear is bluish green.
 """  # noqa: D205
@@ -51,7 +51,7 @@ img = visualtorch.render(
     color_map=color_map,
     spacing=250,
     padding=60,
-    one_dim_orientation="x",
+    low_dim_orientation="x",
 )
 
 dpi = 150  # rendered at 2x this in the final doc build (savefig.dpi=300 in conf.py)

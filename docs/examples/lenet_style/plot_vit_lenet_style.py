@@ -2,9 +2,14 @@
 =======================================
 
 The same small Vision Transformer as the ``graph``/``flow`` styles' ViT examples, rendered in
-``lenet`` style instead. This style's "stacked 3D plane" look is built around CNN feature maps,
-so it doesn't translate cleanly to a Transformer's ``(batch, seq_len, dim)`` shapes - included
-here for completeness, but ``graph`` is the clearer choice for this kind of architecture.
+``lenet`` style instead. A Transformer layer's ``(seq_len, hidden_size)`` shape has no real
+spatial/channel structure, so ``hidden_size`` (the feature/channel-like dimension) drives the
+stacked-plane depth the same way a CNN's channel count does, keeping every layer's look
+consistent throughout the diagram.
+
+``offset_z=1`` is set here - the default (``10``) is tuned for CNN layers' typically-modest
+channel counts, and multiplies into a very wide image once every Transformer layer's
+``hidden_size``/``dim_feedforward`` also drives depth.
 
 Note: VisualTorch traces the literal module-by-module computation, so this shows the real
 executed sequence of layers, not the conceptual/pedagogical diagram style used in ViT papers.
@@ -72,6 +77,7 @@ img = visualtorch.render(
     spacing=80,
     padding=60,
     show_dimension=False,
+    offset_z=1,
 )
 
 dpi = 150  # rendered at 2x this in the final doc build (savefig.dpi=300 in conf.py)
