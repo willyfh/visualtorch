@@ -1,6 +1,7 @@
-# Research Showcase
+# Papers Using VisualTorch
 
-Published research that has used VisualTorch to visualize model architectures.
+Published research that has used VisualTorch to visualize model architectures. Used it in your
+own research? [Open a pull request](https://github.com/willyfh/visualtorch/pulls) to add it here.
 
 | Paper                                                                                                                                                                                                                                                                                     | Venue (Year)                        |
 | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------- |
@@ -51,7 +52,3 @@ Trains a CNN on physics-based finite element simulations to predict equivalent p
 for use in structural digital twins.
 
 ![CNN architecture](../../_static/images/showcase/mdpi-shear-wall.png)
-
----
-
-Used VisualTorch in your own research? [Open a pull request](https://github.com/willyfh/visualtorch/pulls) to add it here.
