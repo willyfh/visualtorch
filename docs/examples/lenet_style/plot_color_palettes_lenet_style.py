@@ -12,22 +12,19 @@ import visualtorch
 from torch import nn
 
 model = nn.Sequential(
-    nn.Conv2d(3, 16, kernel_size=3, padding=1),
-    nn.ReLU(),
+    nn.Conv2d(3, 8, kernel_size=3, padding=1),
     nn.MaxPool2d(2, 2),
-    nn.Conv2d(16, 32, kernel_size=3, padding=1),
-    nn.ReLU(),
-    nn.Flatten(),
-    nn.Linear(32 * 112 * 112, 10),
+    nn.Conv2d(8, 16, kernel_size=3, padding=1),
+    nn.MaxPool2d(2, 2),
 )
 
-input_shape = (1, 3, 224, 224)
+input_shape = (1, 3, 128, 128)
 
 dpi = 150  # rendered at 2x this in the final doc build (savefig.dpi=300 in conf.py)
 
 
 def _show(palette: str) -> None:
-    img = visualtorch.render(model, input_shape, style="flow", palette=palette)
+    img = visualtorch.render(model, input_shape, style="lenet", palette=palette)
     plt.figure(figsize=(img.width / dpi, img.height / dpi), dpi=dpi)
     plt.imshow(img)
     plt.axis("off")
