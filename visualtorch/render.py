@@ -32,6 +32,7 @@ class CommonOptions:
 
     to_file: str | None = None
     color_map: dict[Any, Any] | None = None
+    palette: str = "okabe_ito"
     background_fill: str | tuple[int, ...] = "white"
     padding: int = 10
     opacity: int = 255
@@ -107,6 +108,7 @@ def _render_graph(
         input_shape,
         to_file=common.to_file,
         color_map=common.color_map,
+        palette=common.palette,
         node_size=options.node_size,
         background_fill=common.background_fill,
         padding=common.padding,
@@ -143,6 +145,7 @@ def _render_flow(
         scale_xy=options.scale_xy,
         type_ignore=options.type_ignore,
         color_map=common.color_map,
+        palette=common.palette,
         one_dim_orientation=options.one_dim_orientation,
         background_fill=common.background_fill,
         draw_volume=options.draw_volume,
@@ -177,6 +180,7 @@ def _render_lenet(
         scale_xy=options.scale_xy,
         type_ignore=options.type_ignore,
         color_map=common.color_map,
+        palette=common.palette,
         one_dim_orientation=options.one_dim_orientation,
         background_fill=common.background_fill,
         padding=common.padding,
