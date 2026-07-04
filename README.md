@@ -20,7 +20,7 @@ the first. Downstream connections are correct either way. Contributions are welc
 
 <div align="center">
 
-![VisualTorch Examples](docs/source/_static/images/banners/readme-examples.png)
+![VisualTorch Examples](https://raw.githubusercontent.com/willyfh/visualtorch/e6ad79751e0f7412b1074beb45f9baeccd1419e4/docs/source/_static/images/banners/readme-examples.png)
 
 </div>
 
