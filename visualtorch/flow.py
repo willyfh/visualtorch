@@ -25,6 +25,7 @@ from .utils.utils import (
     format_shape_label,
     get_rgba_tuple,
     linear_layout,
+    resolve_palette,
     self_multiply,
     vertical_image_concat,
 )
@@ -42,6 +43,7 @@ def flow_view(
     scale_xy: float = 1,
     type_ignore: list | None = None,
     color_map: dict | None = None,
+    palette: str = "okabe_ito",
     one_dim_orientation: str = "z",
     background_fill: str | tuple[int, ...] = "white",
     draw_volume: bool = True,
@@ -76,6 +78,10 @@ def flow_view(
         type_ignore (list, optional): List of layer types in the torch model to ignore during drawing.
         color_map (dict, optional): Dictionary defining fill and outline colors for each layer by class type.
             Will fallback to default values for unspecified classes.
+        palette (str, optional): Named color palette used as the fallback for any layer type not
+            given an explicit override via `color_map`. One of `"okabe_ito"` (default,
+            colorblind-safe), `"tol_bright"`, `"tol_muted"`, `"tab10"`, `"grayscale"`, `"nord"`,
+            `"dracula"`, `"gruvbox"`, `"solarized"`, `"material"`, `"catppuccin"`.
         one_dim_orientation (str, optional): Axis on which one-dim layers should be drawn. E.g., 'x', 'y', or 'z'.
         background_fill (str or tuple, optional): Background color for the image. A string or a tuple (R, G, B, A).
         draw_volume (bool, optional): Flag to switch between 3D volumetric view and 2D box view.
@@ -133,7 +139,7 @@ def flow_view(
     filtered_columns = [column for column in filtered_columns if column]
 
     layer_types: list[type] = []
-    color_wheel = ColorWheel()
+    color_wheel = ColorWheel(colors=resolve_palette(palette))
     make_box = _box_factory(
         one_dim_orientation,
         scale_xy,

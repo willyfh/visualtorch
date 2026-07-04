@@ -227,26 +227,116 @@ class Ellipses(Shape):
         )
 
 
+PALETTES: dict[str, list[str]] = {
+    # Okabe-Ito: a colorblind-safe palette (Okabe & Ito, 2008) widely recommended for
+    # scientific visualization, e.g. in Nature's figure guidelines.
+    "okabe_ito": ["#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7"],
+    # Paul Tol's "bright" qualitative scheme - colorblind-safe, higher-contrast alternative.
+    "tol_bright": ["#4477AA", "#EE6677", "#228833", "#CCBB44", "#66CCEE", "#AA3377", "#BBBBBB"],
+    # Paul Tol's "muted" qualitative scheme - colorblind-safe, softer aesthetic.
+    "tol_muted": [
+        "#CC6677",
+        "#332288",
+        "#DDCC77",
+        "#117733",
+        "#88CCEE",
+        "#882255",
+        "#44AA99",
+        "#999933",
+        "#AA4499",
+    ],
+    # matplotlib's default color cycle.
+    "tab10": [
+        "#1f77b4",
+        "#ff7f0e",
+        "#2ca02c",
+        "#d62728",
+        "#9467bd",
+        "#8c564b",
+        "#e377c2",
+        "#7f7f7f",
+        "#bcbd22",
+        "#17becf",
+    ],
+    # Evenly-spaced grays for print/monochrome-safe figures.
+    "grayscale": ["#404040", "#595959", "#737373", "#8c8c8c", "#a6a6a6", "#bfbfbf", "#d9d9d9"],
+    # Nord's Aurora + Frost accent colors.
+    "nord": [
+        "#bf616a",
+        "#d08770",
+        "#ebcb8b",
+        "#a3be8c",
+        "#b48ead",
+        "#8fbcbb",
+        "#88c0d0",
+        "#81a1c1",
+        "#5e81ac",
+    ],
+    # Dracula theme's accent colors.
+    "dracula": ["#FF5555", "#FFB86C", "#F1FA8C", "#50FA7B", "#8BE9FD", "#BD93F9", "#FF79C6"],
+    # Gruvbox's bright color variants.
+    "gruvbox": ["#fb4934", "#b8bb26", "#fabd2f", "#83a598", "#d3869b", "#8ec07c", "#fe8019"],
+    # Solarized's accent colors.
+    "solarized": [
+        "#b58900",
+        "#cb4b16",
+        "#dc322f",
+        "#d33682",
+        "#6c71c4",
+        "#268bd2",
+        "#2aa198",
+        "#859900",
+    ],
+    # Material Design's 500-weight color spread.
+    "material": [
+        "#f44336",
+        "#e91e63",
+        "#9c27b0",
+        "#3f51b5",
+        "#2196f3",
+        "#009688",
+        "#4caf50",
+        "#ffc107",
+        "#ff5722",
+    ],
+    # Catppuccin's Mocha flavor accent colors.
+    "catppuccin": [
+        "#f38ba8",
+        "#fab387",
+        "#f9e2af",
+        "#a6e3a1",
+        "#94e2d5",
+        "#89dceb",
+        "#89b4fa",
+        "#b4befe",
+        "#cba6f7",
+        "#f5c2e7",
+    ],
+}
+
+
+def resolve_palette(name: str) -> list[str]:
+    """Resolve a named palette to its list of hex colors.
+
+    Args:
+        name (str): One of the keys in `PALETTES`.
+
+    Returns:
+        list[str]: The palette's hex color strings.
+    """
+    if name not in PALETTES:
+        supported = ", ".join(sorted(PALETTES))
+        error_msg = f"Unsupported palette {name!r}. Supported palettes: {supported}."
+        raise ValueError(error_msg)
+    return PALETTES[name]
+
+
 class ColorWheel:
     """Default colors for the shapes."""
 
     def __init__(self, colors: list | None = None) -> None:
         self._cache: dict[type, Any] = {}
-        # Okabe-Ito: a colorblind-safe palette (Okabe & Ito, 2008) widely recommended for
-        # scientific visualization, e.g. in Nature's figure guidelines.
-        self.colors = (
-            colors
-            if colors is not None
-            else [
-                "#E69F00",  # orange
-                "#56B4E9",  # sky blue
-                "#009E73",  # bluish green
-                "#F0E442",  # yellow
-                "#0072B2",  # blue
-                "#D55E00",  # vermillion
-                "#CC79A7",  # reddish purple
-            ]
-        )
+        self.colors = colors if colors is not None else PALETTES["okabe_ito"]
 
     def get_color(self, class_type: type) -> tuple | None:
         """Return color from cache if exist, if not, get from the list and store it to the cache."""

@@ -24,6 +24,7 @@ from .utils.utils import (
     StackedBox,
     format_shape_label,
     get_rgba_tuple,
+    resolve_palette,
     self_multiply,
 )
 
@@ -41,6 +42,7 @@ def lenet_view(
     scale_xy: float = 1,
     type_ignore: list | None = None,
     color_map: dict | None = None,
+    palette: str = "okabe_ito",
     one_dim_orientation: str = "z",
     background_fill: str | tuple[int, ...] = "white",
     padding: int = 10,
@@ -77,6 +79,10 @@ def lenet_view(
         type_ignore (list, optional): List of layer types in the torch model to ignore during drawing.
         color_map (dict, optional): Dictionary defining fill and outline colors for each layer by class type.
             Will fallback to default values for unspecified classes.
+        palette (str, optional): Named color palette used as the fallback for any layer type not
+            given an explicit override via `color_map`. One of `"okabe_ito"` (default,
+            colorblind-safe), `"tol_bright"`, `"tol_muted"`, `"tab10"`, `"grayscale"`, `"nord"`,
+            `"dracula"`, `"gruvbox"`, `"solarized"`, `"material"`, `"catppuccin"`.
         one_dim_orientation (str, optional): Axis on which one-dim layers should be drawn. E.g., 'x', 'y', or 'z'.
         background_fill (str or tuple, optional): Background color for the image. A string or a tuple (R, G, B, A).
         padding (int, optional): Distance in pixels before the first and after the last layer.
@@ -142,7 +148,7 @@ def lenet_view(
         opacity,
         offset_z,
         layer_types,
-        ColorWheel(),
+        ColorWheel(colors=resolve_palette(palette)),
     )
     column_layout = layout_columns(
         filtered_columns,

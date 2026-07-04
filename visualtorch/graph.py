@@ -15,7 +15,7 @@ from PIL import Image, ImageFont
 from .backend import extract_architecture
 from .connectors import compute_skip_levels, draw_connector
 from .utils.traced_layer import TracedLayer
-from .utils.utils import Box, Circle, ColorWheel, Ellipses, ImageDraw, InputShape, format_shape_label
+from .utils.utils import Box, Circle, ColorWheel, Ellipses, ImageDraw, InputShape, format_shape_label, resolve_palette
 
 
 def graph_view(
@@ -23,6 +23,7 @@ def graph_view(
     input_shape: InputShape,
     to_file: str | None = None,
     color_map: dict[Any, Any] | None = None,
+    palette: str = "okabe_ito",
     node_size: int = 50,
     background_fill: str | tuple[int, ...] = "white",
     padding: int = 10,
@@ -51,6 +52,10 @@ def graph_view(
             will disable writing.
         color_map (dict, optional): Dict defining fill and outline for each layer by class type. Will fallback
             to default values for not specified classes.
+        palette (str, optional): Named color palette used as the fallback for any layer type not
+            given an explicit override via `color_map`. One of `"okabe_ito"` (default,
+            colorblind-safe), `"tol_bright"`, `"tol_muted"`, `"tab10"`, `"grayscale"`, `"nord"`,
+            `"dracula"`, `"gruvbox"`, `"solarized"`, `"material"`, `"catppuccin"`.
         node_size (int, optional): Size in pixels each node will have.
         background_fill (Any, optional): Color for the image background. Can be str or (R,G,B,A).
         padding (int, optional): Distance in pixels before the first and after the last layer.
@@ -111,7 +116,7 @@ def graph_view(
         _color_map,
         opacity,
         layer_spacing,
-        ColorWheel(),
+        ColorWheel(colors=resolve_palette(palette)),
     )
 
     # An edge whose endpoint was just dropped above (a hidden input's own edges) can no longer

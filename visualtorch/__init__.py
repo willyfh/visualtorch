@@ -11,6 +11,7 @@ from visualtorch.render import (
     render,
 )
 from visualtorch.utils.layer_utils import Input
+from visualtorch.utils.utils import PALETTES
 
 __all__ = [
     "render",
@@ -19,4 +20,5 @@ __all__ = [
     "FlowStyleOptions",
     "LenetStyleOptions",
     "Input",
+    "PALETTES",
 ]

@@ -3,11 +3,15 @@
 # Copyright (C) 2024 Willy Fitra Hendria
 # SPDX-License-Identifier: MIT
 
+from collections import defaultdict
+
 import pytest
 import torch
 from torch import nn
 from visualtorch import render
 from visualtorch.backend import extract_architecture
+from visualtorch.utils.layer_utils import Input
+from visualtorch.utils.utils import PALETTES
 
 
 @pytest.fixture()
@@ -148,3 +152,43 @@ def test_render_handles_unused_input_tensor() -> None:
 
     img = render(PartiallyUnusedNet(), input_shape=((1, 10), (1, 5)), style="graph")
     assert img is not None
+
+
+@pytest.mark.parametrize("palette", sorted(PALETTES))
+def test_render_runs_for_every_named_palette(sequential_model: nn.Sequential, palette: str) -> None:
+    """Every named palette should render without error - catches any malformed hex color."""
+    img = render(sequential_model, input_shape=(1, 3, 16, 16), style="graph", palette=palette)
+    assert img is not None
+
+
+def test_render_rejects_unsupported_palette(sequential_model: nn.Sequential) -> None:
+    """An unrecognized palette name should raise a clear error, not silently fall back."""
+    with pytest.raises(ValueError, match="Unsupported palette"):
+        render(sequential_model, input_shape=(1, 3, 16, 16), style="graph", palette="bogus")
+
+
+def test_render_palette_changes_fallback_colors(sequential_model: nn.Sequential) -> None:
+    """A different palette should actually change the colors of unmapped layer types."""
+    default = render(sequential_model, input_shape=(1, 3, 16, 16), style="graph")
+    dracula = render(sequential_model, input_shape=(1, 3, 16, 16), style="graph", palette="dracula")
+
+    assert default.tobytes() != dracula.tobytes()
+
+
+def test_render_color_map_overrides_palette(sequential_model: nn.Sequential) -> None:
+    """An explicit color_map entry should still win over the palette fallback."""
+    color_map: dict = defaultdict(dict)
+    color_map[Input]["fill"] = "#abcdef"
+    color_map[nn.Conv2d]["fill"] = "#123456"
+    color_map[nn.ReLU]["fill"] = "#654321"
+
+    okabe_ito = render(sequential_model, input_shape=(1, 3, 16, 16), style="graph", color_map=color_map)
+    dracula = render(
+        sequential_model,
+        input_shape=(1, 3, 16, 16),
+        style="graph",
+        color_map=color_map,
+        palette="dracula",
+    )
+
+    assert okabe_ito.tobytes() == dracula.tobytes()
