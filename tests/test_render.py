@@ -192,3 +192,34 @@ def test_render_color_map_overrides_palette(sequential_model: nn.Sequential) -> 
     )
 
     assert okabe_ito.tobytes() == dracula.tobytes()
+
+
+def test_input_dummy_layer_alias_still_works() -> None:
+    """The deprecated top-level InputDummyLayer alias should still resolve to Input and warn."""
+    import visualtorch
+
+    with pytest.warns(DeprecationWarning, match="InputDummyLayer"):
+        legacy_cls = visualtorch.InputDummyLayer
+    assert legacy_cls is Input
+
+
+def test_input_dummy_layer_alias_from_layer_utils_still_works() -> None:
+    """The deprecated InputDummyLayer alias should also resolve via its original submodule path."""
+    from visualtorch.utils import layer_utils
+
+    with pytest.warns(DeprecationWarning, match="InputDummyLayer"):
+        legacy_cls = layer_utils.InputDummyLayer
+    assert legacy_cls is Input
+
+
+def test_render_one_dim_orientation_still_works(sequential_model: nn.Sequential) -> None:
+    """The deprecated one_dim_orientation kwarg should still work through render() for both styles."""
+    with pytest.warns(DeprecationWarning, match="one_dim_orientation"):
+        flow_deprecated = render(sequential_model, input_shape=(1, 3, 16, 16), style="flow", one_dim_orientation="x")
+    flow_current = render(sequential_model, input_shape=(1, 3, 16, 16), style="flow", low_dim_orientation="x")
+    assert flow_deprecated.tobytes() == flow_current.tobytes()
+
+    with pytest.warns(DeprecationWarning, match="one_dim_orientation"):
+        lenet_deprecated = render(sequential_model, input_shape=(1, 3, 16, 16), style="lenet", one_dim_orientation="x")
+    lenet_current = render(sequential_model, input_shape=(1, 3, 16, 16), style="lenet", low_dim_orientation="x")
+    assert lenet_deprecated.tobytes() == lenet_current.tobytes()

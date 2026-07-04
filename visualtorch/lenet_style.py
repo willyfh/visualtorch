@@ -3,6 +3,7 @@
 # Copyright (C) 2024 Willy Fitra Hendria
 # SPDX-License-Identifier: MIT
 
+import warnings
 from collections import defaultdict
 from collections.abc import Callable
 from math import ceil
@@ -57,6 +58,7 @@ def lenet_view(
     level_gap: int | None = None,
     show_dimension: bool = True,
     show_input: bool = True,
+    one_dim_orientation: str | None = None,
 ) -> PIL.Image:
     """Generate a LeNet style architecture visualization for a given torch model.
 
@@ -108,10 +110,20 @@ def lenet_view(
             arrow belongs to which named input). Ignored (input always kept) when the input feeds
             more than one consumer, e.g. a residual shortcut, since dropping it would silently
             discard that edge.
+        one_dim_orientation (str, optional): Deprecated, use `low_dim_orientation` instead.
 
     Returns:
         PIL.Image: An Image object representing the generated architecture visualization.
     """
+    if one_dim_orientation is not None:
+        warnings.warn(
+            "`one_dim_orientation` is deprecated and will be removed in a future release, "
+            "use `low_dim_orientation` instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        low_dim_orientation = one_dim_orientation
+
     if type_ignore is None:
         type_ignore = []
 

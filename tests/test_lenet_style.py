@@ -186,6 +186,14 @@ def test_lenet_view_invalid_low_dim_orientation_raises(classifier_model: nn.Modu
         lenet_view(classifier_model, input_shape=(1, 3, 16, 16), low_dim_orientation="bad")
 
 
+def test_lenet_view_one_dim_orientation_still_works(classifier_model: nn.Module) -> None:
+    """The deprecated one_dim_orientation kwarg should still work and warn, not crash."""
+    with pytest.warns(DeprecationWarning, match="one_dim_orientation"):
+        deprecated_img = lenet_view(classifier_model, input_shape=(1, 3, 16, 16), one_dim_orientation="x")
+    current_img = lenet_view(classifier_model, input_shape=(1, 3, 16, 16), low_dim_orientation="x")
+    assert deprecated_img.tobytes() == current_img.tobytes()
+
+
 def test_lenet_view_with_type_ignore(sequential_model: nn.Sequential) -> None:
     """Layers matched by type_ignore should be skipped without error."""
     img = lenet_view(
