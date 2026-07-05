@@ -8,4 +8,5 @@ sphinx-copybutton
 sphinx_design
 sphinx_gallery
 matplotlib
+scipy
 torchvision
