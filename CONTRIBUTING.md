@@ -10,6 +10,14 @@ We use GitHub issues to track bugs and feature requests. If you want to report a
 
 The [GitHub Discussions](https://github.com/willyfh/visualtorch/discussions/) is enabled in visualtorch to help the community asking questions and/or propose ideas/solutions.
 
+## Picking Up an Issue
+
+Before starting work, please comment on the issue to let others know you're picking it up, so
+effort isn't duplicated. If you're a first-time contributor, we'd appreciate it if you claimed just
+one issue at a time (especially ones labeled `good first issue`) rather than several at once - it
+gives more people a chance to get involved, and you're welcome to grab another once your first PR
+is merged.
+
 ## Development & PRs
 
 ###  Getting Started
