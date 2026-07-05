@@ -41,5 +41,5 @@ setuptools.setup(
     extras_require={"dev": _read_requirements("docs/requirements.txt") + _read_requirements("dev-requirements.txt")},
     python_requires=">=3.10",
     license="MIT",
-    license_files=("LICENSE",),
+    license_files=("LICENSE.md",),
 )
