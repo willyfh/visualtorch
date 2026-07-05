@@ -17,7 +17,7 @@ environment to avoid GitHub's low unauthenticated rate limit.
 import json
 import os
 import urllib.request
-from datetime import datetime, timedelta
+from datetime import datetime, timezone
 from pathlib import Path
 
 import matplotlib.dates as mdates
@@ -27,13 +27,13 @@ import numpy as np
 from matplotlib import patheffects
 from matplotlib.offsetbox import AnnotationBbox, OffsetImage
 from PIL import Image
+from scipy.interpolate import PchipInterpolator
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 IMAGE_DIR = REPO_ROOT / "docs" / "source" / "_static" / "images"
 LOGO_PATH = IMAGE_DIR / "logos" / "fire-icon.png"
 REPO = "willyfh/visualtorch"
 ACCENT_COLOR = "#E69F00"  # first color of visualtorch's own "okabe_ito" palette.
-SMOOTHING_WINDOW_DAYS = 10  # small enough that a genuine growth spurt still reads as a sharp rise.
 
 _THEMES = {
     "light": {"figure": "#ffffff", "text": "#24292f"},
@@ -65,30 +65,50 @@ def _fetch_stargazer_timestamps() -> list[datetime]:
     return sorted(timestamps)
 
 
-def _smoothed_daily(dates: list[datetime], counts: list[int]) -> tuple[list[datetime], np.ndarray]:
-    """Resample to one point per day, then apply a small rolling average.
+def _monotone_curve(
+    dates: list[datetime],
+    counts: list[int],
+    num_points: int = 2000,
+) -> tuple[list[datetime], np.ndarray]:
+    """Smoothly interpolate a quarterly resampling of the data via monotonic cubic interpolation.
 
-    Collapses the raw per-star timestamps (which jump in sharp vertical steps) into a smooth
-    curve. The day grid always includes the exact final timestamp (not just whole days since the
-    first star) - otherwise a floor-day grid can land up to 24h before the true last star and
-    silently drop a recent burst from the average entirely.
+    Matches star-history.com's own approach (d3-shape's `curveMonotoneX`) for the smooth,
+    flowing curve look - a handful of big sweeping waves, not a kink at every single star event.
+    Interpolating through all real points directly (hundreds of them) still looks visibly
+    stair-stepped, since PCHIP preserves every real kink exactly; resampling to one anchor per
+    quarter first (taking the true cumulative count as of each anchor time, a step function
+    lookup) reduces that noise the same way a coarser data density would, while the true final
+    value is still forced to stay exact. A fixed calendar unit scales naturally with the repo's
+    actual history length, unlike an arbitrary fixed point count.
+
+    Anchors span from the join date (the first star's timestamp) through right now, not just the
+    last star's timestamp - so the line still extends flat to the present even if the most recent
+    star happened a while ago, instead of visually stopping short of today.
     """
-    total_days = (dates[-1] - dates[0]).days
-    day_grid = [dates[0] + timedelta(days=i) for i in range(total_days + 1)]
-    if day_grid[-1] < dates[-1]:
-        day_grid.append(dates[-1])
+    x_full = np.array([d.timestamp() for d in dates])
+    y_full = np.array(counts, dtype=float)
+    now = datetime.now(tz=timezone.utc).timestamp()
 
-    daily_counts = np.interp(
-        [d.timestamp() for d in day_grid],
-        [d.timestamp() for d in dates],
-        counts,
-    )
+    seconds_per_quarter = 91.31 * 24 * 3600
+    num_anchors = max(int((now - x_full[0]) / seconds_per_quarter), 2)
+    anchor_x = np.linspace(x_full[0], now, num_anchors)
+    indices = np.clip(np.searchsorted(x_full, anchor_x, side="right") - 1, 0, len(y_full) - 1)
+    anchor_y = y_full[indices]
+    anchor_y[-1] = y_full[-1]
 
-    window = min(SMOOTHING_WINDOW_DAYS, len(daily_counts))
-    kernel = np.ones(window) / window
-    padded = np.pad(daily_counts, (window // 2, window - window // 2 - 1), mode="edge")
-    smoothed = np.convolve(padded, kernel, mode="valid")
-    return day_grid, smoothed
+    # PchipInterpolator requires strictly increasing x - collapse ties (multiple anchors falling
+    # in the same real-data gap can land on the same step value but distinct times, which is
+    # fine; true ties only happen at the very start) by keeping the last of each duplicate.
+    deduped: dict[float, float] = {}
+    for xi, yi in zip(anchor_x, anchor_y, strict=True):
+        deduped[xi] = yi
+    x = np.array(sorted(deduped))
+    y = np.array([deduped[xi] for xi in x], dtype=float)
+
+    interpolator = PchipInterpolator(x, y)
+    dense_x = np.linspace(x[0], x[-1], num_points)
+    dense_dates = [datetime.fromtimestamp(t, tz=timezone.utc) for t in dense_x]
+    return dense_dates, interpolator(dense_x)
 
 
 def _render_theme(
@@ -98,7 +118,7 @@ def _render_theme(
     theme_name: str,
 ) -> None:
     theme = _THEMES[theme_name]
-    plot_dates, plot_counts = _smoothed_daily(dates, counts)
+    curve_dates, curve_counts = _monotone_curve(dates, counts)
 
     with plt.xkcd(scale=1, length=150, randomness=2):
         # xkcd() hardcodes a white outline stroke on every line/spine/text (invisible on a white
@@ -116,8 +136,8 @@ def _render_theme(
         fig.patch.set_edgecolor(theme["figure"])
         ax.set_facecolor(theme["figure"])
 
-        ax.plot(plot_dates, plot_counts, color=ACCENT_COLOR, linewidth=2.5, label=REPO)
-        ax.fill_between(plot_dates, plot_counts, color=ACCENT_COLOR, alpha=0.15)
+        ax.plot(curve_dates, curve_counts, color=ACCENT_COLOR, linewidth=2.5, label=REPO)
+        ax.fill_between(curve_dates, curve_counts, color=ACCENT_COLOR, alpha=0.15)
 
         ax.set_ylabel("GitHub Stars", color=theme["text"])
         ax.xaxis.set_major_locator(mdates.MonthLocator(interval=6))
