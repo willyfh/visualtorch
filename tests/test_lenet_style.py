@@ -387,3 +387,21 @@ def test_lenet_view_2d_shape_seq_len_is_discarded() -> None:
     img_bigger_hidden = lenet_view(model_bigger_hidden, input_shape=(1, 5, 8))
 
     assert img_short_seq.tobytes() != img_bigger_hidden.tobytes()
+
+def test_lenet_view_connector_fill_and_width_accepted(residual_model: nn.Module) -> None:
+    """connector_fill and connector_width should visually change the rendered output."""
+    img_custom = lenet_view(
+        residual_model,
+        input_shape=(1, 4, 8, 8),
+        connector_fill="blue",
+        connector_width=3,
+    )
+    img_default = lenet_view(residual_model, input_shape=(1, 4, 8, 8))
+    assert img_custom.tobytes() != img_default.tobytes()
+
+
+def test_lenet_view_connector_fill_none_uses_box_outline(residual_model: nn.Module) -> None:
+    """connector_fill=None (the default) should produce the same result as not passing it at all."""
+    img_default = lenet_view(residual_model, input_shape=(1, 4, 8, 8))
+    img_explicit_none = lenet_view(residual_model, input_shape=(1, 4, 8, 8), connector_fill=None)
+    assert img_default.tobytes() == img_explicit_none.tobytes()
