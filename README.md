@@ -40,6 +40,8 @@ VisualTorch has been used in published research, including works published in Na
 
 See the [Research Showcase page](https://visualtorch.readthedocs.io/en/latest/markdown/showcase/index.html) for the full list.
 
+Used VisualTorch in your own research? [Tell us about it](https://github.com/willyfh/visualtorch/discussions) - we'd love to add it to the showcase.
+
 ## Examples
 
 See the [Usage Examples page](https://visualtorch.readthedocs.io/en/latest/usage_examples/index.html).
