@@ -609,3 +609,10 @@ def test_layered_view_drops_index_ignore(sequential_model: nn.Sequential) -> Non
     with pytest.warns(DeprecationWarning, match="layered_view"):
         img = layered_view(sequential_model, input_shape=(1, 3, 224, 224), index_ignore=[0])
     assert img is not None
+
+
+def test_layered_module_path_still_importable() -> None:
+    """The pre-1.0 `visualtorch.layered` module path should still resolve to the same function."""
+    from visualtorch.layered import layered_view as layered_view_from_old_path
+
+    assert layered_view_from_old_path is layered_view
