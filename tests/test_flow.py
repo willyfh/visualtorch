@@ -616,3 +616,21 @@ def test_layered_module_path_still_importable() -> None:
     from visualtorch.layered import layered_view as layered_view_from_old_path
 
     assert layered_view_from_old_path is layered_view
+    
+def test_flow_view_connector_fill_and_width_accepted(residual_model: nn.Module) -> None:
+    """connector_fill and connector_width should visually change the rendered output."""
+    img_custom = flow_view(
+        residual_model,
+        input_shape=(1, 8, 16, 16),
+        connector_fill="red",
+        connector_width=3,
+    )
+    img_default = flow_view(residual_model, input_shape=(1, 8, 16, 16))
+    assert img_custom.tobytes() != img_default.tobytes()
+
+
+def test_flow_view_connector_fill_none_uses_box_outline(residual_model: nn.Module) -> None:
+    """connector_fill=None (the default) should produce the same result as not passing it at all."""
+    img_default = flow_view(residual_model, input_shape=(1, 8, 16, 16))
+    img_explicit_none = flow_view(residual_model, input_shape=(1, 8, 16, 16), connector_fill=None)
+    assert img_default.tobytes() == img_explicit_none.tobytes()

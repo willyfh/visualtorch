@@ -59,6 +59,8 @@ def flow_view(
     show_dimension: bool = False,
     level_gap: int | None = None,
     show_input: bool = True,
+    connector_fill: str | tuple[int, ...] | None = None,
+    connector_width: int = 1,
     one_dim_orientation: str | None = None,
 ) -> PIL.Image:
     """Generate a flow-style architecture visualization for a given torch model.
@@ -106,6 +108,9 @@ def flow_view(
             you're overlaying your own custom input illustration instead. Has no effect on a
             multi-input model, where every input is always shown (omitting any of them would
             make it ambiguous which arrow belongs to which named input).
+        connector_fill (str or tuple, optional): Color for skip-connection lines. Can be a string
+            or a tuple (R, G, B, A). If None, inherits the target box's outline color.
+        connector_width (int, optional): Line width in pixels for skip-connection lines. Defaults to 1.
         one_dim_orientation (str, optional): Deprecated, use `low_dim_orientation` instead.
 
     Returns:
@@ -220,7 +225,17 @@ def flow_view(
     _apply_centering(column_layout, top_margin_for_skips, column_layout.diagram_height)
 
     _draw_funnels_and_boxes(draw, architecture, column_layout, edge_to_level, draw_funnel)
-    _draw_skip_connectors(draw, architecture, column_layout, edge_to_level, num_levels, padding, resolved_level_gap)
+    _draw_skip_connectors(
+        draw,
+        architecture,
+        column_layout,
+        edge_to_level,
+        num_levels,
+        padding,
+        resolved_level_gap,
+        connector_fill,
+        connector_width,
+    )
 
     draw.flush()
 
@@ -394,6 +409,8 @@ def _draw_skip_connectors(
     num_levels: int,
     padding: int,
     resolved_level_gap: int,
+    connector_fill: str | tuple[int, ...] | None = None,
+    connector_width: int = 1,
 ) -> None:
     """Draw every skip-connection edge, routed above the diagram.
 
@@ -420,14 +437,15 @@ def _draw_skip_connectors(
         detour_y = padding + (num_levels - 1 - level) * resolved_level_gap
         start_de = getattr(start_box, "de", 0)
         end_de = getattr(end_box, "de", 0)
+        resolved_color = connector_fill if connector_fill is not None else end_box.outline
         draw_connector(
             draw,
             start_box.x2 + start_de / 2,
             start_box.y1 - start_de / 2,
             end_box.x1 + end_de / 2,
             end_box.y1 - end_de / 2,
-            color=end_box.outline,
-            width=1,
+            color=resolved_color,
+            width=connector_width,
             detour_y=detour_y,
         )
 

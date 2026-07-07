@@ -75,6 +75,8 @@ class FlowStyleOptions:
     legend: bool = False
     show_dimension: bool = False
     show_input: bool = True
+    connector_fill: str | tuple[int, ...] | None = None
+    connector_width: int = 1
     one_dim_orientation: str | None = None  # deprecated, use low_dim_orientation
 
 
@@ -96,6 +98,8 @@ class LenetStyleOptions:
     offset_z: int = 10
     show_dimension: bool = True
     show_input: bool = True
+    connector_fill: str | tuple[int, ...] | None = None
+    connector_width: int = 1
     one_dim_orientation: str | None = None  # deprecated, use low_dim_orientation
 
 
@@ -162,6 +166,8 @@ def _render_flow(
         show_dimension=options.show_dimension,
         level_gap=common.level_gap,
         show_input=options.show_input,
+        connector_fill=options.connector_fill,
+        connector_width=options.connector_width,
         one_dim_orientation=options.one_dim_orientation,
     )
 
@@ -198,6 +204,8 @@ def _render_lenet(
         level_gap=common.level_gap,
         show_dimension=options.show_dimension,
         show_input=options.show_input,
+        connector_fill=options.connector_fill,
+        connector_width=options.connector_width,
         one_dim_orientation=options.one_dim_orientation,
     )
 
