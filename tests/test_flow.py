@@ -611,6 +611,13 @@ def test_layered_view_drops_index_ignore(sequential_model: nn.Sequential) -> Non
     assert img is not None
 
 
+def test_layered_module_path_still_importable() -> None:
+    """The pre-1.0 `visualtorch.layered` module path should still resolve to the same function."""
+    from visualtorch.layered import layered_view as layered_view_from_old_path
+
+    assert layered_view_from_old_path is layered_view
+
+
 def test_flow_view_connector_fill_and_width_accepted(residual_model: nn.Module) -> None:
     """connector_fill and connector_width should visually change the rendered output."""
     img_custom = flow_view(
