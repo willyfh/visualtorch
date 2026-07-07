@@ -388,6 +388,7 @@ def test_lenet_view_2d_shape_seq_len_is_discarded() -> None:
 
     assert img_short_seq.tobytes() != img_bigger_hidden.tobytes()
 
+
 def test_lenet_view_connector_fill_and_width_accepted(residual_model: nn.Module) -> None:
     """connector_fill and connector_width should visually change the rendered output."""
     img_custom = lenet_view(

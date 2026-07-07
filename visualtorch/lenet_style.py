@@ -218,7 +218,17 @@ def lenet_view(
     _apply_centering(column_layout, top_margin_for_skips + spread_margin / 2)
 
     _draw_funnels_and_boxes(draw, architecture, column_layout, edge_to_level, draw_funnel)
-    _draw_skip_connectors(draw, architecture, column_layout, edge_to_level, num_levels, padding, resolved_level_gap, connector_fill, connector_width)
+    _draw_skip_connectors(
+        draw,
+        architecture,
+        column_layout,
+        edge_to_level,
+        num_levels,
+        padding,
+        resolved_level_gap,
+        connector_fill,
+        connector_width,
+    )
 
     draw.flush()
 

@@ -610,6 +610,7 @@ def test_layered_view_drops_index_ignore(sequential_model: nn.Sequential) -> Non
         img = layered_view(sequential_model, input_shape=(1, 3, 224, 224), index_ignore=[0])
     assert img is not None
 
+
 def test_flow_view_connector_fill_and_width_accepted(residual_model: nn.Module) -> None:
     """connector_fill and connector_width should visually change the rendered output."""
     img_custom = flow_view(
