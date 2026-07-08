@@ -459,3 +459,20 @@ def test_graph_view_output_size_matches_pre_refactor_baseline(
 
     for name, img in cases.items():
         assert img.size == expected_sizes[name], f"{name} canvas size changed"
+
+
+def test_graph_view_with_type_ignore(conv_model: nn.Module) -> None:
+    """Layers matched by type_ignore should be skipped without error."""
+    img = graph_view(
+        conv_model,
+        input_shape=(1, 3, 16, 16),
+        type_ignore=[nn.ReLU],
+    )
+    assert img is not None
+
+
+def test_graph_view_type_ignore_reduces_diagram(batchnorm_model: nn.Module) -> None:
+    """type_ignore should produce a visually different (smaller) diagram than the default."""
+    img_default = graph_view(batchnorm_model, input_shape=(2, 3, 8, 8))
+    img_ignored = graph_view(batchnorm_model, input_shape=(2, 3, 8, 8), type_ignore=[nn.ReLU, nn.BatchNorm2d])
+    assert img_ignored.tobytes() != img_default.tobytes()

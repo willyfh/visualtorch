@@ -29,6 +29,7 @@ def graph_view(
     padding: int = 10,
     layer_spacing: int = 250,
     node_spacing: int = 10,
+    type_ignore: list | None = None,
     connector_fill: str | tuple[int, ...] = "gray",
     connector_width: int = 1,
     ellipsize_after: int = 10,
@@ -61,6 +62,7 @@ def graph_view(
         padding (int, optional): Distance in pixels before the first and after the last layer.
         layer_spacing (int, optional): Spacing in pixels between two layers.
         node_spacing (int, optional): Spacing in pixels between nodes.
+        type_ignore (list, optional): List of layer types in the torch model to ignore during drawing.
         connector_fill (Any, optional): Color for the connectors. Can be str or (R,G,B,A).
         connector_width (int, optional): Line-width of the connectors in pixels.
         ellipsize_after (int, optional): Maximum number of neurons per layer to draw. If a layer is exceeding this,
@@ -84,6 +86,9 @@ def graph_view(
     Returns:
         Image.Image: Generated architecture image.
     """
+    if type_ignore is None:
+        type_ignore = []
+
     _color_map: dict = {}
     if color_map is not None:
         _color_map = defaultdict(dict, color_map)
@@ -104,10 +109,13 @@ def graph_view(
 
     # Create architecture
 
+    filtered_columns = [[layer for layer in column if type(layer.module) not in type_ignore] for column in raw_columns]
+    filtered_columns = [column for column in filtered_columns if column]
+
     current_x = padding  # + input_label_size[0] + text_padding
 
     layers, layer_y, id_to_node_list_map, label_info = _create_architecture(
-        raw_columns,
+        filtered_columns,
         current_x,
         show_neurons,
         ellipsize_after,

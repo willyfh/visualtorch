@@ -48,6 +48,7 @@ class GraphStyleOptions:
     node_size: int = 50
     layer_spacing: int = 250
     node_spacing: int = 10
+    type_ignore: list[type] | None = None
     connector_fill: str | tuple[int, ...] = "gray"
     connector_width: int = 1
     ellipsize_after: int = 10
@@ -116,6 +117,7 @@ def _render_graph(
         color_map=common.color_map,
         palette=common.palette,
         node_size=options.node_size,
+        type_ignore=options.type_ignore,
         background_fill=common.background_fill,
         padding=common.padding,
         layer_spacing=options.layer_spacing,
