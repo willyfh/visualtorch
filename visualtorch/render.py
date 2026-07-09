@@ -18,7 +18,7 @@ from typing import Any, Literal
 from PIL import Image
 from torch import nn
 
-from .flow import flow_view
+from .flow import LegendPosition, flow_view
 from .graph import graph_view
 from .lenet_style import lenet_view
 from .utils.utils import InputShape
@@ -74,6 +74,7 @@ class FlowStyleOptions:
     draw_funnel: bool = True
     shade_step: int = 10
     legend: bool = False
+    legend_position: LegendPosition = "bottom-left"
     show_dimension: bool = False
     show_input: bool = True
     connector_fill: str | tuple[int, ...] | None = None
@@ -162,6 +163,7 @@ def _render_flow(
         draw_funnel=options.draw_funnel,
         shade_step=options.shade_step,
         legend=options.legend,
+        legend_position=options.legend_position,
         font=common.font,
         font_color=common.font_color,
         opacity=common.opacity,
