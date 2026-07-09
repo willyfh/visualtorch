@@ -1,6 +1,6 @@
 # Papers Using VisualTorch
 
-Published research that has used VisualTorch to visualize model architectures. Used it in your own research or built something with it? [Tell us about it](https://github.com/willyfh/visualtorch/discussions) - we'd love to hear.
+Published research that has used VisualTorch to visualize model architectures. Used it in your own research, or know of a paper that cites it - even if it's not yours? [Open a pull request](https://github.com/willyfh/visualtorch/pulls) to add it here, or [tell us about it](https://github.com/willyfh/visualtorch/discussions) and we'll add it for you.
 
 | Paper                                                                                                                                                                                                                                                                                     | Venue (Year)                        |
 | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------- |

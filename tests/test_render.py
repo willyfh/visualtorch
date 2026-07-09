@@ -175,6 +175,73 @@ def test_render_handles_unused_input_tensor() -> None:
     assert img is not None
 
 
+@pytest.mark.parametrize("style", ["graph", "flow", "lenet"])
+def test_render_supports_integer_input_dtype_for_embedding_model(style: str) -> None:
+    """A model starting with nn.Embedding needs an integer dummy tensor, not the default float
+    one - input_dtype=torch.long should make every style render it successfully.
+    """  # noqa: D205
+
+    class TokenModel(nn.Module):
+        def __init__(self) -> None:
+            super().__init__()
+            self.embed = nn.Embedding(1000, 16)
+            self.fc = nn.Linear(16, 4)
+
+        def forward(self, x: torch.Tensor) -> torch.Tensor:
+            return self.fc(self.embed(x))
+
+    img = render(TokenModel(), input_shape=(1, 8), style=style, input_dtype=torch.long)
+    assert img is not None
+
+
+def test_render_multi_input_supports_per_tensor_input_dtype() -> None:
+    """A multi-input model mixing a token (long) branch and a continuous (float) branch should
+    render once each input tensor gets its own dtype via a per-position tuple.
+    """  # noqa: D205
+
+    class TokenAndFeatureModel(nn.Module):
+        def __init__(self) -> None:
+            super().__init__()
+            self.embed = nn.Embedding(1000, 8)
+            self.fc_tokens = nn.Linear(8, 8)
+            self.fc_features = nn.Linear(10, 8)
+            self.head = nn.Linear(16, 4)
+
+        def forward(self, tokens: torch.Tensor, features: torch.Tensor) -> torch.Tensor:
+            token_repr = self.fc_tokens(self.embed(tokens)).mean(dim=1)
+            feature_repr = self.fc_features(features)
+            return self.head(torch.cat([token_repr, feature_repr], dim=-1))
+
+    img = render(
+        TokenAndFeatureModel(),
+        input_shape=((1, 8), (1, 10)),
+        style="graph",
+        input_dtype=(torch.long, None),
+    )
+    assert img is not None
+
+
+def test_render_rejects_invalid_input_dtype(sequential_model: nn.Sequential) -> None:
+    """A non-dtype value for input_dtype should raise a clear ValueError, not an obscure one
+    from deep inside torch.rand/torch.zeros.
+    """  # noqa: D205
+    with pytest.raises(ValueError, match="input_dtype must be"):
+        render(sequential_model, input_shape=(1, 3, 16, 16), style="graph", input_dtype="not-a-dtype")
+
+
+def test_render_rejects_input_dtype_tuple_arity_mismatch(siamese_model: nn.Module) -> None:
+    """A per-position input_dtype tuple with the wrong length for a multi-input model should
+    raise a clear ValueError.
+    """  # noqa: D205
+    with pytest.raises(ValueError, match="input_dtype must be"):
+        render(
+            siamese_model,
+            input_shape=((1, 3, 16, 16), (1, 10)),
+            style="graph",
+            input_dtype=(torch.float32,),
+        )
+
+
 @pytest.mark.parametrize("palette", sorted(PALETTES))
 def test_render_runs_for_every_named_palette(sequential_model: nn.Sequential, palette: str) -> None:
     """Every named palette should render without error - catches any malformed hex color."""

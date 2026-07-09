@@ -158,3 +158,54 @@ def test_show_dimension_includes_every_output_shape(lstm_using_hidden_state_mode
     """show_dimension=True shouldn't crash, and should still work, for a multi-output leaf module."""
     img = view(lstm_using_hidden_state_model, input_shape=(1, 7, 10), show_dimension=True)  # type: ignore[operator]
     assert img is not None
+
+
+@pytest.fixture()
+def embedding_model() -> nn.Module:
+    """A model starting with nn.Embedding - requires an integer/long index tensor.
+
+    The tracer's dummy input was always a uniformly random float tensor, which nn.Embedding (and
+    any other integer/bool-input layer) rejects outright, crashing before any tracing could
+    happen at all.
+    """
+
+    class TokenModel(nn.Module):
+        def __init__(self) -> None:
+            super().__init__()
+            self.embed = nn.Embedding(1000, 32)
+            self.fc = nn.Linear(32, 10)
+
+        def forward(self, x: torch.Tensor) -> torch.Tensor:
+            return self.fc(self.embed(x))
+
+    return TokenModel()
+
+
+def test_extract_architecture_rejects_embedding_model_without_integer_input_dtype(embedding_model: nn.Module) -> None:
+    """Without input_dtype, the dummy tensor is float - nn.Embedding rejects it outright.
+
+    Pinning this failure down explicitly (rather than just testing the fix in isolation) makes
+    sure the fix is actually doing something: if this ever stopped raising, the `input_dtype`
+    tests below would no longer be verifying a real fix.
+    """
+    with pytest.raises(RuntimeError, match="scalar type"):
+        extract_architecture(embedding_model, (1, 16))
+
+
+def test_extract_architecture_supports_embedding_model_via_integer_input_dtype(embedding_model: nn.Module) -> None:
+    """input_dtype=torch.long should let the tracer build a valid dummy index tensor, and the
+    Embedding layer should be traced like any other layer, with its real output shape recorded.
+    """  # noqa: D205
+    architecture = extract_architecture(embedding_model, (1, 16), input_dtype=torch.long)
+    embedding_layer = next(
+        layer for column in architecture.columns for layer in column if isinstance(layer.module, nn.Embedding)
+    )
+
+    assert embedding_layer.output_shape == (1, 16, 32)
+
+
+@pytest.mark.parametrize("view", [graph_view, flow_view, lenet_view])
+def test_view_renders_embedding_model_with_integer_input_dtype(embedding_model: nn.Module, view: object) -> None:
+    """Every style should render a token-embedding model end to end once given input_dtype."""
+    img = view(embedding_model, input_shape=(1, 16), input_dtype=torch.long)  # type: ignore[operator]
+    assert img is not None
