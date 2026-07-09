@@ -103,7 +103,7 @@ def test_render_rejects_kwarg_from_a_different_style(sequential_model: nn.Sequen
 
 
 def test_render_forwards_flow_legend_position(sequential_model: nn.Sequential) -> None:
-    """flow style should accept and forward legend_position through the render entry point."""
+    """Flow style should accept and forward legend_position through the render entry point."""
     top = render(
         sequential_model,
         input_shape=(1, 3, 16, 16),
