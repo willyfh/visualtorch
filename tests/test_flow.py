@@ -210,6 +210,71 @@ def test_flow_view_with_legend(sequential_model: nn.Sequential) -> None:
     assert img is not None
 
 
+@pytest.mark.parametrize(
+    "legend_position",
+    ["top-left", "top-right", "top-center", "bottom-left", "bottom-right", "bottom-center"],
+)
+def test_flow_view_with_legend_position(sequential_model: nn.Sequential, legend_position: str) -> None:
+    """legend_position should accept every documented top/bottom alignment."""
+    img = flow_view(
+        sequential_model,
+        input_shape=(1, 3, 32, 32),
+        legend=True,
+        legend_position=legend_position,
+    )
+
+    assert img is not None
+
+
+def test_flow_view_default_legend_position_matches_bottom_left(sequential_model: nn.Sequential) -> None:
+    """The default legend placement should preserve the previous bottom-left layout."""
+    default = flow_view(sequential_model, input_shape=(1, 3, 32, 32), legend=True)
+    explicit = flow_view(
+        sequential_model,
+        input_shape=(1, 3, 32, 32),
+        legend=True,
+        legend_position="bottom-left",
+    )
+
+    assert default.tobytes() == explicit.tobytes()
+
+
+def test_flow_view_legend_position_moves_legend_vertically(sequential_model: nn.Sequential) -> None:
+    """Top and bottom legend placements should produce different layouts."""
+    top = flow_view(sequential_model, input_shape=(1, 3, 32, 32), legend=True, legend_position="top-left")
+    bottom = flow_view(sequential_model, input_shape=(1, 3, 32, 32), legend=True, legend_position="bottom-left")
+
+    assert top.size == bottom.size
+    assert top.tobytes() != bottom.tobytes()
+
+
+def test_flow_view_legend_position_moves_legend_horizontally(sequential_model: nn.Sequential) -> None:
+    """Left and right legend placements should align the legend within the available width."""
+    left = flow_view(
+        sequential_model,
+        input_shape=(1, 3, 32, 32),
+        legend=True,
+        legend_position="bottom-left",
+        scale_xy=20,
+    )
+    right = flow_view(
+        sequential_model,
+        input_shape=(1, 3, 32, 32),
+        legend=True,
+        legend_position="bottom-right",
+        scale_xy=20,
+    )
+
+    assert left.size == right.size
+    assert left.tobytes() != right.tobytes()
+
+
+def test_flow_view_invalid_legend_position_raises(sequential_model: nn.Sequential) -> None:
+    """Invalid legend positions should fail with a targeted error."""
+    with pytest.raises(ValueError, match="legend_position"):
+        flow_view(sequential_model, input_shape=(1, 3, 32, 32), legend=True, legend_position="left")
+
+
 def test_flow_view_writes_to_file(sequential_model: nn.Sequential, tmp_path: Path) -> None:
     """to_file should save a readable image to disk."""
     out_file = tmp_path / "flow.png"

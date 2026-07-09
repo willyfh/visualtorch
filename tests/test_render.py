@@ -102,6 +102,27 @@ def test_render_rejects_kwarg_from_a_different_style(sequential_model: nn.Sequen
         render(sequential_model, input_shape=(1, 3, 16, 16), style="graph", legend=True)
 
 
+def test_render_forwards_flow_legend_position(sequential_model: nn.Sequential) -> None:
+    """Flow style should accept and forward legend_position through the render entry point."""
+    top = render(
+        sequential_model,
+        input_shape=(1, 3, 16, 16),
+        style="flow",
+        legend=True,
+        legend_position="top-left",
+    )
+    bottom = render(
+        sequential_model,
+        input_shape=(1, 3, 16, 16),
+        style="flow",
+        legend=True,
+        legend_position="bottom-left",
+    )
+
+    assert top.size == bottom.size
+    assert top.tobytes() != bottom.tobytes()
+
+
 def test_render_rejects_malformed_mixed_input_shape_with_clear_error(sequential_model: nn.Sequential) -> None:
     """A shape tuple mixing raw ints and nested shape-tuples at the top level is ambiguous and
     should raise a clear ValueError rather than being silently misinterpreted.
