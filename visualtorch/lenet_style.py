@@ -58,6 +58,7 @@ def lenet_view(
     level_gap: int | None = None,
     show_dimension: bool = True,
     show_input: bool = True,
+    outline_width: int = 1,
     connector_fill: str | tuple[int, ...] | None = None,
     connector_width: int = 1,
     one_dim_orientation: str | None = None,
@@ -112,6 +113,7 @@ def lenet_view(
             arrow belongs to which named input). Ignored (input always kept) when the input feeds
             more than one consumer, e.g. a residual shortcut, since dropping it would silently
             discard that edge.
+        outline_width (int, optional): Line width in pixels for the shape borders. Defaults to 1.
         connector_fill (str or tuple, optional): Color for skip-connection lines. Can be a string
             or a tuple (R, G, B, A). If None, inherits the target box's outline color.
         connector_width (int, optional): Line width in pixels for skip-connection lines. Defaults to 1.
@@ -168,6 +170,7 @@ def lenet_view(
         offset_z,
         layer_types,
         ColorWheel(colors=resolve_palette(palette)),
+        outline_width,
     )
     column_layout = layout_columns(
         filtered_columns,
@@ -274,6 +277,7 @@ def _box_factory(
     offset_z: int,
     layer_types: list[type],
     color_wheel: ColorWheel,
+    outline_width: int = 1,
 ) -> Callable[[TracedLayer], StackedBox]:
     """Build a `make_box` callback: given a traced layer, return a sized, unpositioned `StackedBox`."""
 
@@ -323,6 +327,7 @@ def _box_factory(
             opacity,
         )
         box.outline = color_map.get(layer_type, {}).get("outline", "black")
+        box.outline_width = outline_width
         color_map[layer_type] = {"fill": box.fill, "outline": box.outline}
 
         box.shade = shade_step

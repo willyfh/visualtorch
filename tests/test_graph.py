@@ -476,3 +476,10 @@ def test_graph_view_type_ignore_reduces_diagram(batchnorm_model: nn.Module) -> N
     img_default = graph_view(batchnorm_model, input_shape=(2, 3, 8, 8))
     img_ignored = graph_view(batchnorm_model, input_shape=(2, 3, 8, 8), type_ignore=[nn.ReLU, nn.BatchNorm2d])
     assert img_ignored.tobytes() != img_default.tobytes()
+
+
+def test_graph_view_outline_width_accepted(conv_model: nn.Module) -> None:
+    """outline_width should visually change the rendered output."""
+    img_default = graph_view(conv_model, input_shape=(1, 3, 16, 16), show_neurons=False)
+    img_thick = graph_view(conv_model, input_shape=(1, 3, 16, 16), show_neurons=False, outline_width=5)
+    assert img_thick.tobytes() != img_default.tobytes()
