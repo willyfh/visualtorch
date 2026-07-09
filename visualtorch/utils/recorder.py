@@ -209,6 +209,7 @@ class Recorder:
 def trace_module_graph(
     model: nn.Module,
     input_shapes: tuple[tuple[int, ...], ...],
+    input_dtypes: tuple[torch.dtype | None, ...] | None = None,
 ) -> tuple[
     dict[str, nn.Module],
     dict[str, tuple[int, ...]],
@@ -223,6 +224,13 @@ def trace_module_graph(
         input_shapes (tuple): One shape tuple per input tensor (including batch dim each), in the
             order forward() expects them positionally. A single-input model still passes a
             length-1 tuple, e.g. `((1, 3, 224, 224),)`.
+        input_dtypes (tuple, optional): One dtype (or `None`) per input tensor, same order as
+            `input_shapes`. `None` (the default, for every input) keeps the long-standing
+            behavior of a uniformly random float dummy tensor. An integer/bool dtype (e.g.
+            `torch.long`, needed by `nn.Embedding`-style lookups, which reject a float index
+            tensor) instead gets an all-zero dummy - index `0` is always a valid row regardless
+            of the real embedding table's size, and tracing only needs correct shapes to
+            propagate, not realistic values.
 
     Returns:
         tuple: A tuple containing:
@@ -237,9 +245,13 @@ def trace_module_graph(
             - input_ids (list): One synthetic node id per input tensor, in the same order as
                 `input_shapes`.
     """
+    dtypes = input_dtypes if input_dtypes is not None else (None,) * len(input_shapes)
     dummy_inputs = []
-    for i, shape in enumerate(input_shapes):
-        dummy = torch.rand(shape).as_subclass(RecorderTensor)
+    for i, (shape, dtype) in enumerate(zip(input_shapes, dtypes, strict=True)):
+        if dtype is not None and not dtype.is_floating_point:
+            dummy = torch.zeros(shape, dtype=dtype).as_subclass(RecorderTensor)
+        else:
+            dummy = torch.rand(shape, dtype=dtype).as_subclass(RecorderTensor)
         dummy._producer_ids = {f"{INPUT_NODE_ID}#{i}"}  # noqa: SLF001
         dummy_inputs.append(dummy)
 
