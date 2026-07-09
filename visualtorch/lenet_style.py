@@ -21,6 +21,7 @@ from .utils.traced_layer import TracedLayer
 from .utils.utils import (
     ColorWheel,
     ImageDraw,
+    InputDtype,
     InputShape,
     StackedBox,
     format_shape_label,
@@ -35,6 +36,7 @@ _LABEL_ROW_HEIGHT = 100
 def lenet_view(
     model: nn.Module | nn.Sequential | nn.ModuleList,
     input_shape: InputShape,
+    input_dtype: InputDtype | None = None,
     to_file: str | None = None,
     min_z: int = 1,
     min_xy: int = 10,
@@ -73,6 +75,12 @@ def lenet_view(
             model whose forward() takes multiple separate input tensors, pass a tuple of
             per-tensor shapes instead, one per positional argument in order, e.g.
             ((1, 3, 224, 224), (1, 10)).
+        input_dtype (torch.dtype, optional): The dtype of the dummy input tensor(s) used to trace
+            the model. Defaults to `None` for every input, giving a uniformly random float
+            tensor. Needed for a model that starts with an integer/bool-input layer (e.g.
+            `nn.Embedding`, which rejects a float index tensor): pass `torch.long`, or - for a
+            model with multiple input tensors of different kinds - a tuple of per-tensor dtypes,
+            e.g. `(torch.long, None)`.
         to_file (str, optional): Path to the file to write the created image. Overwrite if exist.
             Image type is inferred from the file extension. Providing None will disable writing.
         min_z (int, optional): Minimum size in pixels that a layer will have along the z-axis.
@@ -138,7 +146,7 @@ def lenet_view(
     if color_map is not None:
         _color_map = defaultdict(dict, color_map)
 
-    architecture = extract_architecture(model, input_shape)
+    architecture = extract_architecture(model, input_shape, input_dtype)
 
     # Hiding is only honored when it's safe to: an input feeding more than one consumer (e.g. a
     # residual block's raw-input shortcut) must stay visible regardless of show_input, since

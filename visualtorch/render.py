@@ -21,7 +21,7 @@ from torch import nn
 from .flow import flow_view
 from .graph import graph_view
 from .lenet_style import lenet_view
-from .utils.utils import InputShape
+from .utils.utils import InputDtype, InputShape
 
 Style = Literal["graph", "flow", "lenet"]
 
@@ -30,6 +30,7 @@ Style = Literal["graph", "flow", "lenet"]
 class CommonOptions:
     """Options accepted by every rendering style."""
 
+    input_dtype: InputDtype | None = None
     to_file: str | None = None
     color_map: dict[Any, Any] | None = None
     palette: str = "okabe_ito"
@@ -116,6 +117,7 @@ def _render_graph(
     return graph_view(
         model,
         input_shape,
+        input_dtype=common.input_dtype,
         to_file=common.to_file,
         color_map=common.color_map,
         palette=common.palette,
@@ -148,6 +150,7 @@ def _render_flow(
     return flow_view(
         model,
         input_shape,
+        input_dtype=common.input_dtype,
         to_file=common.to_file,
         min_z=options.min_z,
         min_xy=options.min_xy,
@@ -188,6 +191,7 @@ def _render_lenet(
     return lenet_view(
         model,
         input_shape,
+        input_dtype=common.input_dtype,
         to_file=common.to_file,
         min_z=options.min_z,
         min_xy=options.min_xy,

@@ -18,7 +18,7 @@ from torch import nn
 from .utils.layer_utils import Input
 from .utils.recorder import trace_module_graph
 from .utils.traced_layer import TracedLayer
-from .utils.utils import InputShape, validate_input_shape
+from .utils.utils import InputDtype, InputShape, validate_input_dtype, validate_input_shape
 
 _INPUT_NODE_ID = "__input_dummy__"
 
@@ -48,7 +48,11 @@ class Architecture:
             yield self._index_to_id[int(start_idx)], self._index_to_id[int(end_idx)]
 
 
-def extract_architecture(model: nn.Module, input_shape: InputShape) -> Architecture:
+def extract_architecture(
+    model: nn.Module,
+    input_shape: InputShape,
+    input_dtype: InputDtype | None = None,
+) -> Architecture:
     """Trace a model's forward pass and extract its structure as an `Architecture`.
 
     Traces an actual forward pass (see `visualtorch.utils.recorder.trace_module_graph`) instead of
@@ -61,15 +65,23 @@ def extract_architecture(model: nn.Module, input_shape: InputShape) -> Architect
             dim (e.g. (1, 3, 224, 224)). For a model whose forward() takes multiple separate input
             tensors, pass a tuple of per-tensor shapes instead, one per positional argument in
             order, e.g. ((1, 3, 224, 224), (1, 10)).
+        input_dtype (torch.dtype, optional): The dtype of the dummy input tensor(s) used to trace
+            the model. Defaults to `None` for every input, giving a uniformly random float
+            tensor - the long-standing behavior. Needed for a model that starts with an
+            integer/bool-input layer (e.g. `nn.Embedding`, which rejects a float index tensor):
+            pass `torch.long`, or - for a model with multiple input tensors of different kinds - a
+            tuple of per-tensor dtypes, e.g. `(torch.long, None)`.
 
     Returns:
         Architecture: The traced model's structure.
     """
     input_shapes = validate_input_shape(input_shape)
+    input_dtypes = validate_input_dtype(input_dtype, len(input_shapes))
 
     id_to_module, id_to_output_shape, id_to_extra_output_shapes, edges, input_ids = trace_module_graph(
         model,
         input_shapes,
+        input_dtypes,
     )
 
     nodes = list(id_to_module.keys())

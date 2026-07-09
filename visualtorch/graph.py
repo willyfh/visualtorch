@@ -15,12 +15,23 @@ from PIL import Image, ImageFont
 from .backend import extract_architecture
 from .connectors import compute_skip_levels, draw_connector
 from .utils.traced_layer import TracedLayer
-from .utils.utils import Box, Circle, ColorWheel, Ellipses, ImageDraw, InputShape, format_shape_label, resolve_palette
+from .utils.utils import (
+    Box,
+    Circle,
+    ColorWheel,
+    Ellipses,
+    ImageDraw,
+    InputDtype,
+    InputShape,
+    format_shape_label,
+    resolve_palette,
+)
 
 
 def graph_view(
     model: torch.nn.Module,
     input_shape: InputShape,
+    input_dtype: InputDtype | None = None,
     to_file: str | None = None,
     color_map: dict[Any, Any] | None = None,
     palette: str = "okabe_ito",
@@ -49,6 +60,12 @@ def graph_view(
         input_shape (tuple): The shape of the input tensor. For a model whose forward() takes
             multiple separate input tensors, pass a tuple of per-tensor shapes instead, one per
             positional argument in order, e.g. ((1, 3, 224, 224), (1, 10)).
+        input_dtype (torch.dtype, optional): The dtype of the dummy input tensor(s) used to trace
+            the model. Defaults to `None` for every input, giving a uniformly random float
+            tensor. Needed for a model that starts with an integer/bool-input layer (e.g.
+            `nn.Embedding`, which rejects a float index tensor): pass `torch.long`, or - for a
+            model with multiple input tensors of different kinds - a tuple of per-tensor dtypes,
+            e.g. `(torch.long, None)`.
         to_file (str, optional): Path to the file to write the created image to. If the image does not exist yet,
             it will be created, else overwritten. Image type is inferred from the file ending. Providing None
             will disable writing.
@@ -95,7 +112,7 @@ def graph_view(
     if color_map is not None:
         _color_map = defaultdict(dict, color_map)
 
-    architecture = extract_architecture(model, input_shape)
+    architecture = extract_architecture(model, input_shape, input_dtype)
 
     # Hiding is only honored when it's safe to: an input feeding more than one consumer (e.g. a
     # residual block's raw-input shortcut) must stay visible regardless of show_input, since

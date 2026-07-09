@@ -4,14 +4,19 @@
 # Copyright (C) 2024 Willy Fitra Hendria
 # SPDX-License-Identifier: MIT
 
-from typing import Any
+from typing import Any, TypeAlias
 
 import aggdraw
 import PIL
+import torch
 from PIL import Image, ImageColor, ImageDraw
 
 InputShape = tuple[int, ...] | tuple[tuple[int, ...], ...]
 """A single flat shape (one input tensor) or a tuple of per-tensor shapes (multiple inputs)."""
+
+InputDtype: TypeAlias = torch.dtype | tuple[torch.dtype | None, ...]
+"""A single dtype (applied to every input tensor) or a tuple of per-tensor dtypes (`None` for any
+entry keeps that tensor's default float dummy)."""
 
 
 class Shape:
@@ -413,6 +418,45 @@ def validate_input_shape(input_shape: tuple) -> tuple[tuple[int, ...], ...]:
         raise ValueError(error_msg)
 
     return tuple(input_shape)
+
+
+def validate_input_dtype(input_dtype: InputDtype | None, n_inputs: int) -> tuple[torch.dtype | None, ...]:
+    """Validate input_dtype and normalize it to one dtype (or None) per input tensor.
+
+    Accepts `None` (every input gets its default dummy - a float tensor via `torch.rand`, the
+    long-standing behavior), a single `torch.dtype` (applied to every input tensor), or a tuple of
+    length `n_inputs` mixing per-tensor `torch.dtype`s and/or `None`s (`None` for a given position
+    keeps that tensor's default float dummy) - for a model whose forward() takes multiple separate
+    input tensors of different kinds, e.g. token ids alongside a continuous feature vector.
+
+    Args:
+        input_dtype: The dtype(s) to validate, or `None`.
+        n_inputs (int): How many input tensors the model's forward() takes.
+
+    Returns:
+        tuple: A tuple of length `n_inputs`, each entry either a `torch.dtype` or `None`.
+
+    Raises:
+        ValueError: If input_dtype is neither `None`, a single `torch.dtype`, nor a tuple of
+            `n_inputs` entries each a `torch.dtype` or `None`.
+    """
+    if input_dtype is None:
+        return (None,) * n_inputs
+
+    if isinstance(input_dtype, torch.dtype):
+        return (input_dtype,) * n_inputs
+
+    error_msg = (
+        "input_dtype must be either a single torch.dtype, e.g. torch.long, or - for models whose "
+        f"forward() takes multiple separate input tensors - a tuple of {n_inputs} per-tensor "
+        f"dtypes (each a torch.dtype or None). Got {input_dtype!r} instead."
+    )
+    if not isinstance(input_dtype, tuple) or len(input_dtype) != n_inputs:
+        raise ValueError(error_msg)
+    if not all(dtype is None or isinstance(dtype, torch.dtype) for dtype in input_dtype):
+        raise ValueError(error_msg)
+
+    return input_dtype
 
 
 def self_multiply(tensor_tuple: tuple | list) -> int | float:
