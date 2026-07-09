@@ -8,6 +8,7 @@ import warnings
 from collections import defaultdict
 from collections.abc import Callable
 from math import ceil
+from typing import Literal
 
 import aggdraw
 import PIL
@@ -29,7 +30,16 @@ from .utils.utils import (
     linear_layout,
     resolve_palette,
     self_multiply,
-    vertical_image_concat,
+)
+
+LegendPosition = Literal["top-left", "top-right", "top-center", "bottom-left", "bottom-right", "bottom-center"]
+_LEGEND_POSITIONS: tuple[LegendPosition, ...] = (
+    "top-left",
+    "top-right",
+    "top-center",
+    "bottom-left",
+    "bottom-right",
+    "bottom-center",
 )
 
 
@@ -64,6 +74,7 @@ def flow_view(
     connector_fill: str | tuple[int, ...] | None = None,
     connector_width: int = 1,
     one_dim_orientation: str | None = None,
+    legend_position: LegendPosition = "bottom-left",
 ) -> PIL.Image:
     """Generate a flow-style architecture visualization for a given torch model.
 
@@ -120,10 +131,15 @@ def flow_view(
             or a tuple (R, G, B, A). If None, inherits the target box's outline color.
         connector_width (int, optional): Line width in pixels for skip-connection lines. Defaults to 1.
         one_dim_orientation (str, optional): Deprecated, use `low_dim_orientation` instead.
+        legend_position (str, optional): Where to place the legend when `legend=True`. One of
+            `"top-left"`, `"top-right"`, `"top-center"`, `"bottom-left"`, `"bottom-right"`, or
+            `"bottom-center"`. Defaults to `"bottom-left"`, matching the previous layout.
 
     Returns:
         PIL.Image: An Image object representing the generated architecture visualization.
     """
+    _validate_legend_position(legend_position)
+
     if one_dim_orientation is not None:
         warnings.warn(
             "`one_dim_orientation` is deprecated and will be removed in a future release, "
@@ -267,12 +283,20 @@ def flow_view(
             spacing,
             padding,
             background_fill,
+            legend_position,
         )
 
     if to_file is not None:
         img.save(to_file)
 
     return img
+
+
+def _validate_legend_position(legend_position: str) -> None:
+    if legend_position not in _LEGEND_POSITIONS:
+        supported = ", ".join(f"{position!r}" for position in _LEGEND_POSITIONS)
+        error_msg = f"unsupported legend_position: {legend_position!r}. Supported positions: {supported}."
+        raise ValueError(error_msg)
 
 
 def _box_factory(
@@ -470,8 +494,9 @@ def _draw_legend(
     spacing: int,
     padding: int,
     background_fill: str | tuple[int, ...],
+    legend_position: LegendPosition,
 ) -> PIL.Image:
-    """Build and append a color legend, one entry per layer type, below the diagram."""
+    """Build and place a color legend, one entry per layer type."""
     text_height = font.getbbox("Ag")[3]
     cube_size = text_height
 
@@ -520,7 +545,40 @@ def _draw_legend(
         background_fill=background_fill,
         horizontal=True,
     )
-    return vertical_image_concat(img, legend_image, background_fill=background_fill)
+    return _place_legend(img, legend_image, legend_position, background_fill)
+
+
+def _place_legend(
+    img: PIL.Image,
+    legend_image: PIL.Image,
+    legend_position: LegendPosition,
+    background_fill: str | tuple[int, ...],
+) -> PIL.Image:
+    """Place the legend outside the diagram while aligning it within the final canvas."""
+    vertical_position, horizontal_position = legend_position.split("-", 1)
+    canvas = Image.new(
+        "RGBA",
+        (max(img.width, legend_image.width), img.height + legend_image.height),
+        background_fill,
+    )
+    legend_x = _horizontal_legend_offset(canvas.width, legend_image.width, horizontal_position)
+
+    if vertical_position == "top":
+        canvas.paste(legend_image, (legend_x, 0))
+        canvas.paste(img, (0, legend_image.height))
+    else:
+        canvas.paste(img, (0, 0))
+        canvas.paste(legend_image, (legend_x, img.height))
+    return canvas
+
+
+def _horizontal_legend_offset(canvas_width: int, legend_width: int, horizontal_position: str) -> int:
+    """Return the x offset for the legend row inside the final canvas."""
+    if horizontal_position == "right":
+        return canvas_width - legend_width
+    if horizontal_position == "center":
+        return (canvas_width - legend_width) // 2
+    return 0
 
 
 def _column_label_and_center(column: list[VolumetricBox]) -> tuple[str, float]:
