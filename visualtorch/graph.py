@@ -41,6 +41,7 @@ def graph_view(
     layer_spacing: int = 250,
     node_spacing: int = 10,
     type_ignore: list | None = None,
+    outline_width: int = 1,
     connector_fill: str | tuple[int, ...] = "gray",
     connector_width: int = 1,
     ellipsize_after: int = 10,
@@ -80,6 +81,7 @@ def graph_view(
         layer_spacing (int, optional): Spacing in pixels between two layers.
         node_spacing (int, optional): Spacing in pixels between nodes.
         type_ignore (list, optional): List of layer types in the torch model to ignore during drawing.
+        outline_width (int, optional): Line width in pixels for the shape borders. Defaults to 1.
         connector_fill (Any, optional): Color for the connectors. Can be str or (R,G,B,A).
         connector_width (int, optional): Line-width of the connectors in pixels.
         ellipsize_after (int, optional): Maximum number of neurons per layer to draw. If a layer is exceeding this,
@@ -142,6 +144,7 @@ def graph_view(
         opacity,
         layer_spacing,
         ColorWheel(colors=resolve_palette(palette)),
+        outline_width,
     )
 
     # An edge whose endpoint was just dropped above (a hidden input's own edges) can no longer
@@ -390,6 +393,7 @@ def _create_architecture(
     opacity: int,
     layer_spacing: int,
     color_wheel: ColorWheel,
+    outline_width: int = 1,
 ) -> tuple[list, list, dict, list[list[tuple[str, float, float]]]]:
     """Create nodes of architecture for each layers."""
     id_to_node_list_map = {}
@@ -434,6 +438,7 @@ def _create_architecture(
                     "outline",
                     "black",
                 )
+                c.outline_width = outline_width
 
                 layer_nodes.append(c)
 

@@ -50,6 +50,7 @@ class GraphStyleOptions:
     layer_spacing: int = 250
     node_spacing: int = 10
     type_ignore: list[type] | None = None
+    outline_width: int = 1
     connector_fill: str | tuple[int, ...] = "gray"
     connector_width: int = 1
     ellipsize_after: int = 10
@@ -69,6 +70,7 @@ class FlowStyleOptions:
     scale_z: float = 0.1
     scale_xy: float = 1
     type_ignore: list[type] | None = None
+    outline_width: int = 1
     low_dim_orientation: str = "z"
     draw_volume: bool = True
     spacing: int = 10
@@ -93,6 +95,7 @@ class LenetStyleOptions:
     scale_z: float = 1
     scale_xy: float = 1
     type_ignore: list[type] | None = None
+    outline_width: int = 1
     low_dim_orientation: str = "z"
     spacing: int = 10
     draw_funnel: bool = True
@@ -121,6 +124,7 @@ def _render_graph(
         palette=common.palette,
         node_size=options.node_size,
         type_ignore=options.type_ignore,
+        outline_width=options.outline_width,
         background_fill=common.background_fill,
         padding=common.padding,
         layer_spacing=options.layer_spacing,
@@ -173,6 +177,7 @@ def _render_flow(
         show_dimension=options.show_dimension,
         level_gap=common.level_gap,
         show_input=options.show_input,
+        outline_width=options.outline_width,
         connector_fill=options.connector_fill,
         connector_width=options.connector_width,
         one_dim_orientation=options.one_dim_orientation,
@@ -212,6 +217,7 @@ def _render_lenet(
         level_gap=common.level_gap,
         show_dimension=options.show_dimension,
         show_input=options.show_input,
+        outline_width=options.outline_width,
         connector_fill=options.connector_fill,
         connector_width=options.connector_width,
         one_dim_orientation=options.one_dim_orientation,

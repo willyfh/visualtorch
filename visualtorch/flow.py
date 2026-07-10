@@ -71,6 +71,7 @@ def flow_view(
     show_dimension: bool = False,
     level_gap: int | None = None,
     show_input: bool = True,
+    outline_width: int = 1,
     connector_fill: str | tuple[int, ...] | None = None,
     connector_width: int = 1,
     one_dim_orientation: str | None = None,
@@ -127,6 +128,7 @@ def flow_view(
             you're overlaying your own custom input illustration instead. Has no effect on a
             multi-input model, where every input is always shown (omitting any of them would
             make it ambiguous which arrow belongs to which named input).
+        outline_width (int, optional): Line width in pixels for the shape borders. Defaults to 1.
         connector_fill (str or tuple, optional): Color for skip-connection lines. Can be a string
             or a tuple (R, G, B, A). If None, inherits the target box's outline color.
         connector_width (int, optional): Line width in pixels for skip-connection lines. Defaults to 1.
@@ -197,6 +199,7 @@ def flow_view(
         opacity,
         color_wheel,
         layer_types,
+        outline_width,
     )
     column_layout = layout_columns(
         filtered_columns,
@@ -313,6 +316,7 @@ def _box_factory(
     opacity: int,
     color_wheel: ColorWheel,
     layer_types: list[type],
+    outline_width: int = 1,
 ) -> Callable[[TracedLayer], Box]:
     """Build a `make_box` callback: given a traced layer, return a sized, unpositioned `Box`."""
 
@@ -360,6 +364,7 @@ def _box_factory(
             opacity,
         )
         box.outline = color_map.get(layer_type, {}).get("outline", "black")
+        box.outline_width = outline_width
         color_map[layer_type] = {"fill": box.fill, "outline": box.outline}
 
         box.shade = shade_step
