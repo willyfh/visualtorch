@@ -42,9 +42,24 @@ candidate for becoming a maintainer once they've:
   `visualtorch/backend.py`, the per-style rendering modules, the test suite).
 - Shown a willingness to help review other contributors' pull requests, not just submit their own.
 
+A contributor who brings in and takes ownership of a substantial existing component (e.g. merging
+in a tool they've already built and maintained elsewhere) can also become a maintainer directly,
+without the sustained-PR history above. The trust signal there is the track record of the
+existing work, not incremental PRs to this repo.
+
 An existing maintainer nominates the candidate (e.g. in an issue or discussion), and current
 maintainers approve by consensus. New maintainers are added to this document and given write
 access to the repository.
+
+## Stepping Down / Inactivity
+
+A maintainer can step down at any time by opening a PR removing themselves from this document.
+
+If a maintainer is unresponsive (no reviews, merges, or activity) for 6+ months with no notice,
+the remaining maintainer(s) may open an issue proposing their removal, giving the inactive
+maintainer at least 2 weeks to respond before removing them from this document and revoking write
+access. This isn't punitive, it's about keeping the maintainer list accurate for anyone
+(contributors, Ecosystem reviewers) relying on it.
 
 ## Release Process
 
