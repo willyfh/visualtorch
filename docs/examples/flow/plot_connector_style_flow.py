@@ -54,7 +54,7 @@ img = visualtorch.render(
     color_map=color_map,
     legend=True,
     connector_fill="red",
-    connector_width=3
+    connector_width=3,
 )
 
 dpi = 150  # rendered at 2x this in the final doc build (savefig.dpi=300 in conf.py)
