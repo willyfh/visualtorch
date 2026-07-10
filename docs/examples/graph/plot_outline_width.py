@@ -1,4 +1,4 @@
-"""Outline Width (Graph)
+"""Outline Width
 =======================================
 Visualization of thin vs thick outline border using the ``outline_width`` parameter
 in the graph style.
@@ -30,7 +30,6 @@ class SimpleDense(nn.Module):
 model = SimpleDense()
 input_shape = (1, 4)
 
-dpi = 150  # rendered at 2x this in the final doc build (savefig.dpi=300 in conf.py)
 
 fig, axes = plt.subplots(1, 2, figsize=(12, 4))
 

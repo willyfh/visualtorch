@@ -1,4 +1,4 @@
-"""Outline Width (Flow)
+"""Outline Width
 =======================================
 Visualization of thin vs thick outline border using the ``outline_width`` parameter
 in the flow style.
@@ -37,7 +37,6 @@ class SimpleCNN(nn.Module):
 model = SimpleCNN()
 input_shape = (1, 3, 224, 224)
 
-dpi = 150  # rendered at 2x this in the final doc build (savefig.dpi=300 in conf.py)
 
 fig, axes = plt.subplots(1, 2, figsize=(12, 4))
 
@@ -46,10 +45,10 @@ axes[0].imshow(img_thin)
 axes[0].axis("off")
 axes[0].set_title("outline_width=1 (default)")
 
-img_thick = visualtorch.render(model, input_shape=input_shape, style="flow", outline_width=8)
+img_thick = visualtorch.render(model, input_shape=input_shape, style="flow", outline_width=3)
 axes[1].imshow(img_thick)
 axes[1].axis("off")
-axes[1].set_title("outline_width=8 (thick)")
+axes[1].set_title("outline_width=3 (thick)")
 
 plt.tight_layout()
 plt.show()
