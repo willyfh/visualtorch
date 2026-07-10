@@ -43,6 +43,7 @@ def graph_view(
     type_ignore: list | None = None,
     connector_fill: str | tuple[int, ...] = "gray",
     connector_width: int = 1,
+    show_arrows: bool = False,
     ellipsize_after: int = 10,
     show_neurons: bool = True,
     opacity: int = 255,
@@ -82,6 +83,8 @@ def graph_view(
         type_ignore (list, optional): List of layer types in the torch model to ignore during drawing.
         connector_fill (Any, optional): Color for the connectors. Can be str or (R,G,B,A).
         connector_width (int, optional): Line-width of the connectors in pixels.
+        show_arrows (bool, optional): If True, draw a small arrowhead at each connector's
+            downstream endpoint to indicate data-flow direction.
         ellipsize_after (int, optional): Maximum number of neurons per layer to draw. If a layer is exceeding this,
             the remaining neurons will be drawn as ellipses.
         show_neurons (bool, optional): If True a node for each neuron in supported layers is created (constrained by
@@ -206,6 +209,7 @@ def graph_view(
         resolved_level_gap,
         connector_fill,
         connector_width,
+        show_arrows,
     )
 
     for layer in layers:
@@ -261,6 +265,7 @@ def _draw_connectors(
     resolved_level_gap: int,
     connector_fill: str | tuple[int, ...],
     connector_width: int,
+    show_arrows: bool,
 ) -> None:
     """Draw every connector, routing skip-connection edges above the diagram."""
     for start_id, end_id in edges:
@@ -286,6 +291,7 @@ def _draw_connectors(
                     color=connector_fill,
                     width=connector_width,
                     detour_y=detour_y,
+                    show_arrows=show_arrows,
                 )
             continue
 
@@ -301,6 +307,7 @@ def _draw_connectors(
                         color=connector_fill,
                         width=connector_width,
                         detour_y=detour_y,
+                        show_arrows=show_arrows,
                     )
 
 

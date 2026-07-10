@@ -52,6 +52,7 @@ class GraphStyleOptions:
     type_ignore: list[type] | None = None
     connector_fill: str | tuple[int, ...] = "gray"
     connector_width: int = 1
+    show_arrows: bool = False
     ellipsize_after: int = 10
     show_neurons: bool = True
     show_dimension: bool = False
@@ -127,6 +128,7 @@ def _render_graph(
         node_spacing=options.node_spacing,
         connector_fill=options.connector_fill,
         connector_width=options.connector_width,
+        show_arrows=options.show_arrows,
         ellipsize_after=options.ellipsize_after,
         show_neurons=options.show_neurons,
         opacity=common.opacity,
