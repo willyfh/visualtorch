@@ -21,11 +21,11 @@ def normalize_input_shape(value: object) -> tuple[int, ...] | tuple[tuple[int, .
     if isinstance(value, str):
         value = json.loads(value)
 
-    if not isinstance(value, (list, tuple)) or not value:
+    if not isinstance(value, list | tuple) or not value:
         message = "input_shape must be a non-empty list/tuple, or a JSON string containing one."
         raise ValueError(message)
 
-    has_nested = any(isinstance(item, (list, tuple)) for item in value)
+    has_nested = any(isinstance(item, list | tuple) for item in value)
     has_scalar = any(isinstance(item, int) and not isinstance(item, bool) for item in value)
     if has_nested and has_scalar:
         message = "input_shape must be either one flat shape or a list of per-input shapes, not both."
@@ -99,8 +99,8 @@ def render_model(
         payload_file_path = Path(payload_file.name)
 
     try:
-        completed = subprocess.run(  # - invokes this package's fixed worker module.
-            [sys.executable, "-m", "visualtorch_mcp.worker", str(payload_file_path)],
+        completed = subprocess.run(
+            [sys.executable, "-m", "visualtorch_mcp.worker", str(payload_file_path)],  # noqa: S603
             check=False,
             capture_output=True,
             text=True,
@@ -127,7 +127,7 @@ def render_model(
 
 
 def _normalize_single_shape(value: object) -> tuple[int, ...]:
-    if not isinstance(value, (list, tuple)) or not value:
+    if not isinstance(value, list | tuple) or not value:
         message = "each input shape must be a non-empty list/tuple of positive integers."
         raise ValueError(message)
 

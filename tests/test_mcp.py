@@ -110,3 +110,44 @@ def test_render_model_worker_smoke(tmp_path: Path) -> None:
     assert output_path.is_file()
     assert result["style"] == "graph"
     assert result["bytes"] == output_path.stat().st_size
+
+
+def test_render_model_keeps_source_stdout_out_of_protocol(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+    """Keep user source output off stdout while returning a parseable result."""
+    result = render_model(
+        source=(
+            "print('source output')\n"
+            "import torch\nmodel = torch.nn.Sequential(torch.nn.Flatten(), torch.nn.Linear(4, 2))"
+        ),
+        input_shape=(1, 1, 2, 2),
+        style="graph",
+        output_path="source-print.png",
+        output_dir=str(tmp_path),
+        options={"show_neurons": False},
+        timeout_seconds=30,
+    )
+
+    captured = capsys.readouterr()
+    assert "source output" not in captured.out
+    assert Path(result["output_path"]).is_file()
+
+
+def test_render_model_imports_model_from_workdir(tmp_path: Path) -> None:
+    """Make the documented workdir available for imports in user source."""
+    (tmp_path / "local_model.py").write_text(
+        "import torch\nmodel = torch.nn.Sequential(torch.nn.Flatten(), torch.nn.Linear(4, 2))\n",
+        encoding="utf-8",
+    )
+
+    result = render_model(
+        source="from local_model import model",
+        input_shape=(1, 1, 2, 2),
+        style="graph",
+        output_path="workdir-import.png",
+        output_dir=str(tmp_path),
+        workdir=str(tmp_path),
+        options={"show_neurons": False},
+        timeout_seconds=30,
+    )
+
+    assert Path(result["output_path"]).is_file()

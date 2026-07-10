@@ -8,7 +8,7 @@ import json
 import os
 import sys
 import traceback
-from contextlib import suppress
+from contextlib import redirect_stdout, suppress
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
@@ -20,8 +20,9 @@ def main() -> None:
     """Render from a JSON payload path passed on the command line."""
     try:
         payload = json.loads(Path(sys.argv[1]).read_text(encoding="utf-8"))
-        result = _render_from_payload(payload)
-    except Exception as exc:
+        with redirect_stdout(sys.stderr):
+            result = _render_from_payload(payload)
+    except Exception as exc:  # noqa: BLE001, RUF100
         print(f"{type(exc).__name__}: {exc}\n{traceback.format_exc()}", file=sys.stderr)
         raise SystemExit(1) from exc
 
@@ -31,11 +32,14 @@ def main() -> None:
 def _render_from_payload(payload: dict[str, Any]) -> dict[str, Any]:
     workdir = payload.get("workdir")
     if workdir:
-        os.chdir(workdir)
+        resolved_workdir = Path(workdir).expanduser().resolve()
+        os.chdir(resolved_workdir)
+        if str(resolved_workdir) not in sys.path:
+            sys.path.insert(0, str(resolved_workdir))
 
     namespace = _execute_source(payload["source"])
     model_expression = payload.get("model_expression") or "model"
-    model = eval(model_expression, namespace)  # noqa: S307 - trusted local model source is intentional.
+    model = eval(model_expression, namespace)  # noqa: PGH001, S307
     if hasattr(model, "eval"):
         model.eval()
 
@@ -122,7 +126,7 @@ def _resolve_type(namespace: dict[str, Any], value: object) -> type:
         with suppress(ImportError):
             namespace["nn"] = importlib.import_module("torch.nn")
 
-    resolved = eval(expression, namespace)  # noqa: S307 - resolves trusted model option types.
+    resolved = eval(expression, namespace)  # noqa: PGH001, S307
     if not isinstance(resolved, type):
         message = f"{value!r} did not resolve to a type."
         raise TypeError(message)
