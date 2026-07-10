@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import sys
 from pathlib import Path
 
 import pytest
@@ -13,6 +14,7 @@ from visualtorch_mcp.runner import (
     resolve_output_path,
 )
 from visualtorch_mcp.worker import _coerce_options, _restore_tuples
+from visualtorch_mcp.worker import main as worker_main
 
 
 @pytest.mark.parametrize(
@@ -130,6 +132,42 @@ def test_render_model_keeps_source_stdout_out_of_protocol(tmp_path: Path, capsys
     captured = capsys.readouterr()
     assert "source output" not in captured.out
     assert Path(result["output_path"]).is_file()
+
+
+def test_worker_protocol_keeps_stdout_json(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """Keep worker stdout parseable while forwarding model output to stderr."""
+    output_path = tmp_path / "worker-protocol.png"
+    payload_path = tmp_path / "payload.json"
+    payload_path.write_text(
+        json.dumps(
+            {
+                "source": (
+                    "print('source output')\n"
+                    "import torch\nmodel = torch.nn.Sequential(torch.nn.Flatten(), torch.nn.Linear(4, 2))"
+                ),
+                "input_shape": [1, 1, 2, 2],
+                "style": "graph",
+                "model_expression": "model",
+                "output_path": str(output_path),
+                "options": {"show_neurons": False},
+            },
+        ),
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(sys, "argv", ["visualtorch_mcp.worker", str(payload_path)])
+
+    worker_main()
+
+    captured = capsys.readouterr()
+    assert "source output" not in captured.out
+    assert "source output" in captured.err
+    result = json.loads(captured.out)
+    assert Path(result["output_path"]) == output_path.resolve()
+    assert output_path.is_file()
 
 
 def test_render_model_imports_model_from_workdir(tmp_path: Path) -> None:
