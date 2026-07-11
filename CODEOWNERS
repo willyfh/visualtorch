@@ -1,3 +1,6 @@
 # See https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
 
 * @willyfh
+/visualtorch_mcp/ @Tariolle
+/docs/source/markdown/get_started/mcp.md @Tariolle
+/tests/test_mcp.py @Tariolle
