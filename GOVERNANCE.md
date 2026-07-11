@@ -47,7 +47,7 @@ in a tool they've already built and maintained elsewhere) can also become a main
 without the sustained-PR history above. The trust signal there is the track record of the
 existing work, not incremental PRs to this repo.
 
-An existing maintainer nominates the candidate (e.g. in an issue or discussion), and current
+An existing maintainer nominates the candidate (e.g. in an issue, discussion, or pull request), and current
 maintainers approve by consensus. New maintainers are added to this document and given write
 access to the repository.
 
