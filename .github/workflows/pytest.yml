@@ -12,7 +12,11 @@ jobs:
       max-parallel: 3
       fail-fast: false
       matrix:
-        python-version: ["3.10", "3.11", "3.12"]
+        # Oldest supported (per setup.py's python_requires>=3.10), a mid-range version, and the
+        # newest available - spans the real range instead of clustering in the middle. Not every
+        # in-between version, on the assumption that if both ends and a midpoint pass, the
+        # versions between them are a very safe bet given Python's own within-3.x compatibility.
+        python-version: ["3.10", "3.12", "3.14"]
     steps:
       - name: Checkout code
         uses: actions/checkout@v7
