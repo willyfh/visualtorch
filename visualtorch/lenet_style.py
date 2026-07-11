@@ -122,9 +122,9 @@ def lenet_view(
             more than one consumer, e.g. a residual shortcut, since dropping it would silently
             discard that edge.
         outline_width (int, optional): Line width in pixels for the shape borders. Defaults to 1.
-        connector_fill (str or tuple, optional): Color for skip-connection lines. Can be a string
+        connector_fill (str or tuple, optional): Color for funnel and skip-connection lines. Can be a string
             or a tuple (R, G, B, A). If None, inherits the target box's outline color.
-        connector_width (int, optional): Line width in pixels for skip-connection lines. Defaults to 1.
+        connector_width (int, optional): Line width in pixels for funnel and skip-connection lines. Defaults to 1.
         one_dim_orientation (str, optional): Deprecated, use `low_dim_orientation` instead.
 
     Returns:
@@ -228,7 +228,9 @@ def lenet_view(
 
     _apply_centering(column_layout, top_margin_for_skips + spread_margin / 2)
 
-    _draw_funnels_and_boxes(draw, architecture, column_layout, edge_to_level, draw_funnel)
+    _draw_funnels_and_boxes(
+        draw, architecture, column_layout, edge_to_level, draw_funnel, connector_fill, connector_width
+    )
     _draw_skip_connectors(
         draw,
         architecture,
@@ -355,9 +357,16 @@ def _apply_centering(column_layout: ColumnLayout, top_margin: float) -> None:
             box.x2 += column_layout.x_off
 
 
-def _draw_stacked_funnel(draw: aggdraw.Draw, start_box: VolumetricBox, end_box: VolumetricBox) -> None:
+def _draw_stacked_funnel(
+    draw: aggdraw.Draw,
+    start_box: VolumetricBox,
+    end_box: VolumetricBox,
+    connector_fill: str | tuple[int, ...] | None = None,
+    connector_width: int = 1,
+) -> None:
     """Draw a tapered funnel connecting the outer bounds of two boxes' offset-copy stacks."""
-    pen = aggdraw.Pen(get_rgba_tuple(end_box.outline))
+    resolved_color = connector_fill if connector_fill is not None else end_box.outline
+    pen = aggdraw.Pen(get_rgba_tuple(resolved_color), connector_width)
     start_de, start_offset_z = getattr(start_box, "de", 0), getattr(start_box, "offset_z", 0)
     end_de, end_offset_z = getattr(end_box, "de", 0), getattr(end_box, "offset_z", 0)
     start_off = -start_offset_z * start_de // 2
@@ -376,6 +385,8 @@ def _draw_funnels_and_boxes(
     column_layout: ColumnLayout,
     edge_to_level: dict[tuple[str, str], int],
     draw_funnel_flag: bool,
+    connector_fill: str | tuple[int, ...] | None = None,
+    connector_width: int = 1,
 ) -> None:
     """Draw each column's incoming funnels, then that column's own boxes, column by column.
 
@@ -398,7 +409,9 @@ def _draw_funnels_and_boxes(
                 layer_id = layer_id_by_box[id(box)]
                 for start_id in incoming_funnels.get(layer_id, []):
                     if start_id in column_layout.id_to_box:
-                        _draw_stacked_funnel(draw, column_layout.id_to_box[start_id], box)
+                        _draw_stacked_funnel(
+                            draw, column_layout.id_to_box[start_id], box, connector_fill, connector_width
+                        )
 
         for box in column:
             box.draw(draw)
