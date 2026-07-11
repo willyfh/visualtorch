@@ -50,6 +50,10 @@ See the [Usage Examples page](https://visualtorch.readthedocs.io/en/latest/usage
 
 Please feel free to send a pull request to contribute to this project by following this [guideline](https://github.com/willyfh/visualtorch/blob/main/CONTRIBUTING.md).
 
+## Releases
+
+Releases follow [semantic versioning](https://semver.org/) - breaking changes require a major version bump, accompanied by a deprecation path where practical rather than a silent removal. A release is cut whenever there's meaningful, ready-to-ship value (a new feature, a fix, or accumulated smaller changes) rather than on a fixed calendar schedule. See [GOVERNANCE.md](https://github.com/willyfh/visualtorch/blob/main/GOVERNANCE.md#release-process) for the full release process, and the [PyPI release history](https://pypi.org/project/visualtorch/#history) for past releases.
+
 ## License
 
 This poject is available as open source under the terms of the [MIT License](https://github.com/willyfh/visualtorch/blob/main/LICENSE.md).
