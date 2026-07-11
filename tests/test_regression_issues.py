@@ -3,7 +3,7 @@
 See https://github.com/willyfh/visualtorch/issues/63, /68, /69, /84, /85.
 """
 
-# Copyright (C) 2024 Willy Fitra Hendria
+# Copyright (C) 2024 VisualTorch Contributors
 # SPDX-License-Identifier: MIT
 
 import pytest

@@ -8,7 +8,7 @@ validated by constructing a per-style dataclass from them - a typo'd kwarg raise
 immediately, rather than being silently ignored.
 """
 
-# Copyright (C) 2024 Willy Fitra Hendria
+# Copyright (C) 2024 VisualTorch Contributors
 # SPDX-License-Identifier: MIT
 
 from collections.abc import Callable

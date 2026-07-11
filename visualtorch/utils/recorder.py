@@ -7,7 +7,7 @@ tensor-subclassing approach, stripped down to what every rendering style needs: 
 leaf module (a module with no children), not a node per tensor op.
 """
 
-# Copyright (C) 2024 Willy Fitra Hendria
+# Copyright (C) 2024 VisualTorch Contributors
 # SPDX-License-Identifier: MIT
 
 from collections.abc import Mapping

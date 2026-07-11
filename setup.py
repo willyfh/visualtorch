@@ -1,6 +1,6 @@
 """Setup file for visualtorch."""
 
-# Copyright (C) 2024 Willy Fitra Hendria
+# Copyright (C) 2024 VisualTorch Contributors
 # SPDX-License-Identifier: MIT
 
 from pathlib import Path

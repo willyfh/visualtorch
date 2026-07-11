@@ -1,6 +1,6 @@
 """Tests for graph view."""
 
-# Copyright (C) 2024 Willy Fitra Hendria
+# Copyright (C) 2024 VisualTorch Contributors
 # SPDX-License-Identifier: MIT
 
 from pathlib import Path
