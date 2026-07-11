@@ -1,7 +1,7 @@
 """Hide Neurons
 =======================================
 
-By default ``graph_view`` draws one node per neuron (constrained by ``max_neurons``), which is
+By default ``graph_view`` draws one node per neuron (constrained by ``ellipsize_after``), which is
 great for seeing the width of each layer but gets busy for anything beyond a toy model. Setting
 ``show_neurons=False`` collapses each layer down to a single node, giving a much more compact,
 block-diagram-like view that stays readable for deeper networks.
