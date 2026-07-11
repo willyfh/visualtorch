@@ -50,6 +50,10 @@ See the [Usage Examples page](https://visualtorch.readthedocs.io/en/latest/usage
 
 Please feel free to send a pull request to contribute to this project by following this [guideline](https://github.com/willyfh/visualtorch/blob/main/CONTRIBUTING.md).
 
+## Releases
+
+See [GOVERNANCE.md](https://github.com/willyfh/visualtorch/blob/main/GOVERNANCE.md#release-process) for release methodology and cadence, and the [PyPI release history](https://pypi.org/project/visualtorch/#history) for past releases.
+
 ## License
 
 This poject is available as open source under the terms of the [MIT License](https://github.com/willyfh/visualtorch/blob/main/LICENSE.md).

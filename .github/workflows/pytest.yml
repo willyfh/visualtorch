@@ -12,7 +12,11 @@ jobs:
       max-parallel: 3
       fail-fast: false
       matrix:
-        python-version: ["3.10", "3.11", "3.12"]
+        # Oldest supported (per setup.py's python_requires>=3.10), a mid-range version, and the
+        # newest available - spans the real range instead of clustering in the middle. Not every
+        # in-between version, on the assumption that if both ends and a midpoint pass, the
+        # versions between them are a very safe bet given Python's own within-3.x compatibility.
+        python-version: ["3.10", "3.12", "3.14"]
     steps:
       - name: Checkout code
         uses: actions/checkout@v7
@@ -22,10 +26,42 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
 
-      - name: Install dependencies
+      # No torch version pin here - pip resolves whatever satisfies torch>=2.0.0 in
+      # requirements.txt, which is the latest stable release (currently 2.13.0). The
+      # test-previous-torch job below explicitly pins the release before that.
+      - name: Install dependencies (latest PyTorch release)
         run: |
           python -m pip install .
           python -m pip install pytest
+          python -c "import torch; print(f'Testing against torch {torch.__version__}')"
+
+      - name: Run tests
+        run: pytest
+
+  test-previous-torch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      # Paired with the newest Python (rather than 3.10 or 3.12, both already covered against
+      # latest torch above) so this job covers a distinct combination - older torch release
+      # with the newest Python - instead of overlapping one the `test` job already exercises.
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.14"
+
+      # The previous stable PyTorch minor release, pinned explicitly - the `test` job above
+      # already covers "latest" (unpinned, whatever pip resolves), so this one job is enough
+      # to also demonstrate compatibility with the release before it, without multiplying
+      # every Python version by every torch version.
+      - name: Install dependencies (pinned to the previous PyTorch release)
+        run: |
+          python -m pip install "torch==2.12.1"
+          python -m pip install .
+          python -m pip install pytest
+          python -c "import torch; print(f'Testing against torch {torch.__version__}')"
 
       - name: Run tests
         run: pytest
