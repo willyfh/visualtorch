@@ -85,8 +85,6 @@ def graph_view(
         outline_width (int, optional): Line width in pixels for the shape borders. Defaults to 1.
         connector_fill (Any, optional): Color for the connectors. Can be str or (R,G,B,A).
         connector_width (int, optional): Line-width of the connectors in pixels.
-        show_arrows (bool, optional): If True, draw a small arrowhead at each connector's
-            downstream endpoint to indicate data-flow direction.
         ellipsize_after (int, optional): Maximum number of neurons per layer to draw. If a layer is exceeding this,
             the remaining neurons will be drawn as ellipses.
         show_neurons (bool, optional): If True a node for each neuron in supported layers is created (constrained by
@@ -104,6 +102,8 @@ def graph_view(
             arrow belongs to which named input). Ignored (input always kept) when the input feeds
             more than one consumer, e.g. a residual shortcut, since dropping it would silently
             discard that edge.
+        show_arrows (bool, optional): If True, draw a small arrowhead at each connector's
+            downstream endpoint to indicate data-flow direction.
 
     Returns:
         Image.Image: Generated architecture image.
