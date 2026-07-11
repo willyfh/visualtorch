@@ -229,7 +229,13 @@ def lenet_view(
     _apply_centering(column_layout, top_margin_for_skips + spread_margin / 2)
 
     _draw_funnels_and_boxes(
-        draw, architecture, column_layout, edge_to_level, draw_funnel, connector_fill, connector_width
+        draw,
+        architecture,
+        column_layout,
+        edge_to_level,
+        draw_funnel,
+        connector_fill,
+        connector_width,
     )
     _draw_skip_connectors(
         draw,
@@ -410,7 +416,11 @@ def _draw_funnels_and_boxes(
                 for start_id in incoming_funnels.get(layer_id, []):
                     if start_id in column_layout.id_to_box:
                         _draw_stacked_funnel(
-                            draw, column_layout.id_to_box[start_id], box, connector_fill, connector_width
+                            draw,
+                            column_layout.id_to_box[start_id],
+                            box,
+                            connector_fill,
+                            connector_width,
                         )
 
         for box in column:

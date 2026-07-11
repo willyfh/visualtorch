@@ -252,7 +252,13 @@ def flow_view(
     _apply_centering(column_layout, top_margin_for_skips, column_layout.diagram_height)
 
     _draw_funnels_and_boxes(
-        draw, architecture, column_layout, edge_to_level, draw_funnel, connector_fill, connector_width
+        draw,
+        architecture,
+        column_layout,
+        edge_to_level,
+        draw_funnel,
+        connector_fill,
+        connector_width,
     )
     _draw_skip_connectors(
         draw,
