@@ -1,1 +1,1 @@
-pip install visualtorch==1.2.1
+pip install visualtorch==1.3.0
