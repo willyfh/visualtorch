@@ -53,11 +53,11 @@ class GraphStyleOptions:
     outline_width: int = 1
     connector_fill: str | tuple[int, ...] = "gray"
     connector_width: int = 1
-    show_arrows: bool = False
     ellipsize_after: int = 10
     show_neurons: bool = True
     show_dimension: bool = False
     show_input: bool = True
+    show_arrows: bool = False
 
 
 @dataclass

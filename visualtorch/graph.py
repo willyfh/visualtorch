@@ -44,7 +44,6 @@ def graph_view(
     outline_width: int = 1,
     connector_fill: str | tuple[int, ...] = "gray",
     connector_width: int = 1,
-    show_arrows: bool = False,
     ellipsize_after: int = 10,
     show_neurons: bool = True,
     opacity: int = 255,
@@ -53,6 +52,7 @@ def graph_view(
     font_color: str | tuple[int, ...] = "black",
     level_gap: int | None = None,
     show_input: bool = True,
+    show_arrows: bool = False,
 ) -> Image.Image:
     """Generates an architecture visualization for a given linear PyTorch model in a graph style.
 
