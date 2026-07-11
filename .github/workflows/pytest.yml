@@ -44,10 +44,13 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v7
 
+      # Paired with the newest Python (rather than 3.10 or 3.12, both already covered against
+      # latest torch above) so this job covers a distinct combination - older torch release
+      # with the newest Python - instead of overlapping one the `test` job already exercises.
       - name: Set up Python
         uses: actions/setup-python@v6
         with:
-          python-version: "3.12"
+          python-version: "3.14"
 
       # The previous stable PyTorch minor release, pinned explicitly - the `test` job above
       # already covers "latest" (unpinned, whatever pip resolves), so this one job is enough
