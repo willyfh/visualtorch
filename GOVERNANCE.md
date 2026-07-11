@@ -50,7 +50,10 @@ existing work, not incremental PRs to this repo.
 An existing maintainer nominates the candidate (e.g. in an issue, discussion, or pull request).
 Any existing maintainer may approve the nomination - this doesn't require active sign-off from
 every maintainer, just visibility so others can raise concerns if they have any. New maintainers
-are added to this document and given write access to the repository.
+are added to this document and are typically given write access to the repository right away.
+
+Any maintainer who objects can still reverse the promotion within 14 days of it being announced,
+as long as they give a clear reason. Past that window, the promotion stands.
 
 ## Stepping Down / Inactivity
 
