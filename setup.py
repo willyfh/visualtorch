@@ -24,6 +24,7 @@ setuptools.setup(
     version="1.2.1",
     author="Willy Fitra Hendria",
     author_email="willyfitrahendria@gmail.com",
+    maintainer="VisualTorch Contributors",
     description="Architecture visualization of Torch models",
     keywords=["visualize architecture", "torch visualization", "visualtorch"],
     long_description=long_description,
