@@ -19,6 +19,9 @@ how to actually submit a change, see [CONTRIBUTING.md](CONTRIBUTING.md).
 Current maintainer(s):
 
 - [@willyfh](https://github.com/willyfh)
+- [@Tariolle](https://github.com/Tariolle) (joined via the "brings in and takes ownership of a
+  substantial existing component" path above - contributed the `visualtorch_mcp` package, focus
+  area is the MCP integration)
 
 ## Decision-Making
 
