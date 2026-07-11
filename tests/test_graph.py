@@ -478,6 +478,21 @@ def test_graph_view_type_ignore_reduces_diagram(batchnorm_model: nn.Module) -> N
     assert img_ignored.tobytes() != img_default.tobytes()
 
 
+def test_graph_view_show_arrows_default_matches_existing_output(residual_model: nn.Module) -> None:
+    """show_arrows=False should match the existing default rendering exactly."""
+    img_default = graph_view(residual_model, input_shape=(1, 4), show_neurons=True)
+    img_explicit_false = graph_view(residual_model, input_shape=(1, 4), show_neurons=True, show_arrows=False)
+    assert img_explicit_false.tobytes() == img_default.tobytes()
+
+
+def test_graph_view_show_arrows_changes_connector_pixels(residual_model: nn.Module) -> None:
+    """show_arrows=True should alter connector pixels without changing canvas size."""
+    img_default = graph_view(residual_model, input_shape=(1, 4), show_neurons=True)
+    img_arrows = graph_view(residual_model, input_shape=(1, 4), show_neurons=True, show_arrows=True)
+    assert img_arrows.size == img_default.size
+    assert img_arrows.tobytes() != img_default.tobytes()
+
+
 def test_graph_view_outline_width_accepted(conv_model: nn.Module) -> None:
     """outline_width should visually change the rendered output."""
     img_default = graph_view(conv_model, input_shape=(1, 3, 16, 16), show_neurons=False)

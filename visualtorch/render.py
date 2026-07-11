@@ -57,6 +57,7 @@ class GraphStyleOptions:
     show_neurons: bool = True
     show_dimension: bool = False
     show_input: bool = True
+    show_arrows: bool = False
 
 
 @dataclass
@@ -131,6 +132,7 @@ def _render_graph(
         node_spacing=options.node_spacing,
         connector_fill=options.connector_fill,
         connector_width=options.connector_width,
+        show_arrows=options.show_arrows,
         ellipsize_after=options.ellipsize_after,
         show_neurons=options.show_neurons,
         opacity=common.opacity,

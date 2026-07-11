@@ -11,6 +11,7 @@ line, without any awareness of what a frontend's node objects actually look like
 # SPDX-License-Identifier: MIT
 
 from collections.abc import Callable, Iterable
+from math import hypot
 
 import aggdraw
 
@@ -192,15 +193,47 @@ def draw_connector(
     color: str | tuple[int, ...],
     width: int,
     detour_y: float | None = None,
+    show_arrows: bool = False,
 ) -> None:
     """Draw the line connector between two points.
 
     A plain straight line, unless `detour_y` is given - a skip connection whose column span
     would otherwise draw collinear with (and hidden under) the ordinary adjacent-column edges
-    beneath it, so it's routed with a right-angle detour instead.
+    beneath it, so it's routed with a right-angle detour instead. If `show_arrows` is True, a
+    small filled triangle is drawn at the downstream endpoint `(x2, y2)`.
     """
     pen = aggdraw.Pen(color, width)
+    # Arrow direction follows the final segment: straight line end-to-end, or vertical on detours.
     if detour_y is None:
         draw.line([x1, y1, x2, y2], pen)
+        dx = x2 - x1
+        dy = y2 - y1
+    else:
+        draw.line([x1, y1, x1, detour_y, x2, detour_y, x2, y2], pen)
+        dx = 0.0
+        dy = y2 - detour_y
+
+    if not show_arrows:
         return
-    draw.line([x1, y1, x1, detour_y, x2, detour_y, x2, y2], pen)
+
+    magnitude = hypot(dx, dy)
+    if magnitude == 0:
+        return
+
+    ux = dx / magnitude
+    uy = dy / magnitude
+    arrow_length = max(6.0, width * 4.0)
+    arrow_half_width = max(3.0, width * 2.0)
+
+    base_x = x2 - ux * arrow_length
+    base_y = y2 - uy * arrow_length
+    perp_x = -uy
+    perp_y = ux
+
+    left_x = base_x + perp_x * arrow_half_width
+    left_y = base_y + perp_y * arrow_half_width
+    right_x = base_x - perp_x * arrow_half_width
+    right_y = base_y - perp_y * arrow_half_width
+
+    brush = aggdraw.Brush(color)
+    draw.polygon([x2, y2, left_x, left_y, right_x, right_y], pen, brush)

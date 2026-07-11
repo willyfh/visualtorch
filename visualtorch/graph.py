@@ -52,6 +52,7 @@ def graph_view(
     font_color: str | tuple[int, ...] = "black",
     level_gap: int | None = None,
     show_input: bool = True,
+    show_arrows: bool = False,
 ) -> Image.Image:
     """Generates an architecture visualization for a given linear PyTorch model in a graph style.
 
@@ -84,6 +85,8 @@ def graph_view(
         outline_width (int, optional): Line width in pixels for the shape borders. Defaults to 1.
         connector_fill (Any, optional): Color for the connectors. Can be str or (R,G,B,A).
         connector_width (int, optional): Line-width of the connectors in pixels.
+        show_arrows (bool, optional): If True, draw a small arrowhead at each connector's
+            downstream endpoint to indicate data-flow direction.
         ellipsize_after (int, optional): Maximum number of neurons per layer to draw. If a layer is exceeding this,
             the remaining neurons will be drawn as ellipses.
         show_neurons (bool, optional): If True a node for each neuron in supported layers is created (constrained by
@@ -209,6 +212,7 @@ def graph_view(
         resolved_level_gap,
         connector_fill,
         connector_width,
+        show_arrows,
     )
 
     for layer in layers:
@@ -264,6 +268,7 @@ def _draw_connectors(
     resolved_level_gap: int,
     connector_fill: str | tuple[int, ...],
     connector_width: int,
+    show_arrows: bool,
 ) -> None:
     """Draw every connector, routing skip-connection edges above the diagram."""
     for start_id, end_id in edges:
@@ -289,6 +294,7 @@ def _draw_connectors(
                     color=connector_fill,
                     width=connector_width,
                     detour_y=detour_y,
+                    show_arrows=show_arrows,
                 )
             continue
 
@@ -304,6 +310,7 @@ def _draw_connectors(
                         color=connector_fill,
                         width=connector_width,
                         detour_y=detour_y,
+                        show_arrows=show_arrows,
                     )
 
 
