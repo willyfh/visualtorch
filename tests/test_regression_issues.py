@@ -209,3 +209,100 @@ def test_view_renders_embedding_model_with_integer_input_dtype(embedding_model: 
     """Every style should render a token-embedding model end to end once given input_dtype."""
     img = view(embedding_model, input_shape=(1, 16), input_dtype=torch.long)  # type: ignore[operator]
     assert img is not None
+
+
+@pytest.fixture()
+def ends_in_unconsumed_merge_model() -> nn.Module:
+    """A model whose forward() returns a merge (branch + shortcut) directly - nothing downstream
+    consumes it. The tracer only turns a tensor's producers into edges when that tensor is passed
+    into another module call; a merge returned as-is has no such call, so both the branch and the
+    shortcut silently lost their edges entirely (not just a missing "merge point" indicator).
+    """  # noqa: D205
+
+    class EndsInMerge(nn.Module):
+        def __init__(self) -> None:
+            super().__init__()
+            self.stem = nn.Linear(4, 4)
+            self.fc1 = nn.Linear(4, 4)
+
+        def forward(self, x: torch.Tensor) -> torch.Tensor:
+            stem_out = self.stem(x)
+            branch = self.fc1(stem_out)
+            return branch + stem_out
+
+    return EndsInMerge()
+
+
+def test_extract_architecture_adds_output_node_for_unconsumed_final_merge(
+    ends_in_unconsumed_merge_model: nn.Module,
+) -> None:
+    """Both producers of a final, unconsumed merge should connect to a synthetic Output node."""
+    architecture = extract_architecture(ends_in_unconsumed_merge_model, (1, 4))
+    module_types = [type(layer.module).__name__ for column in architecture.columns for layer in column]
+
+    assert module_types.count("Output") == 1
+
+    output_node = next(
+        layer for column in architecture.columns for layer in column if type(layer.module).__name__ == "Output"
+    )
+    producers = {start for start, end in architecture.edges() if end == output_node.node_id}
+    assert len(producers) == 2
+
+
+def test_extract_architecture_maps_raw_input_shortcut_to_output_node() -> None:
+    """A shortcut straight from the raw input (no processing at all) should still connect to the
+    synthetic Output node, not crash or get silently dropped.
+    """  # noqa: D205
+
+    class IdentityShortcut(nn.Module):
+        def __init__(self) -> None:
+            super().__init__()
+            self.fc = nn.Linear(4, 4)
+
+        def forward(self, x: torch.Tensor) -> torch.Tensor:
+            return self.fc(x) + x
+
+    architecture = extract_architecture(IdentityShortcut(), (1, 4))
+    module_types = [type(layer.module).__name__ for column in architecture.columns for layer in column]
+    assert module_types.count("Output") == 1
+
+
+@pytest.fixture()
+def residual_model_with_trailing_layer() -> nn.Module:
+    """A residual block whose merge feeds a trailing layer - the ordinary, already-working case."""
+
+    class ResidualBlock(nn.Module):
+        def __init__(self) -> None:
+            super().__init__()
+            self.stem = nn.Linear(4, 4)
+            self.fc1 = nn.Linear(4, 4)
+            self.out = nn.Linear(4, 2)
+
+        def forward(self, x: torch.Tensor) -> torch.Tensor:
+            stem_out = self.stem(x)
+            branch = self.fc1(stem_out)
+            return self.out(branch + stem_out)
+
+    return ResidualBlock()
+
+
+def test_extract_architecture_skips_output_node_for_ordinary_single_producer_output(
+    residual_model_with_trailing_layer: nn.Module,
+) -> None:
+    """A model whose final output has a single producer (the common case) needs no synthetic
+    node - nothing is hidden there, since that producer's own edges already capture the structure.
+    """  # noqa: D205
+    architecture = extract_architecture(residual_model_with_trailing_layer, (1, 4))
+    module_types = [type(layer.module).__name__ for column in architecture.columns for layer in column]
+
+    assert "Output" not in module_types
+
+
+@pytest.mark.parametrize("view", [graph_view, flow_view, lenet_view])
+def test_view_renders_unconsumed_final_merge_without_dropping_the_shortcut_edge(
+    ends_in_unconsumed_merge_model: nn.Module,
+    view: object,
+) -> None:
+    """Every style should render the fixed graph, with the shortcut edge visibly present."""
+    img = view(ends_in_unconsumed_merge_model, input_shape=(1, 4))  # type: ignore[operator]
+    assert img is not None
