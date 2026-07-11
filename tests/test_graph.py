@@ -1,6 +1,6 @@
 """Tests for graph view."""
 
-# Copyright (C) 2024 Willy Fitra Hendria
+# Copyright (C) 2024 VisualTorch Contributors
 # SPDX-License-Identifier: MIT
 
 from pathlib import Path
@@ -491,3 +491,10 @@ def test_graph_view_show_arrows_changes_connector_pixels(residual_model: nn.Modu
     img_arrows = graph_view(residual_model, input_shape=(1, 4), show_neurons=True, show_arrows=True)
     assert img_arrows.size == img_default.size
     assert img_arrows.tobytes() != img_default.tobytes()
+
+
+def test_graph_view_outline_width_accepted(conv_model: nn.Module) -> None:
+    """outline_width should visually change the rendered output."""
+    img_default = graph_view(conv_model, input_shape=(1, 3, 16, 16), show_neurons=False)
+    img_thick = graph_view(conv_model, input_shape=(1, 3, 16, 16), show_neurons=False, outline_width=5)
+    assert img_thick.tobytes() != img_default.tobytes()

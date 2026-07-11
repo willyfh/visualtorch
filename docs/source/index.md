@@ -15,6 +15,13 @@ VisualTorch aims to help visualize Torch-based neural network architectures. It 
 Installing visualtorch via PyPI or Source.
 :::
 
+:::{grid-item-card} MCP integration
+:link: markdown/get_started/mcp
+:link-type: doc
+
+Use VisualTorch through an MCP-compatible coding assistant.
+:::
+
 ::::
 
 ## {octicon}`eye` Usage Examples
@@ -82,6 +89,7 @@ Please cite this project in your publications if it helps your research as follo
 :hidden:
 
 markdown/get_started/installation
+markdown/get_started/mcp
 ```
 
 ```{toctree}

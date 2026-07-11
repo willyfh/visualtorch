@@ -1,6 +1,6 @@
 """Tests for the frontend-agnostic connector-routing helpers."""
 
-# Copyright (C) 2024 Willy Fitra Hendria
+# Copyright (C) 2024 VisualTorch Contributors
 # SPDX-License-Identifier: MIT
 
 from visualtorch.connectors import _segment_intersects_rect, compute_skip_levels

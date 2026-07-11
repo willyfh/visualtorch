@@ -9,7 +9,7 @@ Usage: `python scripts/generate_banners.py` from anywhere - writes directly to
 `docs/source/_static/images/banners/{readme-examples,visualizations-preview}.png`.
 """
 
-# Copyright (C) 2024 Willy Fitra Hendria
+# Copyright (C) 2024 VisualTorch Contributors
 # SPDX-License-Identifier: MIT
 
 from collections import defaultdict

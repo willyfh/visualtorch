@@ -1,6 +1,6 @@
 """Tests for the visualtorch.render() single entry point."""
 
-# Copyright (C) 2024 Willy Fitra Hendria
+# Copyright (C) 2024 VisualTorch Contributors
 # SPDX-License-Identifier: MIT
 
 from collections import defaultdict

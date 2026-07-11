@@ -31,7 +31,7 @@ mpl.rcParams["savefig.dpi"] = 300
 mpl.rcParams["figure.dpi"] = 300
 
 project = "VisualTorch"
-copyright = "2024, Willy Fitra Hendria"  # noqa: A001
+copyright = "2024, VisualTorch Contributors"  # noqa: A001
 release = "2024"
 
 # -- General configuration ---------------------------------------------------

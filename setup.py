@@ -1,6 +1,6 @@
 """Setup file for visualtorch."""
 
-# Copyright (C) 2024 Willy Fitra Hendria
+# Copyright (C) 2024 VisualTorch Contributors
 # SPDX-License-Identifier: MIT
 
 from pathlib import Path
@@ -24,6 +24,7 @@ setuptools.setup(
     version="1.2.1",
     author="Willy Fitra Hendria",
     author_email="willyfitrahendria@gmail.com",
+    maintainer="VisualTorch Contributors",
     description="Architecture visualization of Torch models",
     keywords=["visualize architecture", "torch visualization", "visualtorch"],
     long_description=long_description,
@@ -38,7 +39,11 @@ setuptools.setup(
         "Operating System :: OS Independent",
     ],
     install_requires=_read_requirements("requirements.txt"),
-    extras_require={"dev": _read_requirements("docs/requirements.txt") + _read_requirements("dev-requirements.txt")},
+    extras_require={
+        "dev": _read_requirements("docs/requirements.txt") + _read_requirements("dev-requirements.txt"),
+        "mcp": ["mcp>=1.0.0"],
+    },
+    entry_points={"console_scripts": ["visualtorch-mcp=visualtorch_mcp.server:main"]},
     python_requires=">=3.10",
     license="MIT",
     license_files=("LICENSE.md",),

@@ -1,6 +1,6 @@
 """Tests for flow view."""
 
-# Copyright (C) 2024 Willy Fitra Hendria
+# Copyright (C) 2024 VisualTorch Contributors
 # SPDX-License-Identifier: MIT
 
 from pathlib import Path
@@ -700,3 +700,22 @@ def test_flow_view_connector_fill_none_uses_box_outline(residual_model: nn.Modul
     img_default = flow_view(residual_model, input_shape=(1, 8, 16, 16))
     img_explicit_none = flow_view(residual_model, input_shape=(1, 8, 16, 16), connector_fill=None)
     assert img_default.tobytes() == img_explicit_none.tobytes()
+
+
+def test_flow_view_connector_style_applies_to_regular_funnels(sequential_model: nn.Sequential) -> None:
+    """Explicit connector styling should affect adjacent-layer funnels, not only skip edges."""
+    img_default = flow_view(sequential_model, input_shape=(1, 3, 224, 224))
+    img_custom = flow_view(
+        sequential_model,
+        input_shape=(1, 3, 224, 224),
+        connector_fill="red",
+        connector_width=3,
+    )
+    assert img_custom.tobytes() != img_default.tobytes()
+
+
+def test_flow_view_outline_width_accepted(sequential_model: nn.Sequential) -> None:
+    """outline_width should visually change the rendered output."""
+    img_default = flow_view(sequential_model, input_shape=(1, 3, 224, 224), draw_volume=False)
+    img_thick = flow_view(sequential_model, input_shape=(1, 3, 224, 224), draw_volume=False, outline_width=5)
+    assert img_thick.tobytes() != img_default.tobytes()

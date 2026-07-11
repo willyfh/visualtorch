@@ -6,7 +6,7 @@ Originally, this project was based on the [visualkeras](https://github.com/paulg
 
 --
 
-Copyright (c) 2024 Willy Fitra Hendria
+Copyright (c) 2024 VisualTorch Contributors
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal

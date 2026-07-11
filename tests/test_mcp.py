@@ -1,0 +1,233 @@
+"""Focused tests for the migrated VisualTorch MCP integration."""
+
+from __future__ import annotations
+
+import asyncio
+import json
+import shutil
+import sys
+from pathlib import Path
+
+import pytest
+from visualtorch_mcp.api_reference import normalize_style_name
+from visualtorch_mcp.runner import (
+    normalize_input_shape,
+    render_model,
+    resolve_output_path,
+)
+from visualtorch_mcp.worker import _coerce_options, _restore_tuples
+from visualtorch_mcp.worker import main as worker_main
+
+
+@pytest.mark.parametrize(
+    ("alias", "canonical"),
+    [
+        ("graph", "graph"),
+        ("FLOW", "flow"),
+        ("layered", "flow"),
+        ("layered-view", "flow"),
+        (" lenet_style ", "lenet"),
+        ("LENET_VIEW", "lenet"),
+    ],
+)
+def test_style_aliases(alias: str, canonical: str) -> None:
+    """Normalize supported style aliases to their canonical names."""
+    assert normalize_style_name(alias) == canonical
+
+
+def test_unknown_style_is_rejected() -> None:
+    """Reject unsupported style names with an actionable error."""
+    with pytest.raises(ValueError, match="Unsupported style"):
+        normalize_style_name("not-a-style")
+
+
+@pytest.mark.parametrize(
+    ("value", "expected"),
+    [
+        ([1, 3, 8, 8], (1, 3, 8, 8)),
+        ("[[1, 3, 8, 8], [1, 5]]", ((1, 3, 8, 8), (1, 5))),
+        (((1, 3), (1, 2)), ((1, 3), (1, 2))),
+    ],
+)
+def test_input_shape_normalization(value: object, expected: object) -> None:
+    """Normalize flat, JSON, and multi-input shapes into tuples."""
+    assert normalize_input_shape(value) == expected
+
+
+@pytest.mark.parametrize(
+    "value",
+    [
+        [],
+        [1, [3, 8]],
+        [[1, 3], []],
+        [[1, 3], [1, 0]],
+        [[1, 3], [1, True]],
+        "not json",
+    ],
+)
+def test_input_shape_validation(value: object) -> None:
+    """Reject malformed shapes before starting a render subprocess."""
+    with pytest.raises((ValueError, json.JSONDecodeError)):
+        normalize_input_shape(value)
+
+
+def test_output_path_resolution(tmp_path: Path) -> None:
+    """Resolve explicit and generated paths beneath the requested output directory."""
+    explicit = resolve_output_path("nested/diagram", str(tmp_path), "graph")
+    assert explicit == (tmp_path / "nested" / "diagram.png").resolve()
+    assert explicit.parent.is_dir()
+
+    generated = resolve_output_path(None, str(tmp_path), "flow")
+    assert generated.parent == tmp_path.resolve()
+    assert generated.name.startswith("visualtorch_flow_")
+    assert generated.suffix == ".png"
+
+
+def test_worker_option_type_coercion_and_tuple_restore() -> None:
+    """Coerce option type names and restore JSON lists to renderer tuples."""
+    custom = type("Custom", (), {})
+    namespace = {}
+    coerced = _coerce_options(
+        namespace,
+        {"type_ignore": ["Linear", custom], "color_map": {custom: "red"}},
+    )
+    assert coerced["type_ignore"][0].__name__ == "Linear"
+    assert coerced["type_ignore"][1] is custom
+    assert coerced["color_map"] == {custom: "red"}
+    assert _restore_tuples([[1, [2, 3]], 4]) == ((1, (2, 3)), 4)
+
+
+def test_render_model_worker_smoke(tmp_path: Path) -> None:
+    """Render a small model through the worker and report its generated PNG."""
+    result = render_model(
+        source="import torch\nmodel = torch.nn.Sequential(torch.nn.Flatten(), torch.nn.Linear(4, 2))",
+        input_shape=(1, 1, 2, 2),
+        style="graph",
+        output_path="smoke.png",
+        output_dir=str(tmp_path),
+        options={"show_neurons": False},
+        timeout_seconds=30,
+    )
+
+    output_path = Path(result["output_path"])
+    assert output_path == (tmp_path / "smoke.png").resolve()
+    assert output_path.is_file()
+    assert result["style"] == "graph"
+    assert result["bytes"] == output_path.stat().st_size
+
+
+def test_render_model_keeps_source_stdout_out_of_protocol(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+    """Keep user source output off stdout while returning a parseable result."""
+    result = render_model(
+        source=(
+            "print('source output')\n"
+            "import torch\nmodel = torch.nn.Sequential(torch.nn.Flatten(), torch.nn.Linear(4, 2))"
+        ),
+        input_shape=(1, 1, 2, 2),
+        style="graph",
+        output_path="source-print.png",
+        output_dir=str(tmp_path),
+        options={"show_neurons": False},
+        timeout_seconds=30,
+    )
+
+    captured = capsys.readouterr()
+    assert "source output" not in captured.out
+    assert Path(result["output_path"]).is_file()
+
+
+def test_worker_protocol_keeps_stdout_json(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """Keep worker stdout parseable while forwarding model output to stderr."""
+    output_path = tmp_path / "worker-protocol.png"
+    payload_path = tmp_path / "payload.json"
+    payload_path.write_text(
+        json.dumps(
+            {
+                "source": (
+                    "print('source output')\n"
+                    "import torch\nmodel = torch.nn.Sequential(torch.nn.Flatten(), torch.nn.Linear(4, 2))"
+                ),
+                "input_shape": [1, 1, 2, 2],
+                "style": "graph",
+                "model_expression": "model",
+                "output_path": str(output_path),
+                "options": {"show_neurons": False},
+            },
+        ),
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(sys, "argv", ["visualtorch_mcp.worker", str(payload_path)])
+
+    worker_main()
+
+    captured = capsys.readouterr()
+    assert "source output" not in captured.out
+    assert "source output" in captured.err
+    result = json.loads(captured.out)
+    assert Path(result["output_path"]) == output_path.resolve()
+    assert output_path.is_file()
+
+
+def test_render_model_imports_model_from_workdir(tmp_path: Path) -> None:
+    """Make the documented workdir available for imports in user source."""
+    (tmp_path / "local_model.py").write_text(
+        "import torch\nmodel = torch.nn.Sequential(torch.nn.Flatten(), torch.nn.Linear(4, 2))\n",
+        encoding="utf-8",
+    )
+
+    result = render_model(
+        source="from local_model import model",
+        input_shape=(1, 1, 2, 2),
+        style="graph",
+        output_path="workdir-import.png",
+        output_dir=str(tmp_path),
+        workdir=str(tmp_path),
+        options={"show_neurons": False},
+        timeout_seconds=30,
+    )
+
+    assert Path(result["output_path"]).is_file()
+
+
+def test_mcp_stdio_end_to_end(tmp_path: Path) -> None:
+    """Exercise the installed MCP stdio server through its client protocol."""
+    pytest.importorskip("mcp")
+    from mcp import ClientSession, StdioServerParameters
+    from mcp.client.stdio import stdio_client
+
+    executable = shutil.which("visualtorch-mcp")
+    if executable is None:
+        pytest.fail("mcp is installed, but the visualtorch-mcp console script was not found")
+
+    async def exercise_server() -> tuple[object, object, object, object]:
+        server_parameters = StdioServerParameters(command=executable, args=[])
+        async with (
+            stdio_client(server_parameters) as (read_stream, write_stream),
+            ClientSession(read_stream, write_stream) as session,
+        ):
+            await session.initialize()
+            tools = await session.list_tools()
+            resources = await session.list_resources()
+            version = await session.read_resource("visualtorch://version")
+            result = await session.call_tool(
+                "visualize_model",
+                {
+                    "source": ("print('source output')\nimport torch\nmodel = torch.nn.Identity()"),
+                    "input_shape": [1, 1, 2, 2],
+                    "output_dir": str(tmp_path),
+                    "timeout_seconds": 10,
+                },
+            )
+        return tools, resources, version, result
+
+    tools, resources, version, result = asyncio.run(exercise_server())
+
+    assert any(tool.name == "visualize_model" for tool in tools.tools)
+    assert any(str(resource.uri) == "visualtorch://version" for resource in resources.resources)
+    assert version.contents
+    assert not result.isError
+    assert list(tmp_path.glob("*.png"))

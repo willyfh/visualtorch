@@ -1,7 +1,7 @@
 """Utils module for pytorch model visualization."""
 
 # Copyright (C) 2020 Paul Gavrikov
-# Copyright (C) 2024 Willy Fitra Hendria
+# Copyright (C) 2024 VisualTorch Contributors
 # SPDX-License-Identifier: MIT
 
 from typing import Any, TypeAlias
@@ -29,6 +29,7 @@ class Shape:
         self.y2: float = 0
         self._fill = ()
         self._outline = ()
+        self.outline_width: int = 1
 
     @property
     def fill(self) -> tuple:
@@ -58,7 +59,7 @@ class Shape:
 
     def _get_pen_brush(self) -> tuple:
         """Get aggdraw pen and brush"""
-        pen = aggdraw.Pen(self._outline)
+        pen = aggdraw.Pen(self._outline, self.outline_width)
         brush = aggdraw.Brush(self._fill)
         return pen, brush
 

@@ -7,7 +7,7 @@ tensor-subclassing approach, stripped down to what every rendering style needs: 
 leaf module (a module with no children), not a node per tensor op.
 """
 
-# Copyright (C) 2024 Willy Fitra Hendria
+# Copyright (C) 2024 VisualTorch Contributors
 # SPDX-License-Identifier: MIT
 
 from collections.abc import Mapping
@@ -130,6 +130,32 @@ def _all_tensor_shapes(obj: Any) -> list[tuple[int, ...]]:
     return []
 
 
+def _final_output_records(obj: Any) -> list[tuple[tuple[int, ...], set[str]]]:
+    """Recursively collect (shape, producer_ids) for every tensor in the model's own return value.
+
+    Mirrors `_all_tensor_shapes`'s traversal so positions line up, but also carries each tensor's
+    `_producer_ids`. A tensor with 2+ producer ids here is a merge (e.g. `branch + shortcut`)
+    that the model returns directly, with no subsequent module call to receive it - the one case
+    `_wrapped_module_call` never gets a chance to turn into edges, since edges are only recorded
+    when a tensor is passed *into* another module call.
+    """
+    if isinstance(obj, RecorderTensor):
+        return [(tuple(obj.shape), set(getattr(obj, "_producer_ids", set())))]
+    if isinstance(obj, torch.Tensor):
+        return [(tuple(obj.shape), set())]
+    if isinstance(obj, Mapping):
+        records = []
+        for value in obj.values():
+            records.extend(_final_output_records(value))
+        return records
+    if isinstance(obj, list | tuple):
+        records = []
+        for value in obj:
+            records.extend(_final_output_records(value))
+        return records
+    return []
+
+
 def _wrapped_module_call(
     id_to_module: dict[str, nn.Module],
     id_to_output_shape: dict[str, tuple[int, ...]],
@@ -216,6 +242,7 @@ def trace_module_graph(
     dict[str, tuple[tuple[int, ...], ...]],
     list[tuple[str, str]],
     list[str],
+    list[tuple[tuple[int, ...], set[str]]],
 ]:
     """Trace a forward pass to recover the leaf-module call graph.
 
@@ -244,6 +271,11 @@ def trace_module_graph(
             - edges (list): `(producer_node_id, consumer_node_id)` pairs, in call order.
             - input_ids (list): One synthetic node id per input tensor, in the same order as
                 `input_shapes`.
+            - final_output_records (list): One `(shape, producer_ids)` pair per tensor in the
+                model's own return value, in encounter order. A tensor whose `producer_ids` has
+                2+ entries is a merge the model returns directly, with no subsequent module call
+                to turn it into edges - the caller uses this to add a synthetic terminal node so
+                that merge isn't silently dropped from the graph.
     """
     dtypes = input_dtypes if input_dtypes is not None else (None,) * len(input_shapes)
     dummy_inputs = []
@@ -276,7 +308,8 @@ def trace_module_graph(
             for layer in model:
                 output = layer(output)
         else:
-            model(*dummy_inputs)
+            output = model(*dummy_inputs)
 
     input_ids = [f"{INPUT_NODE_ID}#{i}" for i in range(len(input_shapes))]
-    return id_to_module, id_to_output_shape, id_to_extra_output_shapes, edges, input_ids
+    final_output_records = _final_output_records(output)
+    return id_to_module, id_to_output_shape, id_to_extra_output_shapes, edges, input_ids, final_output_records

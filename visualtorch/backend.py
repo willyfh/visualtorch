@@ -4,7 +4,7 @@ Single entry point for extracting a model's structure - topology and shapes - vi
 adjacency graph mechanism (`visualtorch.utils.recorder`), for every rendering frontend to consume.
 """
 
-# Copyright (C) 2024 Willy Fitra Hendria
+# Copyright (C) 2024 VisualTorch Contributors
 # SPDX-License-Identifier: MIT
 
 from collections import deque
@@ -15,12 +15,13 @@ from functools import cached_property
 import numpy as np
 from torch import nn
 
-from .utils.layer_utils import Input
+from .utils.layer_utils import Input, Output
 from .utils.recorder import trace_module_graph
 from .utils.traced_layer import TracedLayer
 from .utils.utils import InputDtype, InputShape, validate_input_dtype, validate_input_shape
 
 _INPUT_NODE_ID = "__input_dummy__"
+_OUTPUT_NODE_ID = "__output_dummy__"
 
 
 @dataclass
@@ -78,7 +79,14 @@ def extract_architecture(
     input_shapes = validate_input_shape(input_shape)
     input_dtypes = validate_input_dtype(input_dtype, len(input_shapes))
 
-    id_to_module, id_to_output_shape, id_to_extra_output_shapes, edges, input_ids = trace_module_graph(
+    (
+        id_to_module,
+        id_to_output_shape,
+        id_to_extra_output_shapes,
+        edges,
+        input_ids,
+        final_output_records,
+    ) = trace_module_graph(
         model,
         input_shapes,
         input_dtypes,
@@ -141,6 +149,19 @@ def extract_architecture(
         columns,
         direct_input_node_ids,
     )
+    # A final merge can be produced directly by a raw model input (e.g. `return self.fc(x) + x`,
+    # an identity shortcut with no processing at all) - that producer id is the recorder's raw
+    # input id, not yet in id_to_index, since only its synthetic dummy counterpart (added above)
+    # is. Map raw input ids to their synthetic dummy node ids so _add_output_dummy_layers can
+    # look either kind of producer up the same way.
+    raw_input_id_to_dummy_id = {input_id: f"{_INPUT_NODE_ID}#{i}" for i, input_id in enumerate(input_ids)}
+    id_to_index, adjacency, columns = _add_output_dummy_layers(
+        final_output_records,
+        raw_input_id_to_dummy_id,
+        id_to_index,
+        adjacency,
+        columns,
+    )
 
     id_to_column = {layer.node_id: col_idx for col_idx, column in enumerate(columns) for layer in column}
 
@@ -178,6 +199,57 @@ def _add_input_dummy_layers(
             adjacency[input_index, id_to_index[node_id]] += 1
 
     return id_to_index, adjacency, columns
+
+
+def _add_output_dummy_layers(
+    final_output_records: list[tuple[tuple[int, ...], set[str]]],
+    raw_input_id_to_dummy_id: dict[str, str],
+    id_to_index: dict[str, int],
+    adjacency: np.ndarray,
+    columns: list[list[TracedLayer]],
+) -> tuple[dict[str, int], np.ndarray, list[list[TracedLayer]]]:
+    """Append one synthetic output node per final merge the model returns directly.
+
+    A tensor with fewer than 2 producer ids needs nothing: either it's an ordinary single-module
+    output (nothing hidden) or it has no traced producer at all (e.g. a constant). Only a tensor
+    with 2+ producers - a merge the model returns with no subsequent module call to receive it -
+    would otherwise silently drop those producers' edges from the graph entirely.
+    """
+    merges = [
+        (shape, {raw_input_id_to_dummy_id.get(pid, pid) for pid in producer_ids})
+        for shape, producer_ids in final_output_records
+        if len(producer_ids) >= 2
+    ]
+    if not merges:
+        return id_to_index, adjacency, columns
+
+    n_outputs = len(merges)
+    output_dummy_node_ids = [f"{_OUTPUT_NODE_ID}#{i}" for i in range(n_outputs)]
+    output_column = [
+        TracedLayer(
+            module=Output(_output_label(i, n_outputs), shape[1] if len(shape) > 1 else None),
+            output_shape=shape,
+            node_id=output_dummy_node_ids[i],
+        )
+        for i, (shape, _producer_ids) in enumerate(merges)
+    ]
+    columns.append(output_column)
+
+    for node_id in output_dummy_node_ids:
+        id_to_index[node_id] = len(id_to_index)
+    adjacency = np.pad(adjacency, ((0, n_outputs), (0, n_outputs)), mode="constant", constant_values=0)
+
+    for i, (_shape, producer_ids) in enumerate(merges):
+        output_index = id_to_index[output_dummy_node_ids[i]]
+        for producer_id in producer_ids:
+            adjacency[id_to_index[producer_id], output_index] += 1
+
+    return id_to_index, adjacency, columns
+
+
+def _output_label(index: int, n_outputs: int) -> str:
+    """Label a synthetic output node - "output" for a single one, else indexed."""
+    return "output" if n_outputs == 1 else f"output_{index}"
 
 
 def _input_label(index: int, n_inputs: int) -> str:
