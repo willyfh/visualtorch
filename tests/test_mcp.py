@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+import asyncio
 import json
+import shutil
 import sys
 from pathlib import Path
 
@@ -189,3 +191,43 @@ def test_render_model_imports_model_from_workdir(tmp_path: Path) -> None:
     )
 
     assert Path(result["output_path"]).is_file()
+
+
+def test_mcp_stdio_end_to_end(tmp_path: Path) -> None:
+    """Exercise the installed MCP stdio server through its client protocol."""
+    pytest.importorskip("mcp")
+    from mcp import ClientSession, StdioServerParameters
+    from mcp.client.stdio import stdio_client
+
+    executable = shutil.which("visualtorch-mcp")
+    if executable is None:
+        pytest.fail("mcp is installed, but the visualtorch-mcp console script was not found")
+
+    async def exercise_server() -> tuple[object, object, object, object]:
+        server_parameters = StdioServerParameters(command=executable, args=[])
+        async with (
+            stdio_client(server_parameters) as (read_stream, write_stream),
+            ClientSession(read_stream, write_stream) as session,
+        ):
+            await session.initialize()
+            tools = await session.list_tools()
+            resources = await session.list_resources()
+            version = await session.read_resource("visualtorch://version")
+            result = await session.call_tool(
+                "visualize_model",
+                {
+                    "source": ("print('source output')\nimport torch\nmodel = torch.nn.Identity()"),
+                    "input_shape": [1, 1, 2, 2],
+                    "output_dir": str(tmp_path),
+                    "timeout_seconds": 10,
+                },
+            )
+        return tools, resources, version, result
+
+    tools, resources, version, result = asyncio.run(exercise_server())
+
+    assert any(tool.name == "visualize_model" for tool in tools.tools)
+    assert any(str(resource.uri) == "visualtorch://version" for resource in resources.resources)
+    assert version.contents
+    assert not result.isError
+    assert list(tmp_path.glob("*.png"))

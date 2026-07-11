@@ -103,6 +103,7 @@ def render_model(
             [sys.executable, "-m", "visualtorch_mcp.worker", str(payload_file_path)],  # noqa: S603
             check=False,
             capture_output=True,
+            stdin=subprocess.DEVNULL,
             text=True,
             timeout=timeout_seconds,
         )
