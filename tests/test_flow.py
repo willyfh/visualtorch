@@ -702,6 +702,18 @@ def test_flow_view_connector_fill_none_uses_box_outline(residual_model: nn.Modul
     assert img_default.tobytes() == img_explicit_none.tobytes()
 
 
+def test_flow_view_connector_style_applies_to_regular_funnels(sequential_model: nn.Sequential) -> None:
+    """Explicit connector styling should affect adjacent-layer funnels, not only skip edges."""
+    img_default = flow_view(sequential_model, input_shape=(1, 3, 224, 224))
+    img_custom = flow_view(
+        sequential_model,
+        input_shape=(1, 3, 224, 224),
+        connector_fill="red",
+        connector_width=3,
+    )
+    assert img_custom.tobytes() != img_default.tobytes()
+
+
 def test_flow_view_outline_width_accepted(sequential_model: nn.Sequential) -> None:
     """outline_width should visually change the rendered output."""
     img_default = flow_view(sequential_model, input_shape=(1, 3, 224, 224), draw_volume=False)
