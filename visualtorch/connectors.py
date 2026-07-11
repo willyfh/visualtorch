@@ -7,7 +7,7 @@ detour "level" via greedy interval-graph-coloring over their column spans, and d
 line, without any awareness of what a frontend's node objects actually look like.
 """
 
-# Copyright (C) 2024 Willy Fitra Hendria
+# Copyright (C) 2024 VisualTorch Contributors
 # SPDX-License-Identifier: MIT
 
 from collections.abc import Callable, Iterable

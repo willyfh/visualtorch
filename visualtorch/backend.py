@@ -4,7 +4,7 @@ Single entry point for extracting a model's structure - topology and shapes - vi
 adjacency graph mechanism (`visualtorch.utils.recorder`), for every rendering frontend to consume.
 """
 
-# Copyright (C) 2024 Willy Fitra Hendria
+# Copyright (C) 2024 VisualTorch Contributors
 # SPDX-License-Identifier: MIT
 
 from collections import deque

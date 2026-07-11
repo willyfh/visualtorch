@@ -9,7 +9,7 @@ vertical gap needed so one box's 3D extrusion doesn't visually occlude the box s
 offset flat rectangles).
 """
 
-# Copyright (C) 2024 Willy Fitra Hendria
+# Copyright (C) 2024 VisualTorch Contributors
 # SPDX-License-Identifier: MIT
 
 from collections.abc import Callable

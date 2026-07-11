@@ -11,7 +11,7 @@ Usage: `python scripts/generate_star_history.py` from anywhere - writes directly
 environment to avoid GitHub's low unauthenticated rate limit.
 """
 
-# Copyright (C) 2024 Willy Fitra Hendria
+# Copyright (C) 2024 VisualTorch Contributors
 # SPDX-License-Identifier: MIT
 
 import json

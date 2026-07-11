@@ -1,6 +1,6 @@
 """Modules for pytorch model visualization."""
 
-# Copyright (C) 2024 Willy Fitra Hendria
+# Copyright (C) 2024 VisualTorch Contributors
 # SPDX-License-Identifier: MIT
 
 import warnings
