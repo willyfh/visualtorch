@@ -34,6 +34,13 @@ The docs include [usage examples](https://visualtorch.readthedocs.io/en/latest/u
 
 See the [Installation page](https://visualtorch.readthedocs.io/en/latest/markdown/get_started/installation.html).
 
+## MCP integration
+
+VisualTorch includes an optional MCP server for generating architecture diagrams from model source
+provided by an MCP client. Install it with `pip install "visualtorch[mcp]"` and see the
+[MCP integration guide](https://visualtorch.readthedocs.io/en/latest/markdown/get_started/mcp.html)
+for configuration and usage details.
+
 ## Used in Research
 
 VisualTorch has been used in published research, including works published in Nature, IEEE, and MDPI.
