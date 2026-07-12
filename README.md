@@ -24,6 +24,18 @@ the first. Downstream connections are correct either way. Contributions are welc
 
 </div>
 
+### Animated Reveal
+
+Every style can also render as an animated GIF, revealing the model one layer/column at a
+time - see `flow_view_animate`/`graph_view_animate`/`lenet_view_animate` in the
+[usage examples](https://visualtorch.readthedocs.io/en/latest/usage_examples/index.html).
+
+<div align="center">
+
+![Animated VisualTorch Example](https://raw.githubusercontent.com/willyfh/visualtorch/PLACEHOLDER_COMMIT_SHA/docs/source/_static/images/banners/readme-animated-demo.gif)
+
+</div>
+
 ## Documentation
 
 Online documentation is available at [visualtorch.readthedocs.io](https://visualtorch.readthedocs.io/en/latest/).

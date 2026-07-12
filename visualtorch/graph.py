@@ -5,6 +5,7 @@
 # SPDX-License-Identifier: MIT
 
 from collections import defaultdict
+from dataclasses import dataclass
 from math import ceil
 from typing import Any
 
@@ -12,6 +13,7 @@ import aggdraw
 import torch
 from PIL import Image, ImageFont
 
+from ._animation import animate_frames
 from .backend import extract_architecture
 from .connectors import compute_skip_levels, draw_connector
 from .utils.traced_layer import TracedLayer
@@ -108,6 +110,84 @@ def graph_view(
     Returns:
         Image.Image: Generated architecture image.
     """
+    setup = _prepare_render(
+        model,
+        input_shape,
+        input_dtype,
+        color_map,
+        palette,
+        node_size,
+        padding,
+        layer_spacing,
+        node_spacing,
+        type_ignore,
+        outline_width,
+        ellipsize_after,
+        show_neurons,
+        opacity,
+        show_dimension,
+        font,
+        level_gap,
+        show_input,
+        background_fill,
+    )
+
+    img = _draw_architecture_frame(
+        setup,
+        reveal_up_to=len(setup.layers) - 1,
+        show_neurons=show_neurons,
+        padding=padding,
+        connector_fill=connector_fill,
+        connector_width=connector_width,
+        show_arrows=show_arrows,
+        show_dimension=show_dimension,
+        font_color=font_color,
+    )
+
+    if to_file is not None:
+        img.save(to_file)
+
+    return img
+
+
+@dataclass
+class _RenderSetup:
+    """Everything computed once, up front, and reused by every frame (static or animated)."""
+
+    layers: list[list[Any]]
+    label_info: list[list[tuple[str, float, float]]]
+    edges: list[tuple[str, str]]
+    node_id_to_column: dict[str, int]
+    id_to_node_list_map: dict[str, list]
+    edge_to_level: dict[tuple[str, str], int]
+    num_levels: int
+    resolved_level_gap: int
+    font: ImageFont
+    img_template: Image.Image
+
+
+def _prepare_render(
+    model: torch.nn.Module,
+    input_shape: InputShape,
+    input_dtype: InputDtype | None,
+    color_map: dict[Any, Any] | None,
+    palette: str,
+    node_size: int,
+    padding: int,
+    layer_spacing: int,
+    node_spacing: int,
+    type_ignore: list | None,
+    outline_width: int,
+    ellipsize_after: int,
+    show_neurons: bool,
+    opacity: int,
+    show_dimension: bool,
+    font: ImageFont,
+    level_gap: int | None,
+    show_input: bool,
+    background_fill: str | tuple[int, ...],
+) -> _RenderSetup:
+    """Trace the model and compute the full layout/canvas once - shared by every frame."""
     if type_ignore is None:
         type_ignore = []
 
@@ -133,6 +213,12 @@ def graph_view(
 
     filtered_columns = [[layer for layer in column if type(layer.module) not in type_ignore] for column in raw_columns]
     filtered_columns = [column for column in filtered_columns if column]
+
+    # Maps each node to its index within `filtered_columns` - NOT `architecture.id_to_column`,
+    # which indexes the unfiltered columns and would be off whenever type_ignore/show_input drops
+    # an entire column, shifting every later index. This mapping is what a reveal cutoff for
+    # animation is checked against, so it must match `layers`/`label_info`'s own indexing exactly.
+    node_id_to_column = {layer.node_id: col_idx for col_idx, column in enumerate(filtered_columns) for layer in column}
 
     current_x = padding  # + input_label_size[0] + text_padding
 
@@ -183,52 +269,230 @@ def graph_view(
     if show_dimension:
         label_info, img_width = _fit_dimension_labels(layers, label_info, font, img_width)
 
-    img = Image.new(
+    img_template = Image.new(
         "RGBA",
         (int(ceil(img_width)), int(ceil(img_height))),
         background_fill,
     )
 
-    draw = aggdraw.Draw(img)
-
     # y correction (centering) - content is centered within the band below the reserved
     # top strip, so existing (no-skip) layouts are unaffected when top_margin_for_skips == 0.
     for i, layer in enumerate(layers):
-        y_off = top_margin_for_skips + (img.height - label_row_height - top_margin_for_skips - layer_y[i]) / 2
+        y_off = top_margin_for_skips + (img_template.height - label_row_height - top_margin_for_skips - layer_y[i]) / 2
         node: Any
         for node in layer:
             node.y1 += y_off
             node.y2 += y_off
         label_info[i] = [(label, center_x, y + y_off) for label, center_x, y in label_info[i]]
 
+    return _RenderSetup(
+        layers=layers,
+        label_info=label_info,
+        edges=edges,
+        node_id_to_column=node_id_to_column,
+        id_to_node_list_map=id_to_node_list_map,
+        edge_to_level=edge_to_level,
+        num_levels=num_levels,
+        resolved_level_gap=resolved_level_gap,
+        font=font,
+        img_template=img_template,
+    )
+
+
+def _draw_architecture_frame(
+    setup: _RenderSetup,
+    reveal_up_to: int,
+    show_neurons: bool,
+    padding: int,
+    connector_fill: str | tuple[int, ...],
+    connector_width: int,
+    show_arrows: bool,
+    show_dimension: bool,
+    font_color: str | tuple[int, ...],
+) -> Image.Image:
+    """Draw a single frame: everything in columns `0..reveal_up_to`, on a copy of the shared canvas.
+
+    The static render calls this once with `reveal_up_to` set to the last column - an animated
+    render calls it once per column, each time with one more column revealed than the last.
+    """
+    img = setup.img_template.copy()
+    draw = aggdraw.Draw(img)
+
+    visible_layers = setup.layers[: reveal_up_to + 1]
+    visible_edges = [
+        (start_id, end_id)
+        for start_id, end_id in setup.edges
+        if setup.node_id_to_column[start_id] <= reveal_up_to and setup.node_id_to_column[end_id] <= reveal_up_to
+    ]
+
     _draw_connectors(
         draw,
-        edges,
-        id_to_node_list_map,
-        edge_to_level,
-        num_levels,
+        visible_edges,
+        setup.id_to_node_list_map,
+        setup.edge_to_level,
+        setup.num_levels,
         show_neurons,
         padding,
-        resolved_level_gap,
+        setup.resolved_level_gap,
         connector_fill,
         connector_width,
         show_arrows,
     )
 
-    for layer in layers:
+    for layer in visible_layers:
         for node in layer:
             node.draw(draw)
 
     draw.flush()
 
-    # Print each layer's output shape below its own block of nodes
     if show_dimension:
-        img = _draw_dimension_labels(img, label_info, font, font_color)
-
-    if to_file is not None:
-        img.save(to_file)
+        img = _draw_dimension_labels(img, setup.label_info[: reveal_up_to + 1], setup.font, font_color)
 
     return img
+
+
+def graph_view_animate(
+    model: torch.nn.Module,
+    input_shape: InputShape,
+    input_dtype: InputDtype | None = None,
+    to_file: str | None = None,
+    color_map: dict[Any, Any] | None = None,
+    palette: str = "okabe_ito",
+    node_size: int = 50,
+    background_fill: str | tuple[int, ...] = "white",
+    padding: int = 10,
+    layer_spacing: int = 250,
+    node_spacing: int = 10,
+    type_ignore: list | None = None,
+    outline_width: int = 1,
+    connector_fill: str | tuple[int, ...] = "gray",
+    connector_width: int = 1,
+    ellipsize_after: int = 10,
+    show_neurons: bool = True,
+    opacity: int = 255,
+    show_dimension: bool = False,
+    font: ImageFont = None,
+    font_color: str | tuple[int, ...] = "black",
+    level_gap: int | None = None,
+    show_input: bool = True,
+    show_arrows: bool = False,
+    frame_duration: int = 600,
+    final_hold_duration: int = 1500,
+    loop: bool = True,
+) -> list[Image.Image] | None:
+    """Generate an animated GIF revealing a graph-style visualization one column at a time.
+
+    Every parameter matches `graph_view()` exactly (same behavior, same defaults), plus the 3
+    animation-only parameters at the end - see `to_file`/the return value note below for the one
+    behavioral difference.
+
+    Args:
+        model (torch.nn.Module): A PyTorch model that will be visualized.
+        input_shape (tuple): The shape of the input tensor. For a model whose forward() takes
+            multiple separate input tensors, pass a tuple of per-tensor shapes instead, one per
+            positional argument in order, e.g. ((1, 3, 224, 224), (1, 10)).
+        input_dtype (torch.dtype, optional): The dtype of the dummy input tensor(s) used to trace
+            the model. Defaults to `None` for every input, giving a uniformly random float
+            tensor. Needed for a model that starts with an integer/bool-input layer (e.g.
+            `nn.Embedding`, which rejects a float index tensor): pass `torch.long`, or - for a
+            model with multiple input tensors of different kinds - a tuple of per-tensor dtypes,
+            e.g. `(torch.long, None)`.
+        to_file (str, optional): Path to write the animated GIF to. See the Returns note below -
+            unlike `graph_view()`, providing None returns the frame list instead of writing a file.
+        color_map (dict, optional): Dict defining fill and outline for each layer by class type. Will fallback
+            to default values for not specified classes.
+        palette (str, optional): Named color palette used as the fallback for any layer type not
+            given an explicit override via `color_map`. One of `"okabe_ito"` (default,
+            colorblind-safe), `"tol_bright"`, `"tol_muted"`, `"tab10"`, `"grayscale"`, `"nord"`,
+            `"dracula"`, `"gruvbox"`, `"solarized"`, `"material"`, `"catppuccin"`.
+        node_size (int, optional): Size in pixels each node will have.
+        background_fill (Any, optional): Color for the image background. Can be str or (R,G,B,A).
+        padding (int, optional): Distance in pixels before the first and after the last layer.
+        layer_spacing (int, optional): Spacing in pixels between two layers.
+        node_spacing (int, optional): Spacing in pixels between nodes.
+        type_ignore (list, optional): List of layer types in the torch model to ignore during drawing.
+        outline_width (int, optional): Line width in pixels for the shape borders. Defaults to 1.
+        connector_fill (Any, optional): Color for the connectors. Can be str or (R,G,B,A).
+        connector_width (int, optional): Line-width of the connectors in pixels.
+        ellipsize_after (int, optional): Maximum number of neurons per layer to draw. If a layer is exceeding this,
+            the remaining neurons will be drawn as ellipses.
+        show_neurons (bool, optional): If True a node for each neuron in supported layers is created (constrained by
+            ellipsize_after), else each layer is represented by a node.
+        opacity (int, optional): Transparency of the color (0 ~ 255).
+        show_dimension (bool, optional): If True, print each layer's output shape below it.
+        font (PIL.ImageFont, optional): Font used for the shape labels. If None, default font will be used.
+        font_color (str or tuple, optional): Color for the font if used. Can be a string or a tuple (R, G, B, A).
+        level_gap (int, optional): Vertical spacing in pixels between stacked skip-connection detour
+            routes. If None, defaults to `node_size`.
+        show_input (bool, optional): For a single-input model, whether to draw the synthetic
+            "Input" node. Defaults to True. Set False to hide it - e.g. if you're overlaying your
+            own custom input illustration instead. Has no effect on a multi-input model, where
+            every input is always shown (omitting any of them would make it ambiguous which
+            arrow belongs to which named input). Ignored (input always kept) when the input feeds
+            more than one consumer, e.g. a residual shortcut, since dropping it would silently
+            discard that edge.
+        show_arrows (bool, optional): If True, draw a small arrowhead at each connector's
+            downstream endpoint to indicate data-flow direction.
+        frame_duration (int, optional): Milliseconds each intermediate frame is displayed.
+        final_hold_duration (int, optional): Milliseconds the final, fully-revealed frame is
+            displayed before the GIF loops - gives a viewer time to actually see the complete
+            diagram rather than immediately looping.
+        loop (bool, optional): If True, the GIF loops forever. If False, it plays once.
+
+    Note:
+        GIF output does not support full alpha transparency - a translucent `background_fill` is
+        flattened by the GIF format itself, unlike the static `*_view()` functions' PNG output.
+
+    Returns:
+        list[Image.Image] | None: The rendered frames (one per column, in reveal order) if
+        `to_file` is None. If `to_file` is given, the GIF is written to that path and `None` is
+        returned instead - unlike every static `*_view()`, which always returns the image even
+        when also writing to a file. `to_file` should end in `.gif`; a mismatched extension will
+        not raise, it will silently save only the first frame.
+    """
+    setup = _prepare_render(
+        model,
+        input_shape,
+        input_dtype,
+        color_map,
+        palette,
+        node_size,
+        padding,
+        layer_spacing,
+        node_spacing,
+        type_ignore,
+        outline_width,
+        ellipsize_after,
+        show_neurons,
+        opacity,
+        show_dimension,
+        font,
+        level_gap,
+        show_input,
+        background_fill,
+    )
+
+    def render_frame(reveal_up_to: int) -> Image.Image:
+        return _draw_architecture_frame(
+            setup,
+            reveal_up_to,
+            show_neurons,
+            padding,
+            connector_fill,
+            connector_width,
+            show_arrows,
+            show_dimension,
+            font_color,
+        )
+
+    return animate_frames(
+        render_frame,
+        n_columns=len(setup.layers),
+        to_file=to_file,
+        frame_duration=frame_duration,
+        final_hold_duration=final_hold_duration,
+        loop=loop,
+    )
 
 
 def _edge_draws_visible_content(id_to_node_list_map: dict[str, list], start_id: str, end_id: str) -> bool:
