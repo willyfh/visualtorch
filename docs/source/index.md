@@ -1,4 +1,4 @@
-# VisualTorch Documentation
+# VisualTorch
 
 VisualTorch aims to help visualize Torch-based neural network architectures. It currently supports generating flow-style, graph-style, and LeNet-style architectures for PyTorch Sequential and Custom models.
 
