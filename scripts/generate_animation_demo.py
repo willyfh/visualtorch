@@ -1,14 +1,16 @@
 """Regenerate the README's hero animated-reveal demo GIF.
 
-Renders the same residual block used in the docs gallery examples through `flow_view_animate`,
-showing the skip connection stay hidden until its merge point is revealed. Run this after any
-change that affects how this specific example renders, then update the README's `<img>` src to
-the new commit's SHA (matching the existing static banner's pinning convention).
+Renders the same colorful sequential CNN used in the "Custom Color" docs example through
+`flow_view_animate`, at a wide spacing so the classic funnel taper from wide conv layers down to
+the final classifier reads clearly. Run this after any change that affects how this specific
+example renders, then update the README's `<img>` src to the new commit's SHA (matching the
+existing static banner's pinning convention).
 
-Note: an earlier version of this script used an Inception-style 4-branch model, but 4 branches
-stacking vertically in one column made the render tall and narrow regardless of style settings -
-a single skip connection (one extra branch, not four) renders landscape instead, which is a much
-better fit for a README hero image.
+Note: earlier versions of this script tried branching models (an Inception-style 4-branch block,
+then a ResNet-style residual block) to showcase branch/merge reveal behavior, upscaled afterward
+since their native renders were small. This colorful sequential model renders at a large enough
+native resolution on its own (no branches to stack vertically eating into width) that no
+upscaling step is needed at all - avoiding any upscale-filter tradeoffs entirely.
 
 Usage: `python scripts/generate_animation_demo.py` from anywhere - writes directly to
 `docs/source/_static/images/banners/readme-animated-demo.gif`.
@@ -17,66 +19,57 @@ Usage: `python scripts/generate_animation_demo.py` from anywhere - writes direct
 # Copyright (C) 2024 VisualTorch Contributors
 # SPDX-License-Identifier: MIT
 
+from collections import defaultdict
 from pathlib import Path
 
-import torch
-from PIL import Image
+import visualtorch
 from torch import nn
 from visualtorch.flow import flow_view_animate
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 BANNER_DIR = REPO_ROOT / "docs" / "source" / "_static" / "images" / "banners"
 
-# This model's small channel counts keep flow_view's native render tiny (well under 200px wide),
-# which looks blurry once GitHub displays it at normal README width - upscaling the frames
-# directly gives a crisp result at a predictable final size. NEAREST, not a smoothing filter like
-# LANCZOS: this is flat-color vector-like content (solid fills, thin outlines), and a GIF's
-# 256-color palette dithers LANCZOS's soft anti-aliased edge pixels into visible noise once
-# quantized - NEAREST introduces no new intermediate colors, so it survives palette reduction
-# cleanly (verified by comparing both as actual encoded GIFs, not just the pre-quantization PNGs).
-_UPSCALE_FACTOR = 4
-_FRAME_DURATION_MS = 600
+_FRAME_DURATION_MS = 400
 _FINAL_HOLD_DURATION_MS = 1500
-
-
-class ResidualBlock(nn.Module):
-    """A classic ResNet-style block with a plain identity shortcut."""
-
-    def __init__(self, channels: int) -> None:
-        super().__init__()
-        self.conv1 = nn.Conv2d(channels, channels, kernel_size=3, padding=1)
-        self.bn1 = nn.BatchNorm2d(channels)
-        self.relu = nn.ReLU()
-        self.conv2 = nn.Conv2d(channels, channels, kernel_size=3, padding=1)
-        self.bn2 = nn.BatchNorm2d(channels)
-
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
-        """Define the forward pass, with a skip connection around conv1/bn1/relu/conv2/bn2."""
-        identity = x
-        out = self.relu(self.bn1(self.conv1(x)))
-        out = self.bn2(self.conv2(out))
-        out = out + identity
-        return self.relu(out)
 
 
 def main() -> None:
     """Render and save the README's hero animated demo GIF."""
     BANNER_DIR.mkdir(parents=True, exist_ok=True)
 
-    model = ResidualBlock(channels=8)
-    input_shape = (1, 8, 16, 16)
+    model = nn.Sequential(
+        nn.Conv2d(3, 16, kernel_size=3, padding=1),
+        nn.ReLU(),
+        nn.MaxPool2d(2, 2),
+        nn.Conv2d(16, 32, kernel_size=3, padding=1),
+        nn.ReLU(),
+        nn.MaxPool2d(2, 2),
+        nn.Conv2d(32, 64, kernel_size=3, padding=1),
+        nn.ReLU(),
+        nn.MaxPool2d(2, 2),
+        nn.Flatten(),
+        nn.Linear(64 * 28 * 28, 256),
+        nn.ReLU(),
+        nn.Linear(256, 10),
+    )
+    input_shape = (1, 3, 224, 224)
 
-    frames = flow_view_animate(model, input_shape, scale_xy=3)
+    color_map: dict = defaultdict(dict)
+    color_map[visualtorch.Input]["fill"] = "#D55E00"  # vermillion
+    color_map[nn.Conv2d]["fill"] = "#E69F00"  # orange
+    color_map[nn.ReLU]["fill"] = "#56B4E9"  # sky blue
+    color_map[nn.MaxPool2d]["fill"] = "#CC79A7"  # reddish purple
+    color_map[nn.Flatten]["fill"] = "#009E73"  # bluish green
+    color_map[nn.Linear]["fill"] = "#0072B2"  # blue
+
+    frames = flow_view_animate(model, input_shape, color_map=color_map, scale_xy=1, spacing=40)
     assert frames is not None  # to_file wasn't passed, so a frame list is always returned
 
-    upscaled = [
-        frame.resize((frame.width * _UPSCALE_FACTOR, frame.height * _UPSCALE_FACTOR), Image.NEAREST) for frame in frames
-    ]
-    durations = [_FRAME_DURATION_MS] * (len(upscaled) - 1) + [_FINAL_HOLD_DURATION_MS]
+    durations = [_FRAME_DURATION_MS] * (len(frames) - 1) + [_FINAL_HOLD_DURATION_MS]
 
     gif_path = BANNER_DIR / "readme-animated-demo.gif"
-    upscaled[0].save(gif_path, save_all=True, append_images=upscaled[1:], duration=durations, loop=0)
-    print(gif_path, upscaled[0].size)
+    frames[0].save(gif_path, save_all=True, append_images=frames[1:], duration=durations, loop=0)
+    print(gif_path, frames[0].size)
 
 
 if __name__ == "__main__":
