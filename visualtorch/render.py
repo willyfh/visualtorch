@@ -1,16 +1,21 @@
 """Single public entry point for pytorch model visualization.
 
-`graph_view`/`flow_view`/`lenet_view` (in `visualtorch.graph`/`.flow`/`.lenet_style`) render the
-same `extract_architecture`-derived structure three different ways; this module consolidates
+`_graph_view`/`_flow_view`/`_lenet_view` (in `visualtorch.graph`/`.flow`/`.lenet_style`) render
+the same `extract_architecture`-derived structure three different ways; this module consolidates
 them behind one function, `render(model, input_shape, style=..., **kwargs)`, so `style` picks
 the rendering style and every other parameter is style-appropriate keyword arguments. Kwargs are
 validated by constructing a per-style dataclass from them - a typo'd kwarg raises `TypeError`
 immediately, rather than being silently ignored.
 
+The old public names for these (`graph_view`/`flow_view`/`lenet_view`) are deprecated in favor
+of `render()` - `render()` calls the private implementations directly, not the deprecated public
+wrappers, so it never triggers their deprecation warning itself.
+
 `animate()` is the equivalent unified entry point for the animated GIF versions of each style.
 Unlike the static functions, the underlying per-style animate implementations are private
-(`_graph_view_animate`/etc.) - they never shipped in a public release, so `animate()` can be the
-one clean public entry point from the start, with no deprecation path ever needed for them.
+(`_graph_view_animate`/etc.) and always have been - they never shipped in a public release, so
+`animate()` was the one clean public entry point from the start, with no deprecation path ever
+needed for them.
 """
 
 # Copyright (C) 2024 VisualTorch Contributors
@@ -23,9 +28,9 @@ from typing import Any, Literal
 from PIL import Image
 from torch import nn
 
-from .flow import LegendPosition, _flow_view_animate, flow_view
-from .graph import _graph_view_animate, graph_view
-from .lenet_style import _lenet_view_animate, lenet_view
+from .flow import LegendPosition, _flow_view, _flow_view_animate
+from .graph import _graph_view, _graph_view_animate
+from .lenet_style import _lenet_view, _lenet_view_animate
 from .utils.utils import InputDtype, InputShape
 
 Style = Literal["graph", "flow", "lenet"]
@@ -121,7 +126,7 @@ def _render_graph(
     options: GraphStyleOptions,
     common: CommonOptions,
 ) -> Image.Image:
-    return graph_view(
+    return _graph_view(
         model,
         input_shape,
         input_dtype=common.input_dtype,
@@ -155,7 +160,7 @@ def _render_flow(
     options: FlowStyleOptions,
     common: CommonOptions,
 ) -> Image.Image:
-    return flow_view(
+    return _flow_view(
         model,
         input_shape,
         input_dtype=common.input_dtype,
@@ -197,7 +202,7 @@ def _render_lenet(
     options: LenetStyleOptions,
     common: CommonOptions,
 ) -> Image.Image:
-    return lenet_view(
+    return _lenet_view(
         model,
         input_shape,
         input_dtype=common.input_dtype,
@@ -295,8 +300,8 @@ def animate(
     """Generate an animated GIF revealing a PyTorch model's architecture one column at a time.
 
     This is the animated counterpart to `render()`: `style` picks which of the three styles to
-    animate, every other parameter matches that style's `graph_view()`/`flow_view()`/
-    `lenet_view()` (see their docstrings for the full per-style parameter list), plus 3 shared
+    animate, every other parameter matches that style's `GraphStyleOptions`/`FlowStyleOptions`/
+    `LenetStyleOptions`/`CommonOptions` fields (see `render()`'s docstring), plus 3 shared
     animation-only parameters: `frame_duration`, `final_hold_duration`, and `loop`. Unlike
     `render()`, kwargs aren't validated via a dataclass here - the underlying implementation
     functions already have explicit (not `**kwargs`) signatures, so an unrecognized keyword
@@ -311,8 +316,9 @@ def animate(
         style (str, optional): Which rendering style to use - `"graph"` (a node/edge diagram),
             `"flow"` (stacked volumetric/2D boxes connected by funnels), or `"lenet"` (the
             classic LeNet look).
-        **kwargs: Style-specific options, matching that style's `graph_view()`/`flow_view()`/
-            `lenet_view()` function, plus 3 shared animation-only options: `frame_duration`
+        **kwargs: Style-specific options (see `GraphStyleOptions`/`FlowStyleOptions`/
+            `LenetStyleOptions`/`CommonOptions` for the full per-style list), plus 3 shared
+            animation-only options: `frame_duration`
             (milliseconds each intermediate frame is displayed, default 600),
             `final_hold_duration` (milliseconds the final, fully-revealed frame is displayed
             before the GIF loops, default 1500), and `loop` (if True, the default, the GIF loops

@@ -81,6 +81,91 @@ def flow_view(
 ) -> PIL.Image:
     """Generate a flow-style architecture visualization for a given torch model.
 
+    Deprecated:
+        Since version 1.4.0. Use `visualtorch.render(model, input_shape, style="flow", ...)`
+        instead - every parameter here is forwarded unchanged.
+    """
+    warnings.warn(
+        "`flow_view` is deprecated and will be removed in a future release, use "
+        '`visualtorch.render(model, input_shape, style="flow", ...)` instead.',
+        DeprecationWarning,
+        stacklevel=2,
+    )
+    return _flow_view(
+        model,
+        input_shape,
+        input_dtype,
+        to_file,
+        min_z,
+        min_xy,
+        max_z,
+        max_xy,
+        scale_z,
+        scale_xy,
+        type_ignore,
+        color_map,
+        palette,
+        low_dim_orientation,
+        background_fill,
+        draw_volume,
+        padding,
+        spacing,
+        draw_funnel,
+        shade_step,
+        legend,
+        font,
+        font_color,
+        opacity,
+        show_dimension,
+        level_gap,
+        show_input,
+        outline_width,
+        connector_fill,
+        connector_width,
+        one_dim_orientation,
+        legend_position,
+    )
+
+
+def _flow_view(
+    model: nn.Module | nn.Sequential | nn.ModuleList,
+    input_shape: InputShape,
+    input_dtype: InputDtype | None = None,
+    to_file: str | None = None,
+    min_z: int = 10,
+    min_xy: int = 10,
+    max_z: int = 400,
+    max_xy: int = 2000,
+    scale_z: float = 0.1,
+    scale_xy: float = 1,
+    type_ignore: list | None = None,
+    color_map: dict | None = None,
+    palette: str = "okabe_ito",
+    low_dim_orientation: str = "z",
+    background_fill: str | tuple[int, ...] = "white",
+    draw_volume: bool = True,
+    padding: int = 10,
+    spacing: int = 10,
+    draw_funnel: bool = True,
+    shade_step: int = 10,
+    legend: bool = False,
+    font: ImageFont = None,
+    font_color: str | tuple[int, ...] = "black",
+    opacity: int = 255,
+    show_dimension: bool = False,
+    level_gap: int | None = None,
+    show_input: bool = True,
+    outline_width: int = 1,
+    connector_fill: str | tuple[int, ...] | None = None,
+    connector_width: int = 1,
+    one_dim_orientation: str | None = None,
+    legend_position: LegendPosition = "bottom-left",
+) -> PIL.Image:
+    """The actual flow_view implementation.
+
+    Called directly by render() and layered_view() to avoid triggering flow_view's own
+    deprecation warning on every call.
+
     Args:
         model (torch.nn.Module): A torch model that will be visualized.
         input_shape (tuple): The shape of the input tensor (default: (1, 3, 224, 224)). For a
@@ -1038,4 +1123,7 @@ def layered_view(*args: object, **kwargs: object) -> PIL.Image:
     kwargs.pop("index_ignore", None)
     if "one_dim_orientation" in kwargs:
         kwargs["low_dim_orientation"] = kwargs.pop("one_dim_orientation")
-    return flow_view(*args, **kwargs)  # type: ignore[arg-type]
+    # Calls _flow_view directly (not flow_view) - flow_view is itself now deprecated too,
+    # and layered_view already emits its own warning above, so delegating to flow_view would
+    # spuriously double it.
+    return _flow_view(*args, **kwargs)  # type: ignore[arg-type]
