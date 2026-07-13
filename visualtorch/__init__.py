@@ -17,13 +17,13 @@ from visualtorch.utils.layer_utils import Input
 from visualtorch.utils.utils import PALETTES
 
 __all__ = [
-    "render",
-    "CommonOptions",
-    "GraphStyleOptions",
-    "FlowStyleOptions",
-    "LenetStyleOptions",
-    "Input",
     "PALETTES",
+    "CommonOptions",
+    "FlowStyleOptions",
+    "GraphStyleOptions",
+    "Input",
+    "LenetStyleOptions",
+    "render",
 ]
 
 

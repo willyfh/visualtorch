@@ -16,7 +16,7 @@ from visualtorch.lenet_style import lenet_view
 from visualtorch.utils.utils import format_shape_label, self_multiply
 
 
-@pytest.fixture()
+@pytest.fixture
 def multi_output_container_model() -> nn.Module:
     """A model whose inner block is a container (not Sequential/ModuleList) that returns multiple tensors.
 
@@ -115,7 +115,7 @@ def test_flow_view_recurrent_sequence_length_does_not_inflate_diagram_height(rec
     assert long_img.height == short_img.height
 
 
-@pytest.fixture()
+@pytest.fixture
 def lstm_using_hidden_state_model() -> nn.Module:
     """A model that consumes `nn.LSTM`'s hidden state (h_n), not its sequence output.
 
@@ -160,7 +160,7 @@ def test_show_dimension_includes_every_output_shape(lstm_using_hidden_state_mode
     assert img is not None
 
 
-@pytest.fixture()
+@pytest.fixture
 def embedding_model() -> nn.Module:
     """A model starting with nn.Embedding - requires an integer/long index tensor.
 
@@ -211,7 +211,7 @@ def test_view_renders_embedding_model_with_integer_input_dtype(embedding_model: 
     assert img is not None
 
 
-@pytest.fixture()
+@pytest.fixture
 def ends_in_unconsumed_merge_model() -> nn.Module:
     """A model whose forward() returns a merge (branch + shortcut) directly - nothing downstream
     consumes it. The tracer only turns a tensor's producers into edges when that tensor is passed
@@ -267,7 +267,7 @@ def test_extract_architecture_maps_raw_input_shortcut_to_output_node() -> None:
     assert module_types.count("Output") == 1
 
 
-@pytest.fixture()
+@pytest.fixture
 def residual_model_with_trailing_layer() -> nn.Module:
     """A residual block whose merge feeds a trailing layer - the ordinary, already-working case."""
 

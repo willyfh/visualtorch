@@ -145,8 +145,8 @@ def _render_theme(
         ax.yaxis.set_major_locator(mticker.MaxNLocator(nbins=4))
         ax.margins(x=0.02, y=0.05)
 
-        ax.spines["top"].set_visible(False)  # noqa: FBT003
-        ax.spines["right"].set_visible(False)  # noqa: FBT003
+        ax.spines["top"].set_visible(False)
+        ax.spines["right"].set_visible(False)
         for spine in ("left", "bottom"):
             ax.spines[spine].set_color(theme["text"])
         ax.tick_params(colors=theme["text"])

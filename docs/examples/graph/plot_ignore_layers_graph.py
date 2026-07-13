@@ -4,6 +4,7 @@ Visualize some layers only. ``type_ignore`` hides layer types you don't care abo
 and Flatten); ``show_input=False`` is the same idea applied to the synthetic input node itself -
 both trim the diagram down to just the layers worth looking at.
 """  # noqa: D205
+
 import matplotlib.pyplot as plt
 import visualtorch
 from torch import nn

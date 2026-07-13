@@ -39,7 +39,7 @@ def _render_from_payload(payload: dict[str, Any]) -> dict[str, Any]:
 
     namespace = _execute_source(payload["source"])
     model_expression = payload.get("model_expression") or "model"
-    model = eval(model_expression, namespace)  # noqa: PGH001, S307
+    model = eval(model_expression, namespace)  # noqa: S307
     if hasattr(model, "eval"):
         model.eval()
 
@@ -126,7 +126,7 @@ def _resolve_type(namespace: dict[str, Any], value: object) -> type:
         with suppress(ImportError):
             namespace["nn"] = importlib.import_module("torch.nn")
 
-    resolved = eval(expression, namespace)  # noqa: PGH001, S307
+    resolved = eval(expression, namespace)  # noqa: S307
     if not isinstance(resolved, type):
         message = f"{value!r} did not resolve to a type."
         raise TypeError(message)

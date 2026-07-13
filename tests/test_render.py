@@ -14,7 +14,7 @@ from visualtorch.utils.layer_utils import Input
 from visualtorch.utils.utils import PALETTES
 
 
-@pytest.fixture()
+@pytest.fixture
 def sequential_model() -> nn.Sequential:
     """A simple conv model, exercised across all three styles."""
     return nn.Sequential(
@@ -23,7 +23,7 @@ def sequential_model() -> nn.Sequential:
     )
 
 
-@pytest.fixture()
+@pytest.fixture
 def siamese_model() -> nn.Module:
     """A small two-branch model: an image branch and a tabular-vector branch, merged by concat."""
 

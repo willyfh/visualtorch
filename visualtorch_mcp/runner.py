@@ -100,7 +100,7 @@ def render_model(
 
     try:
         completed = subprocess.run(
-            [sys.executable, "-m", "visualtorch_mcp.worker", str(payload_file_path)],  # noqa: S603
+            [sys.executable, "-m", "visualtorch_mcp.worker", str(payload_file_path)],
             check=False,
             capture_output=True,
             stdin=subprocess.DEVNULL,

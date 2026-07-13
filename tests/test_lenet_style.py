@@ -14,7 +14,7 @@ from torch import nn
 from visualtorch.lenet_style import lenet_view
 
 
-@pytest.fixture()
+@pytest.fixture
 def sequential_model() -> nn.Sequential:
     """Define Sequential torch model for testing."""
     return nn.Sequential(
@@ -26,7 +26,7 @@ def sequential_model() -> nn.Sequential:
     )
 
 
-@pytest.fixture()
+@pytest.fixture
 def module_list_model() -> nn.ModuleList:
     """Define ModuleList-based torch model for testing."""
     return nn.ModuleList(
@@ -40,7 +40,7 @@ def module_list_model() -> nn.ModuleList:
     )
 
 
-@pytest.fixture()
+@pytest.fixture
 def custom_model() -> nn.Module:
     """Define the custom model."""
 
@@ -62,7 +62,7 @@ def custom_model() -> nn.Module:
     return CustomModel()
 
 
-@pytest.fixture()
+@pytest.fixture
 def lstm_model() -> nn.Module:
     """Define a simple LSTM model for testing."""
 
@@ -82,7 +82,7 @@ def lstm_model() -> nn.Module:
     return LSTMModel(input_size=10, hidden_size=20, num_layers=2)
 
 
-@pytest.fixture()
+@pytest.fixture
 def gru_model() -> nn.Module:
     """Define a simple GRU model for testing."""
 
@@ -101,7 +101,7 @@ def gru_model() -> nn.Module:
     return GRUModel(input_size=10, hidden_size=20, num_layers=2)
 
 
-@pytest.fixture()
+@pytest.fixture
 def rnn_model() -> nn.Module:
     """Define a simple plain RNN model for testing."""
 
@@ -120,7 +120,7 @@ def rnn_model() -> nn.Module:
     return RNNModel(input_size=10, hidden_size=20, num_layers=2)
 
 
-@pytest.fixture()
+@pytest.fixture
 def classifier_model() -> nn.Module:
     """Define a model ending in a 1D (per-sample) output, e.g. classification logits."""
 
@@ -223,7 +223,7 @@ def test_lenet_view_writes_to_file(sequential_model: nn.Sequential, tmp_path: Pa
         assert saved_img.size[1] > 0
 
 
-@pytest.fixture()
+@pytest.fixture
 def small_sequential_model() -> nn.Sequential:
     """A smaller conv stack, so canvas sizes stay small enough to hardcode as a regression lock."""
     return nn.Sequential(
@@ -264,7 +264,7 @@ def test_lenet_view_output_size_matches_post_rewrite_baseline(small_sequential_m
         assert img.size == expected_sizes[name], f"{name} canvas size changed"
 
 
-@pytest.fixture()
+@pytest.fixture
 def residual_model() -> nn.Module:
     """A residual block whose shortcut is the model's own raw input (the most common pattern)."""
 
