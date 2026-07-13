@@ -99,9 +99,7 @@ def _monotone_curve(
     # PchipInterpolator requires strictly increasing x - collapse ties (multiple anchors falling
     # in the same real-data gap can land on the same step value but distinct times, which is
     # fine; true ties only happen at the very start) by keeping the last of each duplicate.
-    deduped: dict[float, float] = {}
-    for xi, yi in zip(anchor_x, anchor_y, strict=True):
-        deduped[xi] = yi
+    deduped: dict[float, float] = dict(zip(anchor_x, anchor_y, strict=True))
     x = np.array(sorted(deduped))
     y = np.array([deduped[xi] for xi in x], dtype=float)
 

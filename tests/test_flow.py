@@ -15,9 +15,12 @@ from torch import nn
 # flow_view is deprecated in favor of render() - importing the private implementation directly
 # (aliased back to flow_view) so this file's tests, which exercise the actual rendering logic
 # rather than the deprecation wrapper itself, don't spam a DeprecationWarning on every call.
+from visualtorch.backend import extract_architecture
 from visualtorch.flow import _flow_view as flow_view
 from visualtorch.flow import flow_view as deprecated_flow_view
 from visualtorch.flow import layered_view
+from visualtorch.layered import layered_view as layered_view_from_old_path
+from visualtorch.utils.layer_utils import Input
 
 
 @pytest.fixture
@@ -539,8 +542,6 @@ def test_flow_view_shows_all_input_boxes_for_multi_input_model() -> None:
     """Unlike the single-input case, flow_view must not hide any of 2+ separate input boxes -
     hiding one would make it ambiguous which arrow originates from which named input.
     """  # noqa: D205
-    from visualtorch.backend import extract_architecture
-    from visualtorch.utils.layer_utils import Input
 
     class TwoInputNet(nn.Module):
         def __init__(self) -> None:
@@ -692,8 +693,6 @@ def test_layered_view_drops_index_ignore(sequential_model: nn.Sequential) -> Non
 
 def test_layered_module_path_still_importable() -> None:
     """The pre-1.0 `visualtorch.layered` module path should still resolve to the same function."""
-    from visualtorch.layered import layered_view as layered_view_from_old_path
-
     assert layered_view_from_old_path is layered_view
 
 

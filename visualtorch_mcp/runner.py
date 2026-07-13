@@ -99,7 +99,10 @@ def render_model(
         payload_file_path = Path(payload_file.name)
 
     try:
-        completed = subprocess.run(
+        # Args are fixed (sys.executable, a hardcoded module name) plus a path this function just
+        # created itself via NamedTemporaryFile - no attacker-controlled input reaches argv, and
+        # shell=False (the default) means no shell injection is possible regardless.
+        completed = subprocess.run(  # noqa: S603
             [sys.executable, "-m", "visualtorch_mcp.worker", str(payload_file_path)],
             check=False,
             capture_output=True,
