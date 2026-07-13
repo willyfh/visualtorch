@@ -11,7 +11,12 @@ import torch
 import torch.nn.functional as func
 from PIL import Image
 from torch import nn
-from visualtorch.lenet_style import lenet_view
+
+# lenet_view is deprecated in favor of render() - importing the private implementation directly
+# so this file's tests (which exercise the actual rendering logic, not the deprecation wrapper
+# itself) don't spam a DeprecationWarning on every call.
+from visualtorch.lenet_style import _lenet_view as lenet_view
+from visualtorch.lenet_style import lenet_view as deprecated_lenet_view
 
 
 @pytest.fixture
@@ -141,6 +146,14 @@ def classifier_model() -> nn.Module:
             return self.fc(x)
 
     return ClassifierModel()
+
+
+def test_lenet_view_is_deprecated(sequential_model: nn.Sequential) -> None:
+    """The deprecated public lenet_view should still work, warn, and match render()'s output."""
+    with pytest.warns(DeprecationWarning, match="lenet_view"):
+        deprecated_img = deprecated_lenet_view(sequential_model, input_shape=(1, 3, 224, 224))
+    current_img = lenet_view(sequential_model, input_shape=(1, 3, 224, 224))
+    assert deprecated_img.tobytes() == current_img.tobytes()
 
 
 def test_sequential_model_lenet_view_runs(sequential_model: nn.Sequential) -> None:

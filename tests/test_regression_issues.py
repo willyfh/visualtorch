@@ -10,9 +10,13 @@ import pytest
 import torch
 from torch import nn
 from visualtorch.backend import extract_architecture
-from visualtorch.flow import flow_view
-from visualtorch.graph import graph_view
-from visualtorch.lenet_style import lenet_view
+
+# graph_view/flow_view/lenet_view are deprecated in favor of render() - importing the private
+# implementations directly so this file's tests, which exercise the actual rendering logic rather
+# than the deprecation wrapper itself, don't spam a DeprecationWarning on every call.
+from visualtorch.flow import _flow_view as flow_view
+from visualtorch.graph import _graph_view as graph_view
+from visualtorch.lenet_style import _lenet_view as lenet_view
 from visualtorch.utils.utils import format_shape_label, self_multiply
 
 

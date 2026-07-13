@@ -10,7 +10,12 @@ import torch
 from PIL import Image
 from torch import nn
 from visualtorch.backend import extract_architecture
-from visualtorch.graph import graph_view
+
+# graph_view is deprecated in favor of render() - importing the private implementation directly
+# so this file's tests (which exercise the actual rendering logic, not the deprecation wrapper
+# itself) don't spam a DeprecationWarning on every call.
+from visualtorch.graph import _graph_view as graph_view
+from visualtorch.graph import graph_view as deprecated_graph_view
 
 
 @pytest.fixture
@@ -498,3 +503,11 @@ def test_graph_view_outline_width_accepted(conv_model: nn.Module) -> None:
     img_default = graph_view(conv_model, input_shape=(1, 3, 16, 16), show_neurons=False)
     img_thick = graph_view(conv_model, input_shape=(1, 3, 16, 16), show_neurons=False, outline_width=5)
     assert img_thick.tobytes() != img_default.tobytes()
+
+
+def test_graph_view_is_deprecated(dense_model: nn.Module) -> None:
+    """The deprecated public graph_view should still work, warn, and match render()'s output."""
+    with pytest.warns(DeprecationWarning, match="graph_view"):
+        deprecated_img = deprecated_graph_view(dense_model, input_shape=(1, 4))
+    current_img = graph_view(dense_model, input_shape=(1, 4))
+    assert deprecated_img.tobytes() == current_img.tobytes()

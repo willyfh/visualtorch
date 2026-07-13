@@ -11,7 +11,13 @@ import torch
 import torch.nn.functional as func
 from PIL import Image
 from torch import nn
-from visualtorch.flow import flow_view, layered_view
+
+# flow_view is deprecated in favor of render() - importing the private implementation directly
+# (aliased back to flow_view) so this file's tests, which exercise the actual rendering logic
+# rather than the deprecation wrapper itself, don't spam a DeprecationWarning on every call.
+from visualtorch.flow import _flow_view as flow_view
+from visualtorch.flow import flow_view as deprecated_flow_view
+from visualtorch.flow import layered_view
 
 
 @pytest.fixture
@@ -659,6 +665,14 @@ def test_flow_view_2d_shape_seq_len_is_discarded() -> None:
     img_bigger_hidden = flow_view(model_bigger_hidden, input_shape=(1, 5, 8))
 
     assert img_short_seq.tobytes() != img_bigger_hidden.tobytes()
+
+
+def test_flow_view_is_deprecated(sequential_model: nn.Sequential) -> None:
+    """The deprecated public flow_view should still work, warn, and match render()'s output."""
+    with pytest.warns(DeprecationWarning, match="flow_view"):
+        deprecated_img = deprecated_flow_view(sequential_model, input_shape=(1, 3, 224, 224))
+    current_img = flow_view(sequential_model, input_shape=(1, 3, 224, 224))
+    assert deprecated_img.tobytes() == current_img.tobytes()
 
 
 def test_layered_view_still_works(sequential_model: nn.Sequential) -> None:

@@ -11,6 +11,7 @@ from visualtorch.render import (
     FlowStyleOptions,
     GraphStyleOptions,
     LenetStyleOptions,
+    animate,
     render,
 )
 from visualtorch.utils.layer_utils import Input
@@ -23,6 +24,7 @@ __all__ = [
     "GraphStyleOptions",
     "Input",
     "LenetStyleOptions",
+    "animate",
     "render",
 ]
 
