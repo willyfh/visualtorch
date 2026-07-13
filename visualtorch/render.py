@@ -311,13 +311,12 @@ def animate(
         style (str, optional): Which rendering style to use - `"graph"` (a node/edge diagram),
             `"flow"` (stacked volumetric/2D boxes connected by funnels), or `"lenet"` (the
             classic LeNet look).
-        **kwargs: Style-specific options (matching that style's `*_view()` function), plus:
-            frame_duration (int, optional): Milliseconds each intermediate frame is displayed.
-                Defaults to 600.
-            final_hold_duration (int, optional): Milliseconds the final, fully-revealed frame is
-                displayed before the GIF loops. Defaults to 1500.
-            loop (bool, optional): If True (the default), the GIF loops forever. If False, it
-                plays once.
+        **kwargs: Style-specific options, matching that style's `graph_view()`/`flow_view()`/
+            `lenet_view()` function, plus 3 shared animation-only options: `frame_duration`
+            (milliseconds each intermediate frame is displayed, default 600),
+            `final_hold_duration` (milliseconds the final, fully-revealed frame is displayed
+            before the GIF loops, default 1500), and `loop` (if True, the default, the GIF loops
+            forever; if False, it plays once).
 
     Returns:
         list[Image.Image] | None: A list of frames (one per column, in reveal order) if
