@@ -73,8 +73,10 @@ def main() -> None:
         frames[0].save(gif_path, save_all=True, append_images=frames[1:], duration=600, loop=0)
         print(gif_path, frames[0].size)
 
+        # The last frame (fully revealed diagram) makes a far more informative gallery
+        # thumbnail than the first (which is just the input node, mostly blank).
         thumbnail_path = ANIMATION_DIR / f"{style}_animated_demo_thumbnail.png"
-        frames[0].convert("RGB").save(thumbnail_path)
+        frames[-1].convert("RGB").save(thumbnail_path)
         print(thumbnail_path)
 
 
