@@ -2,7 +2,7 @@
 # See https://pre-commit.com/hooks.html for more hooks
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v3.2.0
+    rev: v6.0.0
     hooks:
       - id: trailing-whitespace
       - id: end-of-file-fixer
@@ -12,25 +12,25 @@ repos:
       - id: detect-private-key
 
   - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: "v1.7.0"
+    rev: "v2.3.0"
     hooks:
       - id: mypy
         additional_dependencies: [types-PyYAML]
         exclude: "tests"
 
   - repo: https://github.com/pre-commit/mirrors-prettier
-    rev: v3.1.0
+    rev: v4.0.0-alpha.8
     hooks:
       - id: prettier
 
   - repo: https://github.com/igorshubovych/markdownlint-cli
-    rev: v0.37.0
+    rev: v0.49.0
     hooks:
       - id: markdownlint
         args: ["--ignore", "paper/paper.md"]
 
-  - repo: https://github.com/charliermarsh/ruff-pre-commit
-    rev: "v0.1.5"
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: "v0.15.21"
     hooks:
       # Run the linter.
       - id: ruff
