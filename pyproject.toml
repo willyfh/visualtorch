@@ -140,6 +140,13 @@ max-complexity = 15
 # (Any throughout); the recursive tensor-structure helpers here genuinely accept arbitrary
 # nested types (tensors, tuples, dicts, non-tensor values) for the same reason.
 "visualtorch/utils/recorder.py" = ["ANN401", "ANN102"]
+# `# sphinx_gallery_thumbnail_path = '...'` is a real, required sphinx-gallery directive (parsed
+# by its own regex, not executed as Python), not commented-out code - a trailing `# noqa` on the
+# same line would corrupt the parsed value, since sphinx-gallery's regex greedily captures the
+# rest of the line as the path.
+"docs/examples/graph/plot_animated_reveal_graph.py" = ["ERA001"]
+"docs/examples/flow/plot_animated_reveal_flow.py" = ["ERA001"]
+"docs/examples/lenet_style/plot_animated_reveal_lenet_style.py" = ["ERA001"]
 
 [tool.ruff.pydocstyle]
 convention = "google"

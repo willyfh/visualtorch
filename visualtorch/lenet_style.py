@@ -6,6 +6,7 @@
 import warnings
 from collections import defaultdict
 from collections.abc import Callable
+from dataclasses import dataclass, replace
 from math import ceil
 
 import aggdraw
@@ -13,6 +14,7 @@ import PIL
 from PIL import Image, ImageFont
 from torch import nn
 
+from ._animation import animate_frames
 from ._volumetric_layout import ColumnLayout, VolumetricBox, layout_columns
 from .backend import Architecture, extract_architecture
 from .connectors import compute_skip_levels, draw_connector
@@ -130,6 +132,93 @@ def lenet_view(
     Returns:
         PIL.Image: An Image object representing the generated architecture visualization.
     """
+    setup = _prepare_lenet_render(
+        model,
+        input_shape,
+        input_dtype,
+        min_z,
+        min_xy,
+        max_xy,
+        scale_z,
+        scale_xy,
+        type_ignore,
+        color_map,
+        palette,
+        low_dim_orientation,
+        padding,
+        spacing,
+        shade_step,
+        font,
+        max_channels,
+        offset_z,
+        level_gap,
+        show_input,
+        outline_width,
+        one_dim_orientation,
+        show_dimension,
+        background_fill,
+        opacity,
+    )
+
+    img = _draw_diagram_frame(
+        setup,
+        reveal_up_to=len(setup.column_layout.boxes_by_column) - 1,
+        draw_funnel_flag=draw_funnel,
+        connector_fill=connector_fill,
+        connector_width=connector_width,
+        padding=padding,
+        show_dimension=show_dimension,
+        font_color=font_color,
+    )
+
+    if to_file is not None:
+        img.save(to_file)
+
+    return img
+
+
+@dataclass
+class _LenetRenderSetup:
+    """Everything computed once, up front, and reused by every frame (static or animated)."""
+
+    architecture: Architecture
+    column_layout: ColumnLayout
+    edge_to_level: dict[tuple[str, str], int]
+    num_levels: int
+    resolved_level_gap: int
+    font: ImageFont
+    diagram_height: float
+    img_template: Image.Image
+
+
+def _prepare_lenet_render(
+    model: nn.Module | nn.Sequential | nn.ModuleList,
+    input_shape: InputShape,
+    input_dtype: InputDtype | None,
+    min_z: int,
+    min_xy: int,
+    max_xy: int,
+    scale_z: float,
+    scale_xy: float,
+    type_ignore: list | None,
+    color_map: dict | None,
+    palette: str,
+    low_dim_orientation: str,
+    padding: int,
+    spacing: int,
+    shade_step: int,
+    font: ImageFont,
+    max_channels: int,
+    offset_z: int,
+    level_gap: int | None,
+    show_input: bool,
+    outline_width: int,
+    one_dim_orientation: str | None,
+    show_dimension: bool,
+    background_fill: str | tuple[int, ...],
+    opacity: int,
+) -> _LenetRenderSetup:
+    """Trace the model and compute the full layout/canvas once - shared by every frame."""
     if one_dim_orientation is not None:
         warnings.warn(
             "`one_dim_orientation` is deprecated and will be removed in a future release, "
@@ -219,32 +308,75 @@ def lenet_view(
     label_row_height = _LABEL_ROW_HEIGHT if show_dimension else 0
     img_width = column_layout.img_width
     diagram_height = top_margin_for_skips + spread_margin + column_layout.diagram_height
-    img = Image.new(
+    img_template = Image.new(
         "RGBA",
         (int(ceil(img_width)), ceil(diagram_height) + label_row_height),
         background_fill,
     )
-    draw = aggdraw.Draw(img)
 
     _apply_centering(column_layout, top_margin_for_skips + spread_margin / 2)
 
+    return _LenetRenderSetup(
+        architecture=architecture,
+        column_layout=column_layout,
+        edge_to_level=edge_to_level,
+        num_levels=num_levels,
+        resolved_level_gap=resolved_level_gap,
+        font=font,
+        diagram_height=diagram_height,
+        img_template=img_template,
+    )
+
+
+def _draw_diagram_frame(
+    setup: _LenetRenderSetup,
+    reveal_up_to: int,
+    draw_funnel_flag: bool,
+    connector_fill: str | tuple[int, ...] | None,
+    connector_width: int,
+    padding: int,
+    show_dimension: bool,
+    font_color: str | tuple[int, ...],
+) -> PIL.Image:
+    """Draw a single frame: everything in columns `0..reveal_up_to`, on a copy of the shared canvas.
+
+    `_draw_funnels_and_boxes`/`_draw_skip_connectors` already gate every box/edge on
+    `column_layout.id_to_box` membership, so passing a `ColumnLayout` whose `boxes_by_column`/
+    `id_to_box` are truncated to the revealed columns is sufficient.
+
+    The static render calls this once with `reveal_up_to` set to the last column - an animated
+    render calls it once per column, each time with one more column revealed than the last.
+    """
+    img = setup.img_template.copy()
+    draw = aggdraw.Draw(img)
+
+    visible_boxes_by_column = setup.column_layout.boxes_by_column[: reveal_up_to + 1]
+    revealed_box_ids = {id(box) for column in visible_boxes_by_column for box in column}
+    visible_layout = replace(
+        setup.column_layout,
+        boxes_by_column=visible_boxes_by_column,
+        id_to_box={
+            node_id: box for node_id, box in setup.column_layout.id_to_box.items() if id(box) in revealed_box_ids
+        },
+    )
+
     _draw_funnels_and_boxes(
         draw,
-        architecture,
-        column_layout,
-        edge_to_level,
-        draw_funnel,
+        setup.architecture,
+        visible_layout,
+        setup.edge_to_level,
+        draw_funnel_flag,
         connector_fill,
         connector_width,
     )
     _draw_skip_connectors(
         draw,
-        architecture,
-        column_layout,
-        edge_to_level,
-        num_levels,
+        setup.architecture,
+        visible_layout,
+        setup.edge_to_level,
+        setup.num_levels,
         padding,
-        resolved_level_gap,
+        setup.resolved_level_gap,
         connector_fill,
         connector_width,
     )
@@ -252,12 +384,174 @@ def lenet_view(
     draw.flush()
 
     if show_dimension:
-        img = _draw_labels(img, column_layout.boxes_by_column, font, font_color)
-
-    if to_file is not None:
-        img.save(to_file)
+        img = _draw_labels(img, visible_boxes_by_column, setup.font, font_color)
 
     return img
+
+
+def _lenet_view_animate(
+    model: nn.Module | nn.Sequential | nn.ModuleList,
+    input_shape: InputShape,
+    input_dtype: InputDtype | None = None,
+    to_file: str | None = None,
+    min_z: int = 1,
+    min_xy: int = 10,
+    max_xy: int = 2000,
+    scale_z: float = 1,
+    scale_xy: float = 1,
+    type_ignore: list | None = None,
+    color_map: dict | None = None,
+    palette: str = "okabe_ito",
+    low_dim_orientation: str = "z",
+    background_fill: str | tuple[int, ...] = "white",
+    padding: int = 10,
+    spacing: int = 10,
+    draw_funnel: bool = True,
+    shade_step: int = 10,
+    font: ImageFont = None,
+    font_color: str | tuple[int, ...] = "black",
+    opacity: int = 255,
+    max_channels: int = 100,
+    offset_z: int = 10,
+    level_gap: int | None = None,
+    show_dimension: bool = True,
+    show_input: bool = True,
+    outline_width: int = 1,
+    connector_fill: str | tuple[int, ...] | None = None,
+    connector_width: int = 1,
+    one_dim_orientation: str | None = None,
+    frame_duration: int = 600,
+    final_hold_duration: int = 1500,
+    loop: bool = True,
+) -> list[PIL.Image] | None:
+    """Generate an animated GIF revealing a LeNet-style visualization one column at a time.
+
+    Every parameter matches `lenet_view()` exactly (same behavior, same defaults), plus the 3
+    animation-only parameters at the end - see `to_file`/the return value note below for the one
+    behavioral difference.
+
+    Args:
+        model (torch.nn.Module): A torch model that will be visualized.
+        input_shape (tuple): The shape of the input tensor (default: (1, 3, 224, 224)). For a
+            model whose forward() takes multiple separate input tensors, pass a tuple of
+            per-tensor shapes instead, one per positional argument in order, e.g.
+            ((1, 3, 224, 224), (1, 10)).
+        input_dtype (torch.dtype, optional): The dtype of the dummy input tensor(s) used to trace
+            the model. Defaults to `None` for every input, giving a uniformly random float
+            tensor. Needed for a model that starts with an integer/bool-input layer (e.g.
+            `nn.Embedding`, which rejects a float index tensor): pass `torch.long`, or - for a
+            model with multiple input tensors of different kinds - a tuple of per-tensor dtypes,
+            e.g. `(torch.long, None)`.
+        to_file (str, optional): Path to write the animated GIF to. See the Returns note below -
+            unlike `lenet_view()`, providing None returns the frame list instead of writing a file.
+        min_z (int, optional): Minimum size in pixels that a layer will have along the z-axis.
+        min_xy (int, optional): Minimum size in pixels that a layer will have along the x and y axes.
+        max_channels (int, optional): Maximum number of channels.
+        max_xy (int, optional): Maximum size in pixels that a layer will have along the x and y axes.
+        scale_z (float, optional): Scalar multiplier for the size of each layer along the z-axis.
+        scale_xy (float, optional): Scalar multiplier for the size of each layer along the x and y axes.
+        type_ignore (list, optional): List of layer types in the torch model to ignore during drawing.
+        color_map (dict, optional): Dictionary defining fill and outline colors for each layer by class type.
+            Will fallback to default values for unspecified classes.
+        palette (str, optional): Named color palette used as the fallback for any layer type not
+            given an explicit override via `color_map`. One of `"okabe_ito"` (default,
+            colorblind-safe), `"tol_bright"`, `"tol_muted"`, `"tab10"`, `"grayscale"`, `"nord"`,
+            `"dracula"`, `"gruvbox"`, `"solarized"`, `"material"`, `"catppuccin"`.
+        low_dim_orientation (str, optional): Axis on which a layer without real spatial/channel
+            structure (a 1D shape, or a 2D shape like an RNN/attention layer's
+            `(seq_len, hidden_size)`) should be drawn. One of `'x'`, `'y'`, or `'z'`.
+        background_fill (str or tuple, optional): Background color for the image. A string or a tuple (R, G, B, A).
+        padding (int, optional): Distance in pixels before the first and after the last layer.
+        spacing (int, optional): Spacing in pixels between two layers.
+        draw_funnel (bool, optional): If True, a funnel will be drawn between consecutive layers.
+        shade_step (int, optional): Deviation in lightness for drawing shades (only in volumetric view).
+        font (PIL.ImageFont, optional): Font that will be used for the legend. If None, default font will be used.
+        font_color (str or tuple, optional): Color for the font if used. Can be a string or a tuple (R, G, B, A).
+        opacity (int): Transparency of the color (0 ~ 255).
+        offset_z (int): control the offset of overlapping between channels.
+        level_gap (int, optional): Vertical spacing in pixels between stacked skip-connection detour
+            routes. If None, defaults to 50.
+        show_dimension (bool, optional): If True (the default), print each layer's output shape
+            below it. For a model with parallel branches (e.g. multi-branch merges or multiple
+            input tensors), several boxes can share a column and their labels may overlap - set
+            this to False to drop the labels entirely in that case.
+        show_input (bool, optional): For a single-input model, whether to draw the synthetic
+            "Input" box. Defaults to True. Set False to hide it - e.g. if you're overlaying your
+            own custom input illustration instead. Has no effect on a multi-input model, where
+            every input is always shown (omitting any of them would make it ambiguous which
+            arrow belongs to which named input). Ignored (input always kept) when the input feeds
+            more than one consumer, e.g. a residual shortcut, since dropping it would silently
+            discard that edge.
+        outline_width (int, optional): Line width in pixels for the shape borders. Defaults to 1.
+        connector_fill (str or tuple, optional): Color for funnel and skip-connection lines. Can be a string
+            or a tuple (R, G, B, A). If None, inherits the target box's outline color.
+        connector_width (int, optional): Line width in pixels for funnel and skip-connection lines. Defaults to 1.
+        one_dim_orientation (str, optional): Deprecated, use `low_dim_orientation` instead.
+        frame_duration (int, optional): Milliseconds each intermediate frame is displayed.
+        final_hold_duration (int, optional): Milliseconds the final, fully-revealed frame is
+            displayed before the GIF loops - gives a viewer time to actually see the complete
+            diagram rather than immediately looping.
+        loop (bool, optional): If True, the GIF loops forever. If False, it plays once.
+
+    Note:
+        GIF output does not support full alpha transparency - a translucent `background_fill` is
+        flattened by the GIF format itself, unlike the static `lenet_view()`'s PNG output.
+
+    Returns:
+        list[Image.Image] | None: The rendered frames (one per column, in reveal order) if
+        `to_file` is None. If `to_file` is given, the GIF is written to that path and `None` is
+        returned instead - unlike `lenet_view()`, which always returns the image even when also
+        writing to a file. `to_file` should end in `.gif`; a mismatched extension will not raise,
+        it will silently save only the first frame.
+    """
+    setup = _prepare_lenet_render(
+        model,
+        input_shape,
+        input_dtype,
+        min_z,
+        min_xy,
+        max_xy,
+        scale_z,
+        scale_xy,
+        type_ignore,
+        color_map,
+        palette,
+        low_dim_orientation,
+        padding,
+        spacing,
+        shade_step,
+        font,
+        max_channels,
+        offset_z,
+        level_gap,
+        show_input,
+        outline_width,
+        one_dim_orientation,
+        show_dimension,
+        background_fill,
+        opacity,
+    )
+
+    def render_frame(reveal_up_to: int) -> Image.Image:
+        return _draw_diagram_frame(
+            setup,
+            reveal_up_to,
+            draw_funnel,
+            connector_fill,
+            connector_width,
+            padding,
+            show_dimension,
+            font_color,
+        )
+
+    return animate_frames(
+        render_frame,
+        n_columns=len(setup.column_layout.boxes_by_column),
+        to_file=to_file,
+        frame_duration=frame_duration,
+        final_hold_duration=final_hold_duration,
+        loop=loop,
+    )
 
 
 def _gap_for(spacing: int) -> Callable[[VolumetricBox], float]:
