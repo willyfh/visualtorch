@@ -15,11 +15,21 @@ Usage: `python scripts/generate_animation_demo.py` from anywhere - writes direct
 from pathlib import Path
 
 import torch
+from PIL import Image
 from torch import nn
 from visualtorch.flow import flow_view_animate
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 BANNER_DIR = REPO_ROOT / "docs" / "source" / "_static" / "images" / "banners"
+
+# This model's small channel counts keep flow_view's native render tiny (well under 100px wide),
+# which looks blurry once GitHub displays it at normal README width - upscaling the frames
+# directly (rather than fighting scale_xy/scale_z, which scale spatial size and channel-depth
+# independently and don't grow this particular model's width much) gives a crisp result at a
+# predictable final size.
+_UPSCALE_FACTOR = 4
+_FRAME_DURATION_MS = 600
+_FINAL_HOLD_DURATION_MS = 1500
 
 
 class InceptionBlock(nn.Module):
@@ -60,15 +70,17 @@ def main() -> None:
     model = InceptionBlock(16, 8, 8, 8, 8)
     input_shape = (1, 16, 16, 16)
 
+    frames = flow_view_animate(model, input_shape, scale_xy=3, draw_volume=False)
+    assert frames is not None  # to_file wasn't passed, so a frame list is always returned
+
+    upscaled = [
+        frame.resize((frame.width * _UPSCALE_FACTOR, frame.height * _UPSCALE_FACTOR), Image.LANCZOS) for frame in frames
+    ]
+    durations = [_FRAME_DURATION_MS] * (len(upscaled) - 1) + [_FINAL_HOLD_DURATION_MS]
+
     gif_path = BANNER_DIR / "readme-animated-demo.gif"
-    flow_view_animate(
-        model,
-        input_shape,
-        scale_xy=3,
-        draw_volume=False,
-        to_file=str(gif_path),
-    )
-    print(gif_path)
+    upscaled[0].save(gif_path, save_all=True, append_images=upscaled[1:], duration=durations, loop=0)
+    print(gif_path, upscaled[0].size)
 
 
 if __name__ == "__main__":
