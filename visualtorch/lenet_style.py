@@ -69,6 +69,87 @@ def lenet_view(
 ) -> PIL.Image:
     """Generate a LeNet style architecture visualization for a given torch model.
 
+    Deprecated:
+        Since version 1.4.0. Use `visualtorch.render(model, input_shape, style="lenet", ...)`
+        instead - every parameter here is forwarded unchanged.
+    """
+    warnings.warn(
+        "`lenet_view` is deprecated and will be removed in a future release, use "
+        '`visualtorch.render(model, input_shape, style="lenet", ...)` instead.',
+        DeprecationWarning,
+        stacklevel=2,
+    )
+    return _lenet_view(
+        model,
+        input_shape,
+        input_dtype,
+        to_file,
+        min_z,
+        min_xy,
+        max_xy,
+        scale_z,
+        scale_xy,
+        type_ignore,
+        color_map,
+        palette,
+        low_dim_orientation,
+        background_fill,
+        padding,
+        spacing,
+        draw_funnel,
+        shade_step,
+        font,
+        font_color,
+        opacity,
+        max_channels,
+        offset_z,
+        level_gap,
+        show_dimension,
+        show_input,
+        outline_width,
+        connector_fill,
+        connector_width,
+        one_dim_orientation,
+    )
+
+
+def _lenet_view(
+    model: nn.Module | nn.Sequential | nn.ModuleList,
+    input_shape: InputShape,
+    input_dtype: InputDtype | None = None,
+    to_file: str | None = None,
+    min_z: int = 1,
+    min_xy: int = 10,
+    max_xy: int = 2000,
+    scale_z: float = 1,
+    scale_xy: float = 1,
+    type_ignore: list | None = None,
+    color_map: dict | None = None,
+    palette: str = "okabe_ito",
+    low_dim_orientation: str = "z",
+    background_fill: str | tuple[int, ...] = "white",
+    padding: int = 10,
+    spacing: int = 10,
+    draw_funnel: bool = True,
+    shade_step: int = 10,
+    font: ImageFont = None,
+    font_color: str | tuple[int, ...] = "black",
+    opacity: int = 255,
+    max_channels: int = 100,
+    offset_z: int = 10,
+    level_gap: int | None = None,
+    show_dimension: bool = True,
+    show_input: bool = True,
+    outline_width: int = 1,
+    connector_fill: str | tuple[int, ...] | None = None,
+    connector_width: int = 1,
+    one_dim_orientation: str | None = None,
+) -> PIL.Image:
+    """The actual lenet_view implementation.
+
+    Called directly by render() to avoid triggering lenet_view's own deprecation warning on
+    every render() call.
+
     TODO: remove unnecessary arguments for this LeNet style architecture.
 
     Args:

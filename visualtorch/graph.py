@@ -4,6 +4,7 @@
 # Copyright (C) 2024 VisualTorch Contributors
 # SPDX-License-Identifier: MIT
 
+import warnings
 from collections import defaultdict
 from dataclasses import dataclass
 from math import ceil
@@ -57,6 +58,75 @@ def graph_view(
     show_arrows: bool = False,
 ) -> Image.Image:
     """Generates an architecture visualization for a given linear PyTorch model in a graph style.
+
+    Deprecated:
+        Since version 1.4.0. Use `visualtorch.render(model, input_shape, style="graph", ...)`
+        instead - every parameter here is forwarded unchanged.
+    """
+    warnings.warn(
+        "`graph_view` is deprecated and will be removed in a future release, use "
+        '`visualtorch.render(model, input_shape, style="graph", ...)` instead.',
+        DeprecationWarning,
+        stacklevel=2,
+    )
+    return _graph_view(
+        model,
+        input_shape,
+        input_dtype,
+        to_file,
+        color_map,
+        palette,
+        node_size,
+        background_fill,
+        padding,
+        layer_spacing,
+        node_spacing,
+        type_ignore,
+        outline_width,
+        connector_fill,
+        connector_width,
+        ellipsize_after,
+        show_neurons,
+        opacity,
+        show_dimension,
+        font,
+        font_color,
+        level_gap,
+        show_input,
+        show_arrows,
+    )
+
+
+def _graph_view(
+    model: torch.nn.Module,
+    input_shape: InputShape,
+    input_dtype: InputDtype | None = None,
+    to_file: str | None = None,
+    color_map: dict[Any, Any] | None = None,
+    palette: str = "okabe_ito",
+    node_size: int = 50,
+    background_fill: str | tuple[int, ...] = "white",
+    padding: int = 10,
+    layer_spacing: int = 250,
+    node_spacing: int = 10,
+    type_ignore: list | None = None,
+    outline_width: int = 1,
+    connector_fill: str | tuple[int, ...] = "gray",
+    connector_width: int = 1,
+    ellipsize_after: int = 10,
+    show_neurons: bool = True,
+    opacity: int = 255,
+    show_dimension: bool = False,
+    font: ImageFont = None,
+    font_color: str | tuple[int, ...] = "black",
+    level_gap: int | None = None,
+    show_input: bool = True,
+    show_arrows: bool = False,
+) -> Image.Image:
+    """The actual graph_view implementation.
+
+    Called directly by render() to avoid triggering graph_view's own deprecation warning on
+    every render() call.
 
     Args:
         model (torch.nn.Module): A PyTorch model that will be visualized.
