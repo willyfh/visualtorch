@@ -32,7 +32,7 @@ time - see `flow_view_animate`/`graph_view_animate`/`lenet_view_animate` in the
 
 <div align="center">
 
-![Animated VisualTorch Example](https://raw.githubusercontent.com/willyfh/visualtorch/feeeb7ece8413dc01df7616b5f22883d7dab9a1d/docs/source/_static/images/banners/readme-animated-demo.gif)
+![Animated VisualTorch Example](https://raw.githubusercontent.com/willyfh/visualtorch/e3e07b2eb7fb933e533e621d0c07f2d708d418fb/docs/source/_static/images/banners/readme-animated-demo.gif)
 
 </div>
 
