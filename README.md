@@ -26,10 +26,11 @@ the first. Downstream connections are correct either way. Contributions are welc
 
 ### Animated Reveal
 
-Every style can also render as an animated GIF, revealing the model one layer/column at a
-time - see [`flow_view_animate`](https://visualtorch.readthedocs.io/en/latest/usage_examples/flow/plot_animated_reveal_flow.html),
-[`graph_view_animate`](https://visualtorch.readthedocs.io/en/latest/usage_examples/graph/plot_animated_reveal_graph.html), and
-[`lenet_view_animate`](https://visualtorch.readthedocs.io/en/latest/usage_examples/lenet_style/plot_animated_reveal_lenet_style.html).
+Every style can also render as an animated GIF, revealing the model one layer/column at a time,
+via `visualtorch.animate(model, input_shape, style=...)` - see it in action for
+[flow](https://visualtorch.readthedocs.io/en/latest/usage_examples/flow/plot_animated_reveal_flow.html),
+[graph](https://visualtorch.readthedocs.io/en/latest/usage_examples/graph/plot_animated_reveal_graph.html), and
+[lenet](https://visualtorch.readthedocs.io/en/latest/usage_examples/lenet_style/plot_animated_reveal_lenet_style.html) styles.
 
 <div align="center">
 

@@ -1,10 +1,10 @@
 """Regenerate the README's hero animated-reveal demo GIF.
 
 Renders the same colorful sequential CNN used in the "Custom Color" docs example through
-`flow_view_animate`, at a wide spacing so the classic funnel taper from wide conv layers down to
-the final classifier reads clearly. Run this after any change that affects how this specific
-example renders, then update the README's `<img>` src to the new commit's SHA (matching the
-existing static banner's pinning convention).
+`visualtorch.animate(style="flow")`, at a wide spacing so the classic funnel taper from wide conv
+layers down to the final classifier reads clearly. Run this after any change that affects how
+this specific example renders, then update the README's `<img>` src to the new commit's SHA
+(matching the existing static banner's pinning convention).
 
 Note: earlier versions of this script tried branching models (an Inception-style 4-branch block,
 then a ResNet-style residual block) to showcase branch/merge reveal behavior, upscaled afterward
@@ -24,7 +24,6 @@ from pathlib import Path
 
 import visualtorch
 from torch import nn
-from visualtorch.flow import flow_view_animate
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 BANNER_DIR = REPO_ROOT / "docs" / "source" / "_static" / "images" / "banners"
@@ -62,7 +61,7 @@ def main() -> None:
     color_map[nn.Flatten]["fill"] = "#009E73"  # bluish green
     color_map[nn.Linear]["fill"] = "#0072B2"  # blue
 
-    frames = flow_view_animate(model, input_shape, color_map=color_map, scale_xy=1, spacing=40)
+    frames = visualtorch.animate(model, input_shape, style="flow", color_map=color_map, scale_xy=1, spacing=40)
     assert frames is not None  # to_file wasn't passed, so a frame list is always returned
 
     durations = [_FRAME_DURATION_MS] * (len(frames) - 1) + [_FINAL_HOLD_DURATION_MS]

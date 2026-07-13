@@ -351,7 +351,7 @@ def _draw_architecture_frame(
     return img
 
 
-def graph_view_animate(
+def _graph_view_animate(
     model: torch.nn.Module,
     input_shape: InputShape,
     input_dtype: InputDtype | None = None,

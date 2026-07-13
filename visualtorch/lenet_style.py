@@ -389,7 +389,7 @@ def _draw_diagram_frame(
     return img
 
 
-def lenet_view_animate(
+def _lenet_view_animate(
     model: nn.Module | nn.Sequential | nn.ModuleList,
     input_shape: InputShape,
     input_dtype: InputDtype | None = None,

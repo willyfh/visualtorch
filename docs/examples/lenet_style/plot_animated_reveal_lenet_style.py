@@ -1,11 +1,11 @@
 """Animated Reveal
 =======================================
 
-``lenet_view_animate`` renders the same diagram as ``lenet_view``, but as an animated GIF that
-reveals the model one column (depth level) at a time instead of all at once. Parallel branches at
-the same depth reveal together, in the same frame, correctly implying they happen simultaneously -
-a skip connection stays hidden until its merge point is reached, then draws in exactly as it would
-in the static image.
+``visualtorch.animate(style="lenet")`` renders the same diagram as ``style="lenet"`` in
+``visualtorch.render()``, but as an animated GIF that reveals the model one column (depth level)
+at a time instead of all at once. Parallel branches at the same depth reveal together, in the
+same frame, correctly implying they happen simultaneously - a skip connection stays hidden until
+its merge point is reached, then draws in exactly as it would in the static image.
 
 The model here is the same residual block used elsewhere in this gallery, since a merge point is
 the most interesting thing to watch animate in.
@@ -47,4 +47,4 @@ input_shape = (1, 8, 16, 16)
 
 # Returns a list[Image.Image], one per column, in reveal order - pass to_file="your_path.gif" to
 # save it directly as an animated GIF instead.
-frames = visualtorch.lenet_style.lenet_view_animate(model, input_shape, scale_xy=3)
+frames = visualtorch.animate(model, input_shape, style="lenet", scale_xy=3)

@@ -1,4 +1,9 @@
-"""Tests for graph_view_animate/flow_view_animate/lenet_view_animate."""
+"""Tests for visualtorch.animate(), the unified entry point for animated rendering.
+
+The underlying per-style implementations (`_graph_view_animate`/`_flow_view_animate`/
+`_lenet_view_animate`) are intentionally private and never imported directly here - matching how
+`test_render.py` only ever exercises `render()`, never the private `_render_graph`/etc. helpers.
+"""
 
 # Copyright (C) 2024 VisualTorch Contributors
 # SPDX-License-Identifier: MIT
@@ -9,17 +14,18 @@ import pytest
 import torch
 from PIL import Image, ImageSequence
 from torch import nn
+from visualtorch import animate
 from visualtorch.backend import extract_architecture
-from visualtorch.flow import flow_view, flow_view_animate
-from visualtorch.graph import graph_view, graph_view_animate
-from visualtorch.lenet_style import lenet_view, lenet_view_animate
+from visualtorch.flow import flow_view
+from visualtorch.graph import graph_view
+from visualtorch.lenet_style import lenet_view
 
-_STYLE_FUNCS: dict[str, tuple[Callable, Callable]] = {
-    "graph": (graph_view, graph_view_animate),
-    "flow": (flow_view, flow_view_animate),
-    "lenet": (lenet_view, lenet_view_animate),
+_STATIC_VIEW_FUNCS: dict[str, Callable] = {
+    "graph": graph_view,
+    "flow": flow_view,
+    "lenet": lenet_view,
 }
-_STYLES = list(_STYLE_FUNCS)
+_STYLES = list(_STATIC_VIEW_FUNCS)
 
 
 @pytest.fixture()
@@ -113,9 +119,8 @@ def _non_background_pixel_count(img: Image.Image, background_fill: str = "white"
 @pytest.mark.parametrize("style", _STYLES)
 def test_frame_count_matches_column_count(style: str, sequential_model: nn.Module) -> None:
     """Animating a plain sequential model yields one frame per traced column."""
-    _, animate_fn = _STYLE_FUNCS[style]
     input_shape = (1, 3, 8, 8)
-    frames = animate_fn(sequential_model, input_shape)
+    frames = animate(sequential_model, input_shape, style=style)
     architecture = extract_architecture(sequential_model, input_shape)
     assert len(frames) == len(architecture.columns)
 
@@ -123,8 +128,7 @@ def test_frame_count_matches_column_count(style: str, sequential_model: nn.Modul
 @pytest.mark.parametrize("style", _STYLES)
 def test_ink_is_non_decreasing_across_frames(style: str, residual_model: nn.Module) -> None:
     """Nothing disappears frame to frame - each frame reveals strictly more than the last."""
-    _, animate_fn = _STYLE_FUNCS[style]
-    frames = animate_fn(residual_model, (1, 4, 8, 8))
+    frames = animate(residual_model, (1, 4, 8, 8), style=style)
     ink_counts = [_non_background_pixel_count(frame) for frame in frames]
     assert ink_counts == sorted(ink_counts)
     assert ink_counts[0] < ink_counts[-1]
@@ -134,10 +138,9 @@ def test_ink_is_non_decreasing_across_frames(style: str, residual_model: nn.Modu
 @pytest.mark.parametrize("extra_kwargs", [{}, {"show_dimension": True}])
 def test_last_frame_matches_static_render(style: str, residual_model: nn.Module, extra_kwargs: dict) -> None:
     """The fully-revealed last frame must be byte-identical to the equivalent static render."""
-    view_fn, animate_fn = _STYLE_FUNCS[style]
     input_shape = (1, 4, 8, 8)
-    frames = animate_fn(residual_model, input_shape, **extra_kwargs)
-    static_img = view_fn(residual_model, input_shape, **extra_kwargs)
+    frames = animate(residual_model, input_shape, style=style, **extra_kwargs)
+    static_img = _STATIC_VIEW_FUNCS[style](residual_model, input_shape, **extra_kwargs)
     assert frames[-1].tobytes() == static_img.tobytes()
 
 
@@ -145,19 +148,19 @@ def test_graph_last_frame_matches_static_show_neurons_true() -> None:
     """graph_view's show_neurons=True path (unique to graph style) also matches statically."""
     model = nn.Sequential(nn.Linear(4, 8), nn.Linear(8, 2))
     input_shape = (1, 4)
-    frames = graph_view_animate(model, input_shape, show_neurons=True)
+    frames = animate(model, input_shape, style="graph", show_neurons=True)
     static_img = graph_view(model, input_shape, show_neurons=True)
     assert frames[-1].tobytes() == static_img.tobytes()
 
 
 def test_flow_legend_fixed_and_correct_from_first_frame() -> None:
-    """flow_view_animate's legend renders full/fixed from frame 0, matching the static legend."""
+    """Flow's animated legend renders full/fixed from frame 0, matching the static legend."""
     model = nn.Sequential(nn.Conv2d(3, 4, 3, 1, 1), nn.BatchNorm2d(4), nn.ReLU())
     input_shape = (1, 3, 8, 8)
 
     no_legend_static = flow_view(model, input_shape, legend=False)
     static_with_legend = flow_view(model, input_shape, legend=True)
-    frames = flow_view_animate(model, input_shape, legend=True)
+    frames = animate(model, input_shape, style="flow", legend=True)
 
     assert frames[-1].tobytes() == static_with_legend.tobytes()
 
@@ -178,10 +181,9 @@ def test_flow_legend_fixed_and_correct_from_first_frame() -> None:
 @pytest.mark.parametrize("style", _STYLES)
 def test_show_dimension_labels_appear_with_their_column(style: str, sequential_model: nn.Module) -> None:
     """A column's shape label appears exactly when that column's boxes do, not before."""
-    _, animate_fn = _STYLE_FUNCS[style]
     input_shape = (1, 3, 8, 8)
-    frames = animate_fn(sequential_model, input_shape, show_dimension=True)
-    no_labels_frames = animate_fn(sequential_model, input_shape, show_dimension=False)
+    frames = animate(sequential_model, input_shape, style=style, show_dimension=True)
+    no_labels_frames = animate(sequential_model, input_shape, style=style, show_dimension=False)
 
     # Every frame with labels should have at least as much ink as its no-label counterpart, and
     # strictly more once there's a column with a shape label reserved for it (frame 0 already
@@ -193,17 +195,15 @@ def test_show_dimension_labels_appear_with_their_column(style: str, sequential_m
 @pytest.mark.parametrize("style", _STYLES)
 def test_all_frames_share_canvas_size(style: str, residual_model: nn.Module) -> None:
     """Every frame must be the same size - only the content revealed changes, never the canvas."""
-    _, animate_fn = _STYLE_FUNCS[style]
-    frames = animate_fn(residual_model, (1, 4, 8, 8))
+    frames = animate(residual_model, (1, 4, 8, 8), style=style)
     assert len({frame.size for frame in frames}) == 1
 
 
 @pytest.mark.parametrize("style", _STYLES)
 def test_to_file_writes_gif_and_returns_none(style: str, sequential_model: nn.Module, tmp_path: object) -> None:
     """Passing `to_file` writes the GIF and returns None, unlike the static `*_view()`."""
-    _, animate_fn = _STYLE_FUNCS[style]
     out_path = tmp_path / "out.gif"
-    result = animate_fn(sequential_model, (1, 3, 8, 8), to_file=str(out_path))
+    result = animate(sequential_model, (1, 3, 8, 8), style=style, to_file=str(out_path))
     assert result is None
     assert out_path.exists()
     with Image.open(out_path) as saved:
@@ -213,8 +213,7 @@ def test_to_file_writes_gif_and_returns_none(style: str, sequential_model: nn.Mo
 @pytest.mark.parametrize("style", _STYLES)
 def test_to_file_none_returns_frame_list(style: str, sequential_model: nn.Module) -> None:
     """`to_file=None` (the default) returns the raw per-column frames instead of writing a file."""
-    _, animate_fn = _STYLE_FUNCS[style]
-    result = animate_fn(sequential_model, (1, 3, 8, 8), to_file=None)
+    result = animate(sequential_model, (1, 3, 8, 8), style=style, to_file=None)
     assert isinstance(result, list)
     assert all(isinstance(frame, Image.Image) for frame in result)
 
@@ -222,11 +221,11 @@ def test_to_file_none_returns_frame_list(style: str, sequential_model: nn.Module
 @pytest.mark.parametrize("style", _STYLES)
 def test_frame_durations_and_loop_forever(style: str, sequential_model: nn.Module, tmp_path: object) -> None:
     """Written GIF frame durations and loop-forever metadata round-trip correctly."""
-    _, animate_fn = _STYLE_FUNCS[style]
     out_path = tmp_path / "out.gif"
-    animate_fn(
+    animate(
         sequential_model,
         (1, 3, 8, 8),
+        style=style,
         to_file=str(out_path),
         frame_duration=250,
         final_hold_duration=900,
@@ -243,9 +242,8 @@ def test_frame_durations_and_loop_forever(style: str, sequential_model: nn.Modul
 @pytest.mark.parametrize("style", _STYLES)
 def test_loop_false_plays_once(style: str, sequential_model: nn.Module, tmp_path: object) -> None:
     """`loop=False` writes a GIF that plays once instead of looping forever."""
-    _, animate_fn = _STYLE_FUNCS[style]
     out_path = tmp_path / "out.gif"
-    animate_fn(sequential_model, (1, 3, 8, 8), to_file=str(out_path), loop=False)
+    animate(sequential_model, (1, 3, 8, 8), style=style, to_file=str(out_path), loop=False)
     with Image.open(out_path) as saved:
         assert saved.info.get("loop") == 1
 
@@ -253,18 +251,35 @@ def test_loop_false_plays_once(style: str, sequential_model: nn.Module, tmp_path
 @pytest.mark.parametrize("style", _STYLES)
 def test_animate_multi_input_model_matches_static(style: str, siamese_model: nn.Module) -> None:
     """Parallel inputs reveal together (same frame), with no special-casing needed."""
-    view_fn, animate_fn = _STYLE_FUNCS[style]
     input_shape = ((1, 3, 8, 8), (1, 10))
-    frames = animate_fn(siamese_model, input_shape)
-    static_img = view_fn(siamese_model, input_shape)
+    frames = animate(siamese_model, input_shape, style=style)
+    static_img = _STATIC_VIEW_FUNCS[style](siamese_model, input_shape)
     assert frames[-1].tobytes() == static_img.tobytes()
 
 
 @pytest.mark.parametrize("style", _STYLES)
 def test_animate_multi_branch_model_matches_static(style: str, inception_model: nn.Module) -> None:
     """Parallel branches (not just a residual skip) reveal together, in the same frame."""
-    view_fn, animate_fn = _STYLE_FUNCS[style]
     input_shape = (1, 4, 8, 8)
-    frames = animate_fn(inception_model, input_shape)
-    static_img = view_fn(inception_model, input_shape)
+    frames = animate(inception_model, input_shape, style=style)
+    static_img = _STATIC_VIEW_FUNCS[style](inception_model, input_shape)
     assert frames[-1].tobytes() == static_img.tobytes()
+
+
+def test_animate_defaults_to_graph_style(sequential_model: nn.Module) -> None:
+    """Omitting style should animate the graph style (the default), matching render()'s default."""
+    default_frames = animate(sequential_model, (1, 3, 8, 8))
+    graph_frames = animate(sequential_model, (1, 3, 8, 8), style="graph")
+    assert [f.tobytes() for f in default_frames] == [f.tobytes() for f in graph_frames]
+
+
+def test_animate_rejects_unsupported_style(sequential_model: nn.Module) -> None:
+    """An unrecognized style should raise a clear error, not silently fall back."""
+    with pytest.raises(ValueError, match="Unsupported style"):
+        animate(sequential_model, (1, 3, 8, 8), style="bogus")
+
+
+def test_animate_rejects_typo_d_kwarg(sequential_model: nn.Module) -> None:
+    """A typo'd kwarg should raise TypeError, not be silently ignored."""
+    with pytest.raises(TypeError):
+        animate(sequential_model, (1, 3, 8, 8), style="graph", nod_size=20)

@@ -1,10 +1,10 @@
 """Regenerate the docs gallery's per-style animated-reveal demo GIFs + thumbnails.
 
-Renders one small model with a skip connection through each of `graph_view_animate`,
-`flow_view_animate`, `lenet_view_animate`, so each style's `plot_animated_*.py` gallery example
-has a real, versioned GIF to embed (sphinx-gallery can't capture a GIF via its default matplotlib
-scraper, so these are pre-generated and committed rather than produced during the doc build). Also
-saves each demo's first frame as a static PNG, used as the gallery thumbnail via that example's
+Renders one small model with a skip connection through `visualtorch.animate()` for each style, so
+each style's `plot_animated_*.py` gallery example has a real, versioned GIF to embed
+(sphinx-gallery can't capture a GIF via its default matplotlib scraper, so these are pre-generated
+and committed rather than produced during the doc build). Also saves each demo's last frame (the
+fully-revealed diagram) as a static PNG, used as the gallery thumbnail via that example's
 `# sphinx_gallery_thumbnail_path` directive.
 
 Usage: `python scripts/generate_animation_demos.py` from anywhere - writes directly to
@@ -18,15 +18,11 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 import torch
+import visualtorch
 from torch import nn
-from visualtorch.flow import flow_view_animate
-from visualtorch.graph import graph_view_animate
-from visualtorch.lenet_style import lenet_view_animate
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
-
-    from PIL import Image
+    from visualtorch.render import Style
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 ANIMATION_DIR = REPO_ROOT / "docs" / "source" / "_static" / "images" / "animations"
@@ -53,20 +49,20 @@ class ResidualBlock(nn.Module):
 
 
 def main() -> None:
-    """Render and save each style's demo GIF + first-frame thumbnail PNG."""
+    """Render and save each style's demo GIF + last-frame thumbnail PNG."""
     ANIMATION_DIR.mkdir(parents=True, exist_ok=True)
 
     model = ResidualBlock(channels=8)
     input_shape = (1, 8, 16, 16)
 
-    demos: dict[str, tuple[Callable[..., list[Image.Image] | None], dict[str, Any]]] = {
-        "graph": (graph_view_animate, {"show_neurons": False, "layer_spacing": 60}),
-        "flow": (flow_view_animate, {"scale_xy": 3}),
-        "lenet": (lenet_view_animate, {"scale_xy": 3}),
+    demo_kwargs: dict[Style, dict[str, Any]] = {
+        "graph": {"show_neurons": False, "layer_spacing": 60},
+        "flow": {"scale_xy": 3},
+        "lenet": {"scale_xy": 3},
     }
 
-    for style, (animate_fn, kwargs) in demos.items():
-        frames = animate_fn(model, input_shape, **kwargs)
+    for style, kwargs in demo_kwargs.items():
+        frames = visualtorch.animate(model, input_shape, style=style, **kwargs)
         assert frames is not None  # to_file wasn't passed, so a frame list is always returned
 
         gif_path = ANIMATION_DIR / f"{style}_animated_demo.gif"

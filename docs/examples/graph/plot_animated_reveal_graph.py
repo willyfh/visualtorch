@@ -1,11 +1,11 @@
 """Animated Reveal
 =======================================
 
-``graph_view_animate`` renders the same diagram as ``graph_view``, but as an animated GIF that
-reveals the model one column (depth level) at a time instead of all at once. Parallel branches at
-the same depth reveal together, in the same frame, correctly implying they happen simultaneously -
-a skip connection stays hidden until its merge point is reached, then draws in exactly as it would
-in the static image.
+``visualtorch.animate(style="graph")`` renders the same diagram as ``style="graph"`` in
+``visualtorch.render()``, but as an animated GIF that reveals the model one column (depth level)
+at a time instead of all at once. Parallel branches at the same depth reveal together, in the
+same frame, correctly implying they happen simultaneously - a skip connection stays hidden until
+its merge point is reached, then draws in exactly as it would in the static image.
 
 The model here is the same residual block used in the "Skip Connections" example, since a merge
 point is the most interesting thing to watch animate in.
@@ -47,4 +47,4 @@ input_shape = (1, 8, 16, 16)
 
 # Returns a list[Image.Image], one per column, in reveal order - pass to_file="your_path.gif" to
 # save it directly as an animated GIF instead.
-frames = visualtorch.graph.graph_view_animate(model, input_shape, show_neurons=False, layer_spacing=60)
+frames = visualtorch.animate(model, input_shape, style="graph", show_neurons=False, layer_spacing=60)
