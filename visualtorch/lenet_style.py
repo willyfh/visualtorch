@@ -28,8 +28,10 @@ from .utils.utils import (
     StackedBox,
     format_shape_label,
     get_rgba_tuple,
+    linear_layout,
     resolve_palette,
     self_multiply,
+    vertical_image_concat,
 )
 
 _LABEL_ROW_HEIGHT = 100
@@ -66,6 +68,7 @@ def lenet_view(
     connector_fill: str | tuple[int, ...] | None = None,
     connector_width: int = 1,
     one_dim_orientation: str | None = None,
+    legend: bool = False,
 ) -> PIL.Image:
     """Generate a LeNet style architecture visualization for a given torch model.
 
@@ -110,6 +113,7 @@ def lenet_view(
         connector_fill,
         connector_width,
         one_dim_orientation,
+        legend,
     )
 
 
@@ -144,6 +148,7 @@ def _lenet_view(
     connector_fill: str | tuple[int, ...] | None = None,
     connector_width: int = 1,
     one_dim_orientation: str | None = None,
+    legend: bool = False,
 ) -> PIL.Image:
     """The actual lenet_view implementation.
 
@@ -209,6 +214,7 @@ def _lenet_view(
             or a tuple (R, G, B, A). If None, inherits the target box's outline color.
         connector_width (int, optional): Line width in pixels for funnel and skip-connection lines. Defaults to 1.
         one_dim_orientation (str, optional): Deprecated, use `low_dim_orientation` instead.
+        legend (bool, optional): If True, append a layer-color legend using stacked-plane swatches.
 
     Returns:
         PIL.Image: An Image object representing the generated architecture visualization.
@@ -250,6 +256,11 @@ def _lenet_view(
         padding=padding,
         show_dimension=show_dimension,
         font_color=font_color,
+        legend=legend,
+        shade_step=shade_step,
+        opacity=opacity,
+        spacing=spacing,
+        background_fill=background_fill,
     )
 
     if to_file is not None:
@@ -267,6 +278,8 @@ class _LenetRenderSetup:
     edge_to_level: dict[tuple[str, str], int]
     num_levels: int
     resolved_level_gap: int
+    layer_types: list[type]
+    color_map: dict
     font: ImageFont
     diagram_height: float
     img_template: Image.Image
@@ -403,6 +416,8 @@ def _prepare_lenet_render(
         edge_to_level=edge_to_level,
         num_levels=num_levels,
         resolved_level_gap=resolved_level_gap,
+        layer_types=layer_types,
+        color_map=_color_map,
         font=font,
         diagram_height=diagram_height,
         img_template=img_template,
@@ -418,6 +433,11 @@ def _draw_diagram_frame(
     padding: int,
     show_dimension: bool,
     font_color: str | tuple[int, ...],
+    legend: bool,
+    shade_step: int,
+    opacity: int,
+    spacing: int,
+    background_fill: str | tuple[int, ...],
 ) -> PIL.Image:
     """Draw a single frame: everything in columns `0..reveal_up_to`, on a copy of the shared canvas.
 
@@ -467,6 +487,20 @@ def _draw_diagram_frame(
     if show_dimension:
         img = _draw_labels(img, visible_boxes_by_column, setup.font, font_color)
 
+    if legend:
+        img = _draw_legend(
+            img,
+            setup.layer_types,
+            setup.color_map,
+            setup.font,
+            font_color,
+            shade_step,
+            opacity,
+            spacing,
+            padding,
+            background_fill,
+        )
+
     return img
 
 
@@ -501,6 +535,7 @@ def _lenet_view_animate(
     connector_fill: str | tuple[int, ...] | None = None,
     connector_width: int = 1,
     one_dim_orientation: str | None = None,
+    legend: bool = False,
     frame_duration: int = 600,
     final_hold_duration: int = 1500,
     loop: bool = True,
@@ -568,6 +603,7 @@ def _lenet_view_animate(
             or a tuple (R, G, B, A). If None, inherits the target box's outline color.
         connector_width (int, optional): Line width in pixels for funnel and skip-connection lines. Defaults to 1.
         one_dim_orientation (str, optional): Deprecated, use `low_dim_orientation` instead.
+        legend (bool, optional): If True, append a fixed layer-color legend using stacked-plane swatches.
         frame_duration (int, optional): Milliseconds each intermediate frame is displayed.
         final_hold_duration (int, optional): Milliseconds the final, fully-revealed frame is
             displayed before the GIF loops - gives a viewer time to actually see the complete
@@ -623,6 +659,11 @@ def _lenet_view_animate(
             padding,
             show_dimension,
             font_color,
+            legend,
+            shade_step,
+            opacity,
+            spacing,
+            background_fill,
         )
 
     return animate_frames(
@@ -868,3 +909,66 @@ def _draw_labels(
             draw_text.text((loc_x, img.height - 50), f"{label} {shape_label}", font=font, fill=font_color)
 
     return Image.alpha_composite(img, text_img)
+
+
+def _draw_legend(
+    img: PIL.Image,
+    layer_types: list[type],
+    color_map: dict,
+    font: ImageFont,
+    font_color: str | tuple[int, ...],
+    shade_step: int,
+    opacity: int,
+    spacing: int,
+    padding: int,
+    background_fill: str | tuple[int, ...],
+) -> PIL.Image:
+    """Append a color legend whose swatches match LeNet's stacked planes."""
+    text_height = font.getbbox("Ag")[3]
+    swatch_size = text_height
+    stack_depth = 3
+    stack_offset = max(1, swatch_size // 6)
+    stack_extent = (stack_depth - 1) * stack_offset
+    patch_height = swatch_size + stack_extent
+    patches = []
+
+    for layer_type in layer_types:
+        label = layer_type.__name__
+        text_width = font.getbbox(label)[2]
+        patch_size = (swatch_size + stack_extent + spacing + text_width, patch_height)
+        patch = Image.new("RGBA", patch_size, background_fill)
+        text_layer = Image.new("RGBA", patch_size, (0, 0, 0, 0))
+        shape_draw = aggdraw.Draw(patch)
+        text_draw = ImageDraw.Draw(text_layer)
+
+        swatch = StackedBox()
+        swatch.de = stack_depth
+        swatch.offset_z = stack_offset
+        swatch.shade = shade_step
+        initial_offset = -swatch.offset_z * swatch.de // 2
+        swatch.x1 = -initial_offset
+        swatch.y1 = -initial_offset
+        swatch.x2 = swatch.x1 + swatch_size
+        swatch.y2 = swatch.y1 + swatch_size
+        swatch.set_fill(color_map[layer_type]["fill"], opacity)
+        swatch.outline = color_map[layer_type]["outline"]
+        swatch.draw(shape_draw)
+
+        text_x = swatch_size + stack_extent + spacing
+        text_y = (patch_size[1] - text_height) / 2
+        text_draw.text((text_x, text_y), label, font=font, fill=font_color)
+
+        shape_draw.flush()
+        patch.paste(text_layer, mask=text_layer)
+        patches.append(patch)
+
+    legend_image = linear_layout(
+        patches,
+        max_width=img.width,
+        max_height=img.height,
+        padding=padding,
+        spacing=spacing,
+        background_fill=background_fill,
+        horizontal=True,
+    )
+    return vertical_image_concat(img, legend_image, background_fill)

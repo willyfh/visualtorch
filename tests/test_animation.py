@@ -182,6 +182,27 @@ def test_flow_legend_fixed_and_correct_from_first_frame() -> None:
     assert legend_crop(frames[0]).tobytes() == legend_crop(frames[-1]).tobytes()
 
 
+@pytest.mark.parametrize("style", ["graph", "lenet"])
+def test_graph_and_lenet_legends_are_fixed_from_first_frame(style: str) -> None:
+    """Graph and LeNet animations should show the complete, fixed legend on every frame."""
+    model = nn.Sequential(nn.Conv2d(3, 4, 3, 1, 1), nn.BatchNorm2d(4), nn.ReLU())
+    input_shape = (1, 3, 8, 8)
+
+    no_legend_static = _STATIC_VIEW_FUNCS[style](model, input_shape, legend=False)
+    static_with_legend = _STATIC_VIEW_FUNCS[style](model, input_shape, legend=True)
+    frames = animate(model, input_shape, style=style, legend=True)
+
+    assert frames[-1].tobytes() == static_with_legend.tobytes()
+
+    legend_strip_height = static_with_legend.height - no_legend_static.height
+    assert legend_strip_height > 0
+
+    def legend_crop(img: Image.Image) -> Image.Image:
+        return img.crop((0, img.height - legend_strip_height, img.width, img.height))
+
+    assert legend_crop(frames[0]).tobytes() == legend_crop(frames[-1]).tobytes()
+
+
 @pytest.mark.parametrize("style", _STYLES)
 def test_show_dimension_labels_appear_with_their_column(style: str, sequential_model: nn.Module) -> None:
     """A column's shape label appears exactly when that column's boxes do, not before."""

@@ -99,7 +99,16 @@ def test_render_rejects_typo_d_common_kwarg(sequential_model: nn.Sequential) -> 
 def test_render_rejects_kwarg_from_a_different_style(sequential_model: nn.Sequential) -> None:
     """A kwarg valid for one style but not another should raise TypeError for the wrong style."""
     with pytest.raises(TypeError):
-        render(sequential_model, input_shape=(1, 3, 16, 16), style="graph", legend=True)
+        render(sequential_model, input_shape=(1, 3, 16, 16), style="graph", draw_volume=True)
+
+
+@pytest.mark.parametrize("style", ["graph", "lenet"])
+def test_render_forwards_legend_for_graph_and_lenet(sequential_model: nn.Sequential, style: str) -> None:
+    """Graph and LeNet styles should accept and forward legend through render()."""
+    without_legend = render(sequential_model, input_shape=(1, 3, 16, 16), style=style, legend=False)
+    with_legend = render(sequential_model, input_shape=(1, 3, 16, 16), style=style, legend=True)
+
+    assert with_legend.height > without_legend.height
 
 
 def test_render_forwards_flow_legend_position(sequential_model: nn.Sequential) -> None:
