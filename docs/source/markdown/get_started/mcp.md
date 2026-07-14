@@ -107,28 +107,33 @@ filters the links to one style.
 
 `visualize_model` and `animate_model` share these fields:
 
-| Field | Type | Required | Description |
-| --- | --- | --- | --- |
-| `source` | string | yes | Python source that imports its dependencies and defines the model. |
-| `input_shape` | array or JSON string | yes | One input shape, or one shape per positional model input; include the batch dimension. |
-| `style` | string | no | `graph`, `flow`, or `lenet`; defaults to `graph`. |
-| `model_expression` | string | no | Expression evaluated after `source`; defaults to `model`. |
-| `output_path` | string | no | Output filename or path. Relative paths are resolved below `output_dir`. |
-| `output_dir` | string | no | Base directory for generated output. |
-| `options` | object | no | Style-specific VisualTorch options advertised by capabilities. |
-| `workdir` | string | no | Existing working directory made available to imports in `source`. |
-| `timeout_seconds` | integer | no | Worker timeout in seconds; defaults to `120` and must be between `1` and `600`. |
+| Field              | Type                 | Required | Description                                                                            |
+| ------------------ | -------------------- | -------- | -------------------------------------------------------------------------------------- |
+| `source`           | string               | yes      | Python source that imports its dependencies and defines the model.                     |
+| `input_shape`      | array or JSON string | yes      | One input shape, or one shape per positional model input; include the batch dimension. |
+| `style`            | string               | no       | `graph`, `flow`, or `lenet`; defaults to `graph`.                                      |
+| `model_expression` | string               | no       | Expression evaluated after `source`; defaults to `model`.                              |
+| `output_path`      | string               | no       | Output filename or path. Relative paths are resolved below `output_dir`.               |
+| `output_dir`       | string               | no       | Base directory for generated output.                                                   |
+| `options`          | object               | no       | Style-specific VisualTorch options advertised by capabilities.                         |
+| `workdir`          | string               | no       | Existing working directory made available to imports in `source`.                      |
+| `timeout_seconds`  | integer              | no       | Worker timeout in seconds; defaults to `120` and must be between `1` and `600`.        |
 
 Use a flat array for one model input:
 
 ```json
-{"input_shape": [1, 3, 224, 224]}
+{ "input_shape": [1, 3, 224, 224] }
 ```
 
 Use a nested array for multiple positional inputs:
 
 ```json
-{"input_shape": [[1, 3, 224, 224], [1, 10]]}
+{
+  "input_shape": [
+    [1, 3, 224, 224],
+    [1, 10]
+  ]
+}
 ```
 
 Style aliases are accepted for compatibility: `layered` and `layered_view` select `flow`, while
@@ -161,14 +166,14 @@ names to `.gif`. It creates missing parent directories, rejects relative paths t
 
 A successful tool result is structured data containing at least:
 
-| Field | Meaning |
-| --- | --- |
-| `output_path` | Absolute path to the generated file. |
-| `kind` | `image` for a static render or `animation` for a GIF. |
-| `style` | Canonical style used for the render. |
-| `media_type` | MIME type (`image/png` or `image/gif`). |
-| `width`, `height` | Pixel dimensions. |
-| `bytes` | Generated file size. |
+| Field             | Meaning                                               |
+| ----------------- | ----------------------------------------------------- |
+| `output_path`     | Absolute path to the generated file.                  |
+| `kind`            | `image` for a static render or `animation` for a GIF. |
+| `style`           | Canonical style used for the render.                  |
+| `media_type`      | MIME type (`image/png` or `image/gif`).               |
+| `width`, `height` | Pixel dimensions.                                     |
+| `bytes`           | Generated file size.                                  |
 
 Static results also report the Pillow `mode` when available. Animation results additionally report
 `frame_count`, `durations_ms`, and `loop`, read back from the generated GIF. Hosts should use the
@@ -176,12 +181,12 @@ returned metadata instead of inferring format, dimensions, or timing from the re
 
 ## Resources
 
-| URI | Contents |
-| --- | --- |
-| `visualtorch://capabilities` | Complete machine-readable capabilities as JSON text. |
-| `visualtorch://docs` | Links to VisualTorch documentation and examples. |
-| `visualtorch://api-reference` | Backward-compatible API reference links. |
-| `visualtorch://version` | Installed VisualTorch package version and MCP API schema version. |
+| URI                           | Contents                                                          |
+| ----------------------------- | ----------------------------------------------------------------- |
+| `visualtorch://capabilities`  | Complete machine-readable capabilities as JSON text.              |
+| `visualtorch://docs`          | Links to VisualTorch documentation and examples.                  |
+| `visualtorch://api-reference` | Backward-compatible API reference links.                          |
+| `visualtorch://version`       | Installed VisualTorch package version and MCP API schema version. |
 
 ## Examples
 
@@ -193,7 +198,7 @@ Static graph request:
   "input_shape": [1, 1, 2, 2],
   "style": "graph",
   "output_path": "architecture.png",
-  "options": {"show_neurons": false, "palette": "okabe_ito"}
+  "options": { "show_neurons": false, "palette": "okabe_ito" }
 }
 ```
 

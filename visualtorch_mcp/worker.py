@@ -292,8 +292,7 @@ def _coerce_color_array(value: object, name: str) -> object:
     if not isinstance(value, list):
         return value
     if len(value) not in {3, 4} or any(
-        not isinstance(channel, int) or isinstance(channel, bool) or not 0 <= channel <= 255
-        for channel in value
+        not isinstance(channel, int) or isinstance(channel, bool) or not 0 <= channel <= 255 for channel in value
     ):
         message = f"{name} color array must contain 3 or 4 integer channels between 0 and 255."
         raise ValueError(message)

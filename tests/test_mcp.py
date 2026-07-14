@@ -84,9 +84,7 @@ def test_static_capabilities_match_public_visualtorch_contracts() -> None:
             if field.default is not MISSING:
                 assert advertised[name]["default"] == field.default
 
-    assert capabilities["palettes"] == {
-        name: list(colors) for name, colors in sorted(visualtorch.PALETTES.items())
-    }
+    assert capabilities["palettes"] == {name: list(colors) for name, colors in sorted(visualtorch.PALETTES.items())}
 
 
 @pytest.mark.parametrize(
@@ -447,7 +445,7 @@ def test_worker_protocol_keeps_stdout_json(
         ),
         encoding="utf-8",
     )
-    completed = subprocess.run(  # noqa: S603
+    completed = subprocess.run(
         [sys.executable, "-m", "visualtorch_mcp.worker", str(payload_path)],
         check=False,
         capture_output=True,
@@ -548,13 +546,17 @@ def test_mcp_stdio_end_to_end(tmp_path: Path) -> None:
             animation_result,
         )
 
-    tools, resources, version, capabilities_resource, capabilities_result, static_result, animation_result = (
-        asyncio.run(exercise_server())
-    )
+    (
+        tools,
+        resources,
+        version,
+        capabilities_resource,
+        capabilities_result,
+        static_result,
+        animation_result,
+    ) = asyncio.run(exercise_server())
 
-    assert {"visualize_model", "animate_model", "visualtorch_capabilities"} <= {
-        tool.name for tool in tools.tools
-    }
+    assert {"visualize_model", "animate_model", "visualtorch_capabilities"} <= {tool.name for tool in tools.tools}
     assert {"visualtorch://version", "visualtorch://capabilities"} <= {
         str(resource.uri) for resource in resources.resources
     }
