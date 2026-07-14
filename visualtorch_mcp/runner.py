@@ -265,7 +265,7 @@ def _run_worker(
     _raise_if_cancelled(cancel_event)
     popen_kwargs: dict[str, Any] = {}
     if os.name == "nt":
-        popen_kwargs["creationflags"] = subprocess.CREATE_NEW_PROCESS_GROUP
+        popen_kwargs["creationflags"] = getattr(subprocess, "CREATE_NEW_PROCESS_GROUP", 0)
     else:
         popen_kwargs["start_new_session"] = True
 
@@ -275,7 +275,12 @@ def _run_worker(
     # a pipe it cannot be held open in a way that blocks us by a user-spawned grandchild.
     with tempfile.TemporaryFile("w+b") as stderr_file:
         process = subprocess.Popen(
-            [sys.executable, "-m", "visualtorch_mcp.worker", str(payload_file_path)],
+            [  # noqa: S603 - fixed interpreter and module invocation.
+                sys.executable,
+                "-m",
+                "visualtorch_mcp.worker",
+                str(payload_file_path),
+            ],
             stdin=subprocess.DEVNULL,
             stdout=subprocess.PIPE,
             stderr=stderr_file,
@@ -347,7 +352,13 @@ def _terminate_process_tree(process: subprocess.Popen[str]) -> None:
         # platform-supported way to include descendants; fall back to killing the worker.
         with suppress(OSError, subprocess.TimeoutExpired):
             subprocess.run(
-                ["taskkill", "/PID", str(process.pid), "/T", "/F"],  # noqa: S607
+                [  # noqa: S603, S607 - fixed Windows process-tree cleanup command.
+                    "taskkill",
+                    "/PID",
+                    str(process.pid),
+                    "/T",
+                    "/F",
+                ],
                 check=False,
                 stdin=subprocess.DEVNULL,
                 stdout=subprocess.DEVNULL,
@@ -358,8 +369,13 @@ def _terminate_process_tree(process: subprocess.Popen[str]) -> None:
             process.kill()
         return
 
+    kill_process_group = getattr(os, "killpg", None)
+    if kill_process_group is None:
+        process.kill()
+        return
+
     try:
-        os.killpg(process.pid, signal.SIGTERM)
+        kill_process_group(process.pid, signal.SIGTERM)
     except ProcessLookupError:
         return
 
@@ -369,13 +385,13 @@ def _terminate_process_tree(process: subprocess.Popen[str]) -> None:
     while time.monotonic() < deadline:
         process.poll()
         try:
-            os.killpg(process.pid, 0)
+            kill_process_group(process.pid, 0)
         except ProcessLookupError:
             return
         time.sleep(min(0.05, max(0, deadline - time.monotonic())))
 
     with suppress(ProcessLookupError):
-        os.killpg(process.pid, signal.SIGKILL)
+        kill_process_group(process.pid, getattr(signal, "SIGKILL", signal.SIGTERM))
     with suppress(subprocess.TimeoutExpired):
         process.wait(timeout=1)
 

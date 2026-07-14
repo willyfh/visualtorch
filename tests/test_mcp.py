@@ -446,7 +446,12 @@ def test_worker_protocol_keeps_stdout_json(
         encoding="utf-8",
     )
     completed = subprocess.run(
-        [sys.executable, "-m", "visualtorch_mcp.worker", str(payload_path)],
+        [  # noqa: S603 - fixed interpreter and module invocation under test.
+            sys.executable,
+            "-m",
+            "visualtorch_mcp.worker",
+            str(payload_path),
+        ],
         check=False,
         capture_output=True,
         text=True,
