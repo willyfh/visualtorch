@@ -41,7 +41,7 @@ setuptools.setup(
     install_requires=_read_requirements("requirements.txt"),
     extras_require={
         "dev": _read_requirements("docs/requirements.txt") + _read_requirements("dev-requirements.txt"),
-        "mcp": ["mcp>=1.0.0"],
+        "mcp": ["mcp>=1.0.0,<2"],
     },
     entry_points={"console_scripts": ["visualtorch-mcp=visualtorch_mcp.server:main"]},
     python_requires=">=3.10",

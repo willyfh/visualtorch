@@ -50,10 +50,13 @@ See the [Installation page](https://visualtorch.readthedocs.io/en/latest/markdow
 
 ## MCP integration
 
-VisualTorch includes an optional MCP server for generating architecture diagrams from model source
-provided by an MCP client. Install it with `pip install "visualtorch[mcp]"` and see the
+VisualTorch includes an optional, client-neutral stdio MCP server for generating static PNG
+diagrams and animated GIF reveals from PyTorch model source. It exposes capability discovery,
+structured output metadata, documentation resources, subprocess timeouts, and all three canonical
+styles (`graph`, `flow`, and `lenet`). Install it with `pip install "visualtorch[mcp]"` and see the
 [MCP integration guide](https://visualtorch.readthedocs.io/en/latest/markdown/get_started/mcp.html)
-for configuration and usage details.
+for the tool schemas, generic stdio configuration, examples, and trusted-code security boundary.
+No client-specific plugin or extension is required.
 
 ## Used in Research
 
