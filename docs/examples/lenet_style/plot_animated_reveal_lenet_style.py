@@ -47,4 +47,14 @@ input_shape = (1, 8, 16, 16)
 
 # Returns a list[Image.Image], one per column, in reveal order - pass to_file="your_path.gif" to
 # save it directly as an animated GIF instead.
-frames = visualtorch.animate(model, input_shape, style="lenet", scale_xy=3)
+# frame_duration controls intermediate frames, final_hold_duration controls the completed frame,
+# and loop controls whether a saved GIF repeats.
+frames = visualtorch.animate(
+    model,
+    input_shape,
+    style="lenet",
+    scale_xy=3,
+    frame_duration=500,
+    final_hold_duration=1500,
+    loop=True,
+)
