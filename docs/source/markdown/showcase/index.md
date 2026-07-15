@@ -2,11 +2,12 @@
 
 Published research that has used VisualTorch to visualize model architectures. Used it in your own research, or know of a paper that cites it - even if it's not yours? [Open a pull request](https://github.com/willyfh/visualtorch/pulls) to add it here, or [tell us about it](https://github.com/willyfh/visualtorch/discussions) and we'll add it for you.
 
-| Paper                                                                                                                                                                                                                                                                                     | Venue (Year)                        |
-| ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------- |
-| [Deep learning-based high-information-content graph representation of early stage bacterial biofilms](#deep-learning-based-high-information-content-graph-representation-of-early-stage-bacterial-biofilms)                                                                               | npj Biofilms and Microbiomes (2026) |
-| [Energy-Efficient Epileptic Seizure Prediction Using Spiking Neural Networks](#energy-efficient-epileptic-seizure-prediction-using-spiking-neural-networks)                                                                                                                               | IEEE ISCAS (2026)                   |
-| [Failure Evaluation of Steel Plate Shear Walls in Multi-Storey Steel Buildings Under Seismic Excitation Using Convolutional Neural Networks](#failure-evaluation-of-steel-plate-shear-walls-in-multi-storey-steel-buildings-under-seismic-excitation-using-convolutional-neural-networks) | Materials, MDPI (2026)              |
+| Paper                                                                                                                                                                                                                                                                                     | Venue (Year)                                           |
+| ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------ |
+| [Deep learning-based high-information-content graph representation of early stage bacterial biofilms](#deep-learning-based-high-information-content-graph-representation-of-early-stage-bacterial-biofilms)                                                                               | npj Biofilms and Microbiomes (2026)                    |
+| [Energy-Efficient Epileptic Seizure Prediction Using Spiking Neural Networks](#energy-efficient-epileptic-seizure-prediction-using-spiking-neural-networks)                                                                                                                               | IEEE ISCAS (2026)                                      |
+| [Failure Evaluation of Steel Plate Shear Walls in Multi-Storey Steel Buildings Under Seismic Excitation Using Convolutional Neural Networks](#failure-evaluation-of-steel-plate-shear-walls-in-multi-storey-steel-buildings-under-seismic-excitation-using-convolutional-neural-networks) | Materials, MDPI (2026)                                 |
+| [Kolmogorov–Arnold neural network for identification of functional groups from FTIR spectra](#kolmogorovarnold-neural-network-for-identification-of-functional-groups-from-ftir-spectra)                                                                                                  | Chemometrics and Intelligent Laboratory Systems (2025) |
 
 ---
 
@@ -51,3 +52,18 @@ Trains a CNN on physics-based finite element simulations to predict equivalent p
 for use in structural digital twins.
 
 ![CNN architecture](../../_static/images/showcase/mdpi-shear-wall.png)
+
+---
+
+## Kolmogorov–Arnold neural network for identification of functional groups from FTIR spectra
+
+**Authors:** Urbańczyk, T., Bożek, J., Mirczak, S., Koperski, J., Krośnicki, M. (2025)
+**Venue:** _Chemometrics and Intelligent Laboratory Systems_
+**Link:** [https://www.sciencedirect.com/science/article/pii/S0169743925001066](https://www.sciencedirect.com/science/article/pii/S0169743925001066)
+
+Trains separate binary classifiers to identify 22 molecular functional groups from one-dimensional
+FTIR spectra. The study compares a classic CNN ending in fully connected linear layers with a
+CNN-KAN that replaces those final layers with Kolmogorov–Arnold layers, while both architectures
+share the same convolutional feature extractor.
+
+![Classic CNN and CNN-KAN architectures](../../_static/images/showcase/elsevier-ftir-cnn-kan.jpg)
