@@ -107,7 +107,7 @@ def test_compute_skip_levels_missing_bbox_conservatively_assumes_collision() -> 
         [("a", "b")],
         id_to_column,
         lambda *_: True,
-        lambda node_id: bboxes.get(node_id),
+        bboxes.get,
     )
 
     assert num_levels == 1

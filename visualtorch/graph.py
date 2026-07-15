@@ -341,7 +341,7 @@ def _prepare_render(
 
     img_template = Image.new(
         "RGBA",
-        (int(ceil(img_width)), int(ceil(img_height))),
+        (ceil(img_width), ceil(img_height)),
         background_fill,
     )
 

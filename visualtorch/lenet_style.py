@@ -391,7 +391,7 @@ def _prepare_lenet_render(
     diagram_height = top_margin_for_skips + spread_margin + column_layout.diagram_height
     img_template = Image.new(
         "RGBA",
-        (int(ceil(img_width)), ceil(diagram_height) + label_row_height),
+        (ceil(img_width), ceil(diagram_height) + label_row_height),
         background_fill,
     )
 

@@ -3,6 +3,7 @@
 Visualization of thin vs thick outline border using the ``outline_width`` parameter
 in the graph style.
 """  # noqa: D205
+
 import matplotlib.pyplot as plt
 import torch
 import visualtorch

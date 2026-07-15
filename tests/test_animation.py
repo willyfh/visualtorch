@@ -32,7 +32,7 @@ _STATIC_VIEW_FUNCS: dict[str, Callable] = {
 _STYLES = list(_STATIC_VIEW_FUNCS)
 
 
-@pytest.fixture()
+@pytest.fixture
 def sequential_model() -> nn.Module:
     """A simple, single-input model with no branching."""
     return nn.Sequential(
@@ -42,7 +42,7 @@ def sequential_model() -> nn.Module:
     )
 
 
-@pytest.fixture()
+@pytest.fixture
 def residual_model() -> nn.Module:
     """A model with a skip connection, to prove the merge column animates correctly."""
 
@@ -68,7 +68,7 @@ def residual_model() -> nn.Module:
     return ResidualBlock()
 
 
-@pytest.fixture()
+@pytest.fixture
 def siamese_model() -> nn.Module:
     """A two-input model, to prove parallel inputs reveal together, in the same frame."""
 
@@ -94,7 +94,7 @@ def siamese_model() -> nn.Module:
     return SiameseNet()
 
 
-@pytest.fixture()
+@pytest.fixture
 def inception_model() -> nn.Module:
     """A multi-branch (not just a residual skip) model: parallel paths merged by addition."""
 

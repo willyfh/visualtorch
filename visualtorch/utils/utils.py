@@ -475,7 +475,7 @@ def self_multiply(tensor_tuple: tuple | list) -> int | float:
     tensor_list = [v for v in tensor_tuple if v is not None]
     if len(tensor_list) == 0:
         return 0
-    s = 1
+    s: int | float = 1
     for v in tensor_list:
         s *= self_multiply(v) if isinstance(v, tuple | list) else v
     return s

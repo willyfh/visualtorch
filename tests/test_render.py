@@ -7,14 +7,16 @@ from collections import defaultdict
 
 import pytest
 import torch
+import visualtorch
 from torch import nn
 from visualtorch import render
 from visualtorch.backend import extract_architecture
+from visualtorch.utils import layer_utils
 from visualtorch.utils.layer_utils import Input
 from visualtorch.utils.utils import PALETTES
 
 
-@pytest.fixture()
+@pytest.fixture
 def sequential_model() -> nn.Sequential:
     """A simple conv model, exercised across all three styles."""
     return nn.Sequential(
@@ -23,7 +25,7 @@ def sequential_model() -> nn.Sequential:
     )
 
 
-@pytest.fixture()
+@pytest.fixture
 def siamese_model() -> nn.Module:
     """A small two-branch model: an image branch and a tabular-vector branch, merged by concat."""
 
@@ -284,8 +286,6 @@ def test_render_color_map_overrides_palette(sequential_model: nn.Sequential) -> 
 
 def test_input_dummy_layer_alias_still_works() -> None:
     """The deprecated top-level InputDummyLayer alias should still resolve to Input and warn."""
-    import visualtorch
-
     with pytest.warns(DeprecationWarning, match="InputDummyLayer"):
         legacy_cls = visualtorch.InputDummyLayer
     assert legacy_cls is Input
@@ -293,8 +293,6 @@ def test_input_dummy_layer_alias_still_works() -> None:
 
 def test_input_dummy_layer_alias_from_layer_utils_still_works() -> None:
     """The deprecated InputDummyLayer alias should also resolve via its original submodule path."""
-    from visualtorch.utils import layer_utils
-
     with pytest.warns(DeprecationWarning, match="InputDummyLayer"):
         legacy_cls = layer_utils.InputDummyLayer
     assert legacy_cls is Input

@@ -4,7 +4,7 @@ We welcome your feedbacks and contributions!
 
 ## Bug Report and Feature Request
 
-We use GitHub issues to track bugs and feature requests. If you want to report a bug or request a feature, please create a new issue [here](https://github.com/willyfh/visualtorch/issues). Please make sure there are no existing issues to avoid duplication.
+We use GitHub issues to track bugs and feature requests. If you want to report a bug or request a feature, please [create a new issue](https://github.com/willyfh/visualtorch/issues). Please make sure there are no existing issues to avoid duplication.
 
 ## Discussion
 

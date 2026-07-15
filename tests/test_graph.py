@@ -18,7 +18,7 @@ from visualtorch.graph import _graph_view as graph_view
 from visualtorch.graph import graph_view as deprecated_graph_view
 
 
-@pytest.fixture()
+@pytest.fixture
 def dense_model() -> nn.Module:
     """A simple dense model creation."""
 
@@ -42,7 +42,7 @@ def dense_model() -> nn.Module:
     return SimpleDense()
 
 
-@pytest.fixture()
+@pytest.fixture
 def conv_model() -> nn.Module:
     """A simple conv model, exercising the Conv2d/ConvolutionBackward0 path."""
     return nn.Sequential(
@@ -51,7 +51,7 @@ def conv_model() -> nn.Module:
     )
 
 
-@pytest.fixture()
+@pytest.fixture
 def wide_dense_model() -> nn.Module:
     """A dense model with a hidden layer wider than the default ellipsize_after threshold."""
 
@@ -70,7 +70,7 @@ def wide_dense_model() -> nn.Module:
     return WideDense()
 
 
-@pytest.fixture()
+@pytest.fixture
 def residual_model() -> nn.Module:
     """A model with a skip connection around a hidden sub-block, to prove branching is captured."""
 
@@ -94,7 +94,7 @@ def residual_model() -> nn.Module:
     return ResidualBlock()
 
 
-@pytest.fixture()
+@pytest.fixture
 def batchnorm_model() -> nn.Module:
     """A model using BatchNorm2d, a layer type never supported by the old hardcoded TARGET_OPS."""
     return nn.Sequential(

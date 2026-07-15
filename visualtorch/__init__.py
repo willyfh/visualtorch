@@ -18,14 +18,14 @@ from visualtorch.utils.layer_utils import Input
 from visualtorch.utils.utils import PALETTES
 
 __all__ = [
-    "render",
-    "animate",
-    "CommonOptions",
-    "GraphStyleOptions",
-    "FlowStyleOptions",
-    "LenetStyleOptions",
-    "Input",
     "PALETTES",
+    "CommonOptions",
+    "FlowStyleOptions",
+    "GraphStyleOptions",
+    "Input",
+    "LenetStyleOptions",
+    "animate",
+    "render",
 ]
 
 

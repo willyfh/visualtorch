@@ -196,8 +196,10 @@ def test_render_model_imports_model_from_workdir(tmp_path: Path) -> None:
 def test_mcp_stdio_end_to_end(tmp_path: Path) -> None:
     """Exercise the installed MCP stdio server through its client protocol."""
     pytest.importorskip("mcp")
-    from mcp import ClientSession, StdioServerParameters
-    from mcp.client.stdio import stdio_client
+    # Must stay local: gated by importorskip above, a top-level import would break every test
+    # run in an environment without the optional `mcp` dependency installed.
+    from mcp import ClientSession, StdioServerParameters  # noqa: PLC0415
+    from mcp.client.stdio import stdio_client  # noqa: PLC0415
 
     executable = shutil.which("visualtorch-mcp")
     if executable is None:
