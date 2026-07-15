@@ -66,7 +66,6 @@ copybutton_exclude = ".linenos, .gp, .go"
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
 
 html_theme = "sphinx_book_theme"
-html_logo = "_static/images/logos/traced-flame-docs-logo.png"
 html_favicon = "_static/images/logos/traced-flame-icon.png"
 html_static_path = ["_static"]
 html_css_files = [
@@ -74,7 +73,8 @@ html_css_files = [
 ]
 html_theme_options = {
     "logo": {
-        "text": "<b>VisualTorch</b>",
+        "image_light": "_static/images/logos/wordmark-light.png",
+        "image_dark": "_static/images/logos/wordmark-dark.png",
     },
     "icon_links": [
         {
