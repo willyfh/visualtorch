@@ -363,6 +363,56 @@ def test_runner_enforces_timeout(tmp_path: Path) -> None:
         )
 
 
+@pytest.mark.parametrize("failure_site", ["sigterm", "probe", "sigkill"])
+def test_process_group_permission_error_falls_back_to_worker_kill(
+    monkeypatch: pytest.MonkeyPatch,
+    failure_site: str,
+) -> None:
+    """Kill the direct worker when macOS denies process-group signaling."""
+    runner = importlib.import_module("visualtorch_mcp.runner")
+    sigkill = 9
+    monkeypatch.setattr(runner.signal, "SIGKILL", sigkill, raising=False)
+    failing_signal = {
+        "sigterm": runner.signal.SIGTERM,
+        "probe": 0,
+        "sigkill": sigkill,
+    }[failure_site]
+    clock = iter([0.0, 0.0 if failure_site == "probe" else 2.0])
+    signals: list[int] = []
+
+    class FakeProcess:
+        pid = 1234
+        kill_count = 0
+        wait_count = 0
+
+        def poll(self) -> None:
+            return None
+
+        def kill(self) -> None:
+            self.kill_count += 1
+
+        def wait(self, timeout: int) -> None:
+            assert timeout == 1
+            self.wait_count += 1
+
+    def kill_process_group(pid: int, sent_signal: int) -> None:
+        assert pid == FakeProcess.pid
+        signals.append(sent_signal)
+        if sent_signal == failing_signal:
+            raise PermissionError
+
+    process = FakeProcess()
+    monkeypatch.setattr(runner.os, "name", "posix")
+    monkeypatch.setattr(runner.os, "killpg", kill_process_group, raising=False)
+    monkeypatch.setattr(runner.time, "monotonic", lambda: next(clock))
+
+    runner._terminate_process_tree(process)  # noqa: SLF001 - exercise the cleanup primitive directly.
+
+    assert failing_signal in signals
+    assert process.kill_count == 1
+    assert process.wait_count == (1 if failure_site == "sigkill" else 0)
+
+
 def test_mcp_cancellation_stops_worker_and_cleans_staging(tmp_path: Path) -> None:
     """Propagate MCP task cancellation into the worker process and parent-owned staging file."""
     pytest.importorskip("mcp")

@@ -376,7 +376,8 @@ def _terminate_process_tree(process: subprocess.Popen[str]) -> None:
 
     try:
         kill_process_group(process.pid, signal.SIGTERM)
-    except ProcessLookupError:
+    except (ProcessLookupError, PermissionError):
+        process.kill()
         return
 
     # The group leader may exit while one of its descendants ignores SIGTERM. Track the
@@ -386,12 +387,15 @@ def _terminate_process_tree(process: subprocess.Popen[str]) -> None:
         process.poll()
         try:
             kill_process_group(process.pid, 0)
-        except ProcessLookupError:
+        except (ProcessLookupError, PermissionError):
+            process.kill()
             return
         time.sleep(min(0.05, max(0, deadline - time.monotonic())))
 
-    with suppress(ProcessLookupError):
+    try:
         kill_process_group(process.pid, getattr(signal, "SIGKILL", signal.SIGTERM))
+    except (ProcessLookupError, PermissionError):
+        process.kill()
     with suppress(subprocess.TimeoutExpired):
         process.wait(timeout=1)
 
