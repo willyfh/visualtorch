@@ -114,8 +114,8 @@ def _skip_edge_collides(
     if start_bbox is None or end_bbox is None:
         return True
 
-    sx1, sy1, sx2, sy2 = start_bbox
-    ex1, ey1, ex2, ey2 = end_bbox
+    _sx1, sy1, sx2, sy2 = start_bbox
+    ex1, ey1, _ex2, ey2 = end_bbox
     line_x1, line_y1 = sx2, (sy1 + sy2) / 2
     line_x2, line_y2 = ex1, (ey1 + ey2) / 2
 

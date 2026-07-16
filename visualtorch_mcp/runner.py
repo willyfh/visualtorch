@@ -274,8 +274,8 @@ def _run_worker(
     # A file keeps arbitrary user diagnostics from consuming the MCP host's memory, and unlike
     # a pipe it cannot be held open in a way that blocks us by a user-spawned grandchild.
     with tempfile.TemporaryFile("w+b") as stderr_file:
-        process = subprocess.Popen(
-            [  # noqa: S603 - fixed interpreter and module invocation.
+        process = subprocess.Popen(  # noqa: S603 - fixed interpreter and module invocation.
+            [
                 sys.executable,
                 "-m",
                 "visualtorch_mcp.worker",
@@ -351,8 +351,8 @@ def _terminate_process_tree(process: subprocess.Popen[str]) -> None:
         # Python cannot terminate an arbitrary Windows process group. taskkill /T is the
         # platform-supported way to include descendants; fall back to killing the worker.
         with suppress(OSError, subprocess.TimeoutExpired):
-            subprocess.run(
-                [  # noqa: S603, S607 - fixed Windows process-tree cleanup command.
+            subprocess.run(  # noqa: S603 - fixed Windows process-tree cleanup command.
+                [  # noqa: S607 - taskkill is the platform-provided executable.
                     "taskkill",
                     "/PID",
                     str(process.pid),

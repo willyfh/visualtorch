@@ -31,7 +31,7 @@ def main() -> None:
         os.dup2(sys.stderr.fileno(), sys.stdout.fileno())
         payload = _load_payload(sys.argv)
         result = _run_from_payload(payload)
-    except Exception as exc:  # noqa: BLE001 - report every worker failure over stderr.
+    except Exception as exc:
         print(f"{type(exc).__name__}: {exc}\n{traceback.format_exc()}", file=sys.stderr)
         os.close(protocol_fd)
         raise SystemExit(1) from exc
@@ -79,7 +79,7 @@ def _run_from_payload(payload: dict[str, Any]) -> dict[str, Any]:
     if not isinstance(model_expression, str):
         message = "model_expression must be a string."
         raise TypeError(message)
-    model = eval(model_expression, namespace)  # noqa: PGH001, S307 - trusted source expression by design.
+    model = eval(model_expression, namespace)  # noqa: S307 - trusted source expression by design.
     if hasattr(model, "eval"):
         model.eval()
 

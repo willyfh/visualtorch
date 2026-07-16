@@ -103,7 +103,7 @@ def extract_architecture(
     direct_input_node_ids: dict[str, set[str]] = {input_id: set() for input_id in input_ids}
     adjacency = np.zeros((len(nodes), len(nodes)))
     successors: dict[str, list[str]] = {node_id: [] for node_id in nodes}
-    in_degree: dict[str, int] = {node_id: 0 for node_id in nodes}
+    in_degree: dict[str, int] = dict.fromkeys(nodes, 0)
     for src_id, trg_id in edges:
         if src_id in input_id_set:
             direct_input_node_ids[src_id].add(trg_id)

@@ -431,7 +431,7 @@ def _prepare_flow_render(
     diagram_height = top_margin_for_skips + column_layout.diagram_height
     img_template = Image.new(
         "RGBA",
-        (int(ceil(img_width)), int(ceil(diagram_height + label_row_height))),
+        (ceil(img_width), ceil(diagram_height + label_row_height)),
         background_fill,
     )
 

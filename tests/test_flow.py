@@ -15,12 +15,15 @@ from torch import nn
 # flow_view is deprecated in favor of render() - importing the private implementation directly
 # (aliased back to flow_view) so this file's tests, which exercise the actual rendering logic
 # rather than the deprecation wrapper itself, don't spam a DeprecationWarning on every call.
+from visualtorch.backend import extract_architecture
 from visualtorch.flow import _flow_view as flow_view
 from visualtorch.flow import flow_view as deprecated_flow_view
 from visualtorch.flow import layered_view
+from visualtorch.layered import layered_view as layered_view_from_old_path
+from visualtorch.utils.layer_utils import Input
 
 
-@pytest.fixture()
+@pytest.fixture
 def sequential_model() -> nn.Sequential:
     """Define Sequential torch model for testing."""
     return nn.Sequential(
@@ -32,7 +35,7 @@ def sequential_model() -> nn.Sequential:
     )
 
 
-@pytest.fixture()
+@pytest.fixture
 def module_list_model() -> nn.ModuleList:
     """Define ModuleList-based torch model for testing."""
     return nn.ModuleList(
@@ -46,7 +49,7 @@ def module_list_model() -> nn.ModuleList:
     )
 
 
-@pytest.fixture()
+@pytest.fixture
 def custom_model() -> nn.Module:
     """Define the custom model."""
 
@@ -68,7 +71,7 @@ def custom_model() -> nn.Module:
     return CustomModel()
 
 
-@pytest.fixture()
+@pytest.fixture
 def lstm_model() -> nn.Module:
     """Define a simple LSTM model for testing."""
 
@@ -88,7 +91,7 @@ def lstm_model() -> nn.Module:
     return LSTMModel(input_size=10, hidden_size=20, num_layers=2)
 
 
-@pytest.fixture()
+@pytest.fixture
 def gru_model() -> nn.Module:
     """Define a simple GRU model for testing."""
 
@@ -107,7 +110,7 @@ def gru_model() -> nn.Module:
     return GRUModel(input_size=10, hidden_size=20, num_layers=2)
 
 
-@pytest.fixture()
+@pytest.fixture
 def rnn_model() -> nn.Module:
     """Define a simple plain RNN model for testing."""
 
@@ -126,7 +129,7 @@ def rnn_model() -> nn.Module:
     return RNNModel(input_size=10, hidden_size=20, num_layers=2)
 
 
-@pytest.fixture()
+@pytest.fixture
 def classifier_model() -> nn.Module:
     """Define a model ending in a 1D (per-sample) output, e.g. classification logits."""
 
@@ -340,7 +343,7 @@ def test_flow_view_output_size_matches_pre_refactor_baseline(sequential_model: n
         assert img.size == expected_sizes[name], f"{name} canvas size changed"
 
 
-@pytest.fixture()
+@pytest.fixture
 def residual_model() -> nn.Module:
     """A residual block whose shortcut is the model's own raw input (the most common pattern)."""
 
@@ -364,7 +367,7 @@ def residual_model() -> nn.Module:
     return ResidualBlock(channels=8)
 
 
-@pytest.fixture()
+@pytest.fixture
 def hidden_skip_model() -> nn.Module:
     """A residual block whose shortcut originates from a hidden layer, not the raw input."""
 
@@ -539,8 +542,6 @@ def test_flow_view_shows_all_input_boxes_for_multi_input_model() -> None:
     """Unlike the single-input case, flow_view must not hide any of 2+ separate input boxes -
     hiding one would make it ambiguous which arrow originates from which named input.
     """  # noqa: D205
-    from visualtorch.backend import extract_architecture
-    from visualtorch.utils.layer_utils import Input
 
     class TwoInputNet(nn.Module):
         def __init__(self) -> None:
@@ -692,8 +693,6 @@ def test_layered_view_drops_index_ignore(sequential_model: nn.Sequential) -> Non
 
 def test_layered_module_path_still_importable() -> None:
     """The pre-1.0 `visualtorch.layered` module path should still resolve to the same function."""
-    from visualtorch.layered import layered_view as layered_view_from_old_path
-
     assert layered_view_from_old_path is layered_view
 
 

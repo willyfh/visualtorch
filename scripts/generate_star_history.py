@@ -31,7 +31,7 @@ from scipy.interpolate import PchipInterpolator
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 IMAGE_DIR = REPO_ROOT / "docs" / "source" / "_static" / "images"
-LOGO_PATH = IMAGE_DIR / "logos" / "fire-icon.png"
+LOGO_PATH = IMAGE_DIR / "logos" / "traced-flame-icon.png"
 REPO = "willyfh/visualtorch"
 ACCENT_COLOR = "#E69F00"  # first color of visualtorch's own "okabe_ito" palette.
 
@@ -99,9 +99,7 @@ def _monotone_curve(
     # PchipInterpolator requires strictly increasing x - collapse ties (multiple anchors falling
     # in the same real-data gap can land on the same step value but distinct times, which is
     # fine; true ties only happen at the very start) by keeping the last of each duplicate.
-    deduped: dict[float, float] = {}
-    for xi, yi in zip(anchor_x, anchor_y, strict=True):
-        deduped[xi] = yi
+    deduped: dict[float, float] = dict(zip(anchor_x, anchor_y, strict=True))
     x = np.array(sorted(deduped))
     y = np.array([deduped[xi] for xi in x], dtype=float)
 
@@ -145,8 +143,8 @@ def _render_theme(
         ax.yaxis.set_major_locator(mticker.MaxNLocator(nbins=4))
         ax.margins(x=0.02, y=0.05)
 
-        ax.spines["top"].set_visible(False)  # noqa: FBT003
-        ax.spines["right"].set_visible(False)  # noqa: FBT003
+        ax.spines["top"].set_visible(False)
+        ax.spines["right"].set_visible(False)
         for spine in ("left", "bottom"):
             ax.spines[spine].set_color(theme["text"])
         ax.tick_params(colors=theme["text"])
