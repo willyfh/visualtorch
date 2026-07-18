@@ -225,6 +225,27 @@ def test_lenet_view_show_dimension_can_be_disabled(sequential_model: nn.Sequenti
     assert without_labels.height < with_labels.height
 
 
+def test_lenet_view_with_legend(small_sequential_model: nn.Sequential) -> None:
+    """legend=True should append a stacked-plane layer-color legend."""
+    without_legend = lenet_view(small_sequential_model, input_shape=(1, 3, 16, 16), show_dimension=False)
+    with_legend = lenet_view(
+        small_sequential_model,
+        input_shape=(1, 3, 16, 16),
+        show_dimension=False,
+        legend=True,
+    )
+
+    assert with_legend.height > without_legend.height
+
+
+def test_lenet_view_legend_false_preserves_default(small_sequential_model: nn.Sequential) -> None:
+    """The opt-in legend must not change lenet_view's default output."""
+    default = lenet_view(small_sequential_model, input_shape=(1, 3, 16, 16))
+    explicit_false = lenet_view(small_sequential_model, input_shape=(1, 3, 16, 16), legend=False)
+
+    assert explicit_false.tobytes() == default.tobytes()
+
+
 def test_lenet_view_writes_to_file(sequential_model: nn.Sequential, tmp_path: Path) -> None:
     """to_file should save a readable image to disk."""
     out_file = tmp_path / "lenet.png"

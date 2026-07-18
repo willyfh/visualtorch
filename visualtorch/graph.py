@@ -27,7 +27,9 @@ from .utils.utils import (
     InputDtype,
     InputShape,
     format_shape_label,
+    linear_layout,
     resolve_palette,
+    vertical_image_concat,
 )
 
 
@@ -56,6 +58,7 @@ def graph_view(
     level_gap: int | None = None,
     show_input: bool = True,
     show_arrows: bool = False,
+    legend: bool = False,
 ) -> Image.Image:
     """Generates an architecture visualization for a given linear PyTorch model in a graph style.
 
@@ -94,6 +97,7 @@ def graph_view(
         level_gap,
         show_input,
         show_arrows,
+        legend,
     )
 
 
@@ -122,6 +126,7 @@ def _graph_view(
     level_gap: int | None = None,
     show_input: bool = True,
     show_arrows: bool = False,
+    legend: bool = False,
 ) -> Image.Image:
     """The actual graph_view implementation.
 
@@ -176,6 +181,7 @@ def _graph_view(
             discard that edge.
         show_arrows (bool, optional): If True, draw a small arrowhead at each connector's
             downstream endpoint to indicate data-flow direction.
+        legend (bool, optional): If True, append a layer-color legend using circular swatches.
 
     Returns:
         Image.Image: Generated architecture image.
@@ -196,6 +202,7 @@ def _graph_view(
         show_neurons,
         opacity,
         show_dimension,
+        legend,
         font,
         level_gap,
         show_input,
@@ -212,6 +219,10 @@ def _graph_view(
         show_arrows=show_arrows,
         show_dimension=show_dimension,
         font_color=font_color,
+        legend=legend,
+        opacity=opacity,
+        spacing=node_spacing,
+        background_fill=background_fill,
     )
 
     if to_file is not None:
@@ -232,6 +243,8 @@ class _RenderSetup:
     edge_to_level: dict[tuple[str, str], int]
     num_levels: int
     resolved_level_gap: int
+    layer_types: list[type]
+    color_map: dict
     font: ImageFont
     img_template: Image.Image
 
@@ -252,6 +265,7 @@ def _prepare_render(
     show_neurons: bool,
     opacity: int,
     show_dimension: bool,
+    legend: bool,
     font: ImageFont,
     level_gap: int | None,
     show_input: bool,
@@ -292,6 +306,7 @@ def _prepare_render(
 
     current_x = padding  # + input_label_size[0] + text_padding
 
+    layer_types: list[type] = []
     layers, layer_y, id_to_node_list_map, label_info = _create_architecture(
         filtered_columns,
         current_x,
@@ -304,6 +319,7 @@ def _prepare_render(
         layer_spacing,
         ColorWheel(colors=resolve_palette(palette)),
         outline_width,
+        layer_types,
     )
 
     # An edge whose endpoint was just dropped above (a hidden input's own edges) can no longer
@@ -322,7 +338,7 @@ def _prepare_render(
     resolved_level_gap = level_gap if level_gap is not None else node_size
     top_margin_for_skips = num_levels * resolved_level_gap
 
-    if font is None and show_dimension:
+    if font is None and (show_dimension or legend):
         font = ImageFont.load_default()
 
     # Reserve a fixed-height strip below each layer's own content for its shape label,
@@ -364,6 +380,8 @@ def _prepare_render(
         edge_to_level=edge_to_level,
         num_levels=num_levels,
         resolved_level_gap=resolved_level_gap,
+        layer_types=layer_types,
+        color_map=_color_map,
         font=font,
         img_template=img_template,
     )
@@ -379,6 +397,10 @@ def _draw_architecture_frame(
     show_arrows: bool,
     show_dimension: bool,
     font_color: str | tuple[int, ...],
+    legend: bool,
+    opacity: int,
+    spacing: int,
+    background_fill: str | tuple[int, ...],
 ) -> Image.Image:
     """Draw a single frame: everything in columns `0..reveal_up_to`, on a copy of the shared canvas.
 
@@ -418,6 +440,19 @@ def _draw_architecture_frame(
     if show_dimension:
         img = _draw_dimension_labels(img, setup.label_info[: reveal_up_to + 1], setup.font, font_color)
 
+    if legend:
+        img = _draw_legend(
+            img,
+            setup.layer_types,
+            setup.color_map,
+            setup.font,
+            font_color,
+            opacity,
+            spacing,
+            padding,
+            background_fill,
+        )
+
     return img
 
 
@@ -446,6 +481,7 @@ def _graph_view_animate(
     level_gap: int | None = None,
     show_input: bool = True,
     show_arrows: bool = False,
+    legend: bool = False,
     frame_duration: int = 600,
     final_hold_duration: int = 1500,
     loop: bool = True,
@@ -503,6 +539,7 @@ def _graph_view_animate(
             discard that edge.
         show_arrows (bool, optional): If True, draw a small arrowhead at each connector's
             downstream endpoint to indicate data-flow direction.
+        legend (bool, optional): If True, append a fixed layer-color legend using circular swatches.
         frame_duration (int, optional): Milliseconds each intermediate frame is displayed.
         final_hold_duration (int, optional): Milliseconds the final, fully-revealed frame is
             displayed before the GIF loops - gives a viewer time to actually see the complete
@@ -536,6 +573,7 @@ def _graph_view_animate(
         show_neurons,
         opacity,
         show_dimension,
+        legend,
         font,
         level_gap,
         show_input,
@@ -553,6 +591,10 @@ def _graph_view_animate(
             show_arrows,
             show_dimension,
             font_color,
+            legend,
+            opacity,
+            node_spacing,
+            background_fill,
         )
 
     return animate_frames(
@@ -701,6 +743,57 @@ def _draw_dimension_labels(
     return Image.alpha_composite(img, text_img)
 
 
+def _draw_legend(
+    img: Image.Image,
+    layer_types: list[type],
+    color_map: dict,
+    font: ImageFont,
+    font_color: str | tuple[int, ...],
+    opacity: int,
+    spacing: int,
+    padding: int,
+    background_fill: str | tuple[int, ...],
+) -> Image.Image:
+    """Append a color legend whose swatches match graph nodes."""
+    text_height = font.getbbox("Ag")[3]
+    swatch_size = text_height
+    patches = []
+
+    for layer_type in layer_types:
+        label = layer_type.__name__
+        text_width = font.getbbox(label)[2]
+        patch_size = (swatch_size + spacing + text_width, swatch_size)
+        patch = Image.new("RGBA", patch_size, background_fill)
+        text_layer = Image.new("RGBA", patch_size, (0, 0, 0, 0))
+        shape_draw = aggdraw.Draw(patch)
+        text_draw = ImageDraw.Draw(text_layer)
+
+        swatch = Circle()
+        swatch.x2 = swatch_size
+        swatch.y2 = swatch_size
+        swatch.set_fill(color_map[layer_type]["fill"], opacity)
+        swatch.outline = color_map[layer_type]["outline"]
+        swatch.draw(shape_draw)
+
+        text_y = (patch_size[1] - text_height) / 2
+        text_draw.text((swatch_size + spacing, text_y), label, font=font, fill=font_color)
+
+        shape_draw.flush()
+        patch.paste(text_layer, mask=text_layer)
+        patches.append(patch)
+
+    legend_image = linear_layout(
+        patches,
+        max_width=img.width,
+        max_height=img.height,
+        padding=padding,
+        spacing=spacing,
+        background_fill=background_fill,
+        horizontal=True,
+    )
+    return vertical_image_concat(img, legend_image, background_fill)
+
+
 def _retrieve_isbox_units(layer: TracedLayer, show_neurons: bool) -> tuple[bool, int]:
     """Return the number of units and the flag whether to visualize using a box or not.
 
@@ -734,7 +827,8 @@ def _create_architecture(
     opacity: int,
     layer_spacing: int,
     color_wheel: ColorWheel,
-    outline_width: int = 1,
+    outline_width: int,
+    layer_types: list[type],
 ) -> tuple[list, list, dict, list[list[tuple[str, float, float]]]]:
     """Create nodes of architecture for each layers."""
     id_to_node_list_map = {}
@@ -782,6 +876,14 @@ def _create_architecture(
                 c.outline_width = outline_width
 
                 layer_nodes.append(c)
+
+            if layer_nodes:
+                if layer_type not in layer_types:
+                    layer_types.append(layer_type)
+                color_map[layer_type] = {
+                    "fill": layer_nodes[0].fill,
+                    "outline": layer_nodes[0].outline,
+                }
 
             id_to_node_list_map[layer.node_id] = layer_nodes
             nodes.extend(layer_nodes)

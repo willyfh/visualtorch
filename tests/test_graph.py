@@ -429,6 +429,22 @@ def test_graph_view_residual_model_show_neurons_true_runs(residual_model: nn.Mod
     assert img is not None
 
 
+def test_graph_view_with_legend(conv_model: nn.Module) -> None:
+    """legend=True should append a circular layer-color legend."""
+    without_legend = graph_view(conv_model, input_shape=(1, 3, 16, 16), show_neurons=False)
+    with_legend = graph_view(conv_model, input_shape=(1, 3, 16, 16), show_neurons=False, legend=True)
+
+    assert with_legend.height > without_legend.height
+
+
+def test_graph_view_legend_false_preserves_default(conv_model: nn.Module) -> None:
+    """The opt-in legend must not change graph_view's default output."""
+    default = graph_view(conv_model, input_shape=(1, 3, 16, 16), show_neurons=False)
+    explicit_false = graph_view(conv_model, input_shape=(1, 3, 16, 16), show_neurons=False, legend=False)
+
+    assert explicit_false.tobytes() == default.tobytes()
+
+
 def test_graph_view_output_size_matches_pre_refactor_baseline(
     dense_model: nn.Module,
     conv_model: nn.Module,

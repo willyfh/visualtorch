@@ -68,6 +68,7 @@ class GraphStyleOptions:
     show_dimension: bool = False
     show_input: bool = True
     show_arrows: bool = False
+    legend: bool = False
 
 
 @dataclass
@@ -118,6 +119,7 @@ class LenetStyleOptions:
     connector_fill: str | tuple[int, ...] | None = None
     connector_width: int = 1
     one_dim_orientation: str | None = None  # deprecated, use low_dim_orientation
+    legend: bool = False
 
 
 def _render_graph(
@@ -151,6 +153,7 @@ def _render_graph(
         font_color=common.font_color,
         level_gap=common.level_gap,
         show_input=options.show_input,
+        legend=options.legend,
     )
 
 
@@ -233,6 +236,7 @@ def _render_lenet(
         connector_fill=options.connector_fill,
         connector_width=options.connector_width,
         one_dim_orientation=options.one_dim_orientation,
+        legend=options.legend,
     )
 
 
