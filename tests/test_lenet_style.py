@@ -238,6 +238,92 @@ def test_lenet_view_with_legend(small_sequential_model: nn.Sequential) -> None:
     assert with_legend.height > without_legend.height
 
 
+@pytest.mark.parametrize(
+    "legend_position",
+    ["top-left", "top-right", "top-center", "bottom-left", "bottom-right", "bottom-center"],
+)
+def test_lenet_view_with_legend_position(small_sequential_model: nn.Sequential, legend_position: str) -> None:
+    """legend_position should accept every documented top/bottom alignment."""
+    img = lenet_view(
+        small_sequential_model,
+        input_shape=(1, 3, 16, 16),
+        show_dimension=False,
+        legend=True,
+        legend_position=legend_position,
+    )
+
+    assert img is not None
+
+
+def test_lenet_view_default_legend_position_matches_bottom_left(small_sequential_model: nn.Sequential) -> None:
+    """The default legend placement should preserve the previous bottom-left layout."""
+    default = lenet_view(
+        small_sequential_model,
+        input_shape=(1, 3, 16, 16),
+        show_dimension=False,
+        legend=True,
+    )
+    explicit = lenet_view(
+        small_sequential_model,
+        input_shape=(1, 3, 16, 16),
+        show_dimension=False,
+        legend=True,
+        legend_position="bottom-left",
+    )
+
+    assert default.tobytes() == explicit.tobytes()
+
+
+def test_lenet_view_legend_position_moves_legend_vertically(small_sequential_model: nn.Sequential) -> None:
+    """Top and bottom legend placements should produce different layouts."""
+    top = lenet_view(
+        small_sequential_model,
+        input_shape=(1, 3, 16, 16),
+        show_dimension=False,
+        legend=True,
+        legend_position="top-left",
+    )
+    bottom = lenet_view(
+        small_sequential_model,
+        input_shape=(1, 3, 16, 16),
+        show_dimension=False,
+        legend=True,
+        legend_position="bottom-left",
+    )
+
+    assert top.size == bottom.size
+    assert top.tobytes() != bottom.tobytes()
+
+
+def test_lenet_view_legend_position_moves_legend_horizontally(small_sequential_model: nn.Sequential) -> None:
+    """Left and right legend placements should align the legend within the available width."""
+    left = lenet_view(
+        small_sequential_model,
+        input_shape=(1, 3, 16, 16),
+        show_dimension=False,
+        legend=True,
+        legend_position="bottom-left",
+        spacing=60,
+    )
+    right = lenet_view(
+        small_sequential_model,
+        input_shape=(1, 3, 16, 16),
+        show_dimension=False,
+        legend=True,
+        legend_position="bottom-right",
+        spacing=60,
+    )
+
+    assert left.size == right.size
+    assert left.tobytes() != right.tobytes()
+
+
+def test_lenet_view_invalid_legend_position_raises(small_sequential_model: nn.Sequential) -> None:
+    """Invalid legend positions should fail with a targeted error."""
+    with pytest.raises(ValueError, match="legend_position"):
+        lenet_view(small_sequential_model, input_shape=(1, 3, 16, 16), legend=True, legend_position="left")
+
+
 def test_lenet_view_legend_false_preserves_default(small_sequential_model: nn.Sequential) -> None:
     """The opt-in legend must not change lenet_view's default output."""
     default = lenet_view(small_sequential_model, input_shape=(1, 3, 16, 16))

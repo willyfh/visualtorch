@@ -15,6 +15,7 @@ import torch
 from PIL import Image, ImageFont
 
 from ._animation import animate_frames
+from ._legend import LegendPosition, place_legend, validate_legend_position
 from .backend import extract_architecture
 from .connectors import compute_skip_levels, draw_connector
 from .utils.traced_layer import TracedLayer
@@ -29,7 +30,6 @@ from .utils.utils import (
     format_shape_label,
     linear_layout,
     resolve_palette,
-    vertical_image_concat,
 )
 
 
@@ -59,6 +59,7 @@ def graph_view(
     show_input: bool = True,
     show_arrows: bool = False,
     legend: bool = False,
+    legend_position: LegendPosition = "bottom-left",
 ) -> Image.Image:
     """Generates an architecture visualization for a given linear PyTorch model in a graph style.
 
@@ -98,6 +99,7 @@ def graph_view(
         show_input,
         show_arrows,
         legend,
+        legend_position,
     )
 
 
@@ -127,6 +129,7 @@ def _graph_view(
     show_input: bool = True,
     show_arrows: bool = False,
     legend: bool = False,
+    legend_position: LegendPosition = "bottom-left",
 ) -> Image.Image:
     """The actual graph_view implementation.
 
@@ -182,10 +185,15 @@ def _graph_view(
         show_arrows (bool, optional): If True, draw a small arrowhead at each connector's
             downstream endpoint to indicate data-flow direction.
         legend (bool, optional): If True, append a layer-color legend using circular swatches.
+        legend_position (str, optional): Where to place the legend when `legend=True`. One of
+            "top-left", "top-right", "top-center", "bottom-left", "bottom-right", or
+            "bottom-center". Defaults to "bottom-left", which preserves the original layout.
 
     Returns:
         Image.Image: Generated architecture image.
     """
+    validate_legend_position(legend_position)
+
     setup = _prepare_render(
         model,
         input_shape,
@@ -223,6 +231,7 @@ def _graph_view(
         opacity=opacity,
         spacing=node_spacing,
         background_fill=background_fill,
+        legend_position=legend_position,
     )
 
     if to_file is not None:
@@ -401,6 +410,7 @@ def _draw_architecture_frame(
     opacity: int,
     spacing: int,
     background_fill: str | tuple[int, ...],
+    legend_position: LegendPosition,
 ) -> Image.Image:
     """Draw a single frame: everything in columns `0..reveal_up_to`, on a copy of the shared canvas.
 
@@ -451,6 +461,7 @@ def _draw_architecture_frame(
             spacing,
             padding,
             background_fill,
+            legend_position,
         )
 
     return img
@@ -482,6 +493,7 @@ def _graph_view_animate(
     show_input: bool = True,
     show_arrows: bool = False,
     legend: bool = False,
+    legend_position: LegendPosition = "bottom-left",
     frame_duration: int = 600,
     final_hold_duration: int = 1500,
     loop: bool = True,
@@ -540,6 +552,9 @@ def _graph_view_animate(
         show_arrows (bool, optional): If True, draw a small arrowhead at each connector's
             downstream endpoint to indicate data-flow direction.
         legend (bool, optional): If True, append a fixed layer-color legend using circular swatches.
+        legend_position (str, optional): Where to place the legend when `legend=True`. One of
+            "top-left", "top-right", "top-center", "bottom-left", "bottom-right", or
+            "bottom-center". Defaults to "bottom-left", which preserves the original layout.
         frame_duration (int, optional): Milliseconds each intermediate frame is displayed.
         final_hold_duration (int, optional): Milliseconds the final, fully-revealed frame is
             displayed before the GIF loops - gives a viewer time to actually see the complete
@@ -557,6 +572,8 @@ def _graph_view_animate(
         when also writing to a file. `to_file` should end in `.gif`; a mismatched extension will
         not raise, it will silently save only the first frame.
     """
+    validate_legend_position(legend_position)
+
     setup = _prepare_render(
         model,
         input_shape,
@@ -595,6 +612,7 @@ def _graph_view_animate(
             opacity,
             node_spacing,
             background_fill,
+            legend_position,
         )
 
     return animate_frames(
@@ -753,6 +771,7 @@ def _draw_legend(
     spacing: int,
     padding: int,
     background_fill: str | tuple[int, ...],
+    legend_position: LegendPosition,
 ) -> Image.Image:
     """Append a color legend whose swatches match graph nodes."""
     text_height = font.getbbox("Ag")[3]
@@ -791,7 +810,7 @@ def _draw_legend(
         background_fill=background_fill,
         horizontal=True,
     )
-    return vertical_image_concat(img, legend_image, background_fill)
+    return place_legend(img, legend_image, legend_position, background_fill)
 
 
 def _retrieve_isbox_units(layer: TracedLayer, show_neurons: bool) -> tuple[bool, int]:

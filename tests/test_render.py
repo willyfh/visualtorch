@@ -134,6 +134,28 @@ def test_render_forwards_flow_legend_position(sequential_model: nn.Sequential) -
     assert top.tobytes() != bottom.tobytes()
 
 
+@pytest.mark.parametrize("style", ["graph", "lenet"])
+def test_render_forwards_graph_and_lenet_legend_position(sequential_model: nn.Sequential, style: str) -> None:
+    """Graph and LeNet styles should accept and forward legend_position through render()."""
+    top = render(
+        sequential_model,
+        input_shape=(1, 3, 16, 16),
+        style=style,
+        legend=True,
+        legend_position="top-left",
+    )
+    bottom = render(
+        sequential_model,
+        input_shape=(1, 3, 16, 16),
+        style=style,
+        legend=True,
+        legend_position="bottom-left",
+    )
+
+    assert top.size == bottom.size
+    assert top.tobytes() != bottom.tobytes()
+
+
 def test_render_rejects_malformed_mixed_input_shape_with_clear_error(sequential_model: nn.Sequential) -> None:
     """A shape tuple mixing raw ints and nested shape-tuples at the top level is ambiguous and
     should raise a clear ValueError rather than being silently misinterpreted.
