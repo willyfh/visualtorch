@@ -65,7 +65,7 @@ STYLE_OPTION_SPECS: dict[str, dict[str, tuple[str, object]]] = {
         "show_input": ("boolean", True),
         "show_arrows": ("boolean", False),
         "legend": ("boolean", False),
-            "legend_position": ("string", "bottom-left"),
+        "legend_position": ("string", "bottom-left"),
     },
     "flow": {
         "min_z": ("integer", 10),
@@ -109,7 +109,7 @@ STYLE_OPTION_SPECS: dict[str, dict[str, tuple[str, object]]] = {
         "connector_width": ("integer", 1),
         "one_dim_orientation": ("string | null", None),
         "legend": ("boolean", False),
-            "legend_position": ("string", "bottom-left"),
+        "legend_position": ("string", "bottom-left"),
     },
 }
 
