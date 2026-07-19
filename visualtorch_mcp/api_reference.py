@@ -64,6 +64,7 @@ STYLE_OPTION_SPECS: dict[str, dict[str, tuple[str, object]]] = {
         "show_dimension": ("boolean", False),
         "show_input": ("boolean", True),
         "show_arrows": ("boolean", False),
+        "legend": ("boolean", False),
     },
     "flow": {
         "min_z": ("integer", 10),
@@ -106,6 +107,7 @@ STYLE_OPTION_SPECS: dict[str, dict[str, tuple[str, object]]] = {
         "connector_fill": ("color string | integer array | null", None),
         "connector_width": ("integer", 1),
         "one_dim_orientation": ("string | null", None),
+        "legend": ("boolean", False),
     },
 }
 
@@ -189,7 +191,7 @@ OPTION_DESCRIPTIONS = {
     "spacing": "Space between adjacent layer drawings in pixels.",
     "draw_funnel": "Draw funnel-shaped connectors between layers.",
     "shade_step": "Brightness step applied to shaded layer faces.",
-    "legend": "Add a layer-color legend to a flow diagram.",
+    "legend": "Add a layer-color legend to the diagram.",
     "legend_position": "Legend placement around the rendered flow diagram.",
     "one_dim_orientation": "Deprecated alias for low_dim_orientation.",
     "max_channels": "Maximum number of feature-map channels drawn for a LeNet-style layer.",
