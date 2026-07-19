@@ -28,7 +28,8 @@ from typing import Any, Literal
 from PIL import Image
 from torch import nn
 
-from .flow import LegendPosition, _flow_view, _flow_view_animate
+from ._legend import LegendPosition
+from .flow import _flow_view, _flow_view_animate
 from .graph import _graph_view, _graph_view_animate
 from .lenet_style import _lenet_view, _lenet_view_animate
 from .utils.utils import InputDtype, InputShape
@@ -69,6 +70,7 @@ class GraphStyleOptions:
     show_input: bool = True
     show_arrows: bool = False
     legend: bool = False
+    legend_position: LegendPosition = "bottom-left"
 
 
 @dataclass
@@ -120,6 +122,7 @@ class LenetStyleOptions:
     connector_width: int = 1
     one_dim_orientation: str | None = None  # deprecated, use low_dim_orientation
     legend: bool = False
+    legend_position: LegendPosition = "bottom-left"
 
 
 def _render_graph(
@@ -154,6 +157,7 @@ def _render_graph(
         level_gap=common.level_gap,
         show_input=options.show_input,
         legend=options.legend,
+        legend_position=options.legend_position,
     )
 
 
@@ -237,6 +241,7 @@ def _render_lenet(
         connector_width=options.connector_width,
         one_dim_orientation=options.one_dim_orientation,
         legend=options.legend,
+        legend_position=options.legend_position,
     )
 
 

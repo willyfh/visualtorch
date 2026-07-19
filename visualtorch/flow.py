@@ -9,7 +9,6 @@ from collections import defaultdict
 from collections.abc import Callable
 from dataclasses import dataclass, replace
 from math import ceil
-from typing import Literal
 
 import aggdraw
 import PIL
@@ -17,6 +16,7 @@ from PIL import Image, ImageFont
 from torch import nn
 
 from ._animation import animate_frames
+from ._legend import LegendPosition, place_legend, validate_legend_position
 from ._volumetric_layout import ColumnLayout, VolumetricBox, layout_columns
 from .backend import Architecture, extract_architecture
 from .connectors import compute_skip_levels, draw_connector
@@ -32,16 +32,6 @@ from .utils.utils import (
     linear_layout,
     resolve_palette,
     self_multiply,
-)
-
-LegendPosition = Literal["top-left", "top-right", "top-center", "bottom-left", "bottom-right", "bottom-center"]
-_LEGEND_POSITIONS: tuple[LegendPosition, ...] = (
-    "top-left",
-    "top-right",
-    "top-center",
-    "bottom-left",
-    "bottom-right",
-    "bottom-center",
 )
 
 
@@ -327,7 +317,7 @@ def _prepare_flow_render(
     background_fill: str | tuple[int, ...],
 ) -> _FlowRenderSetup:
     """Trace the model and compute the full layout/canvas once - shared by every frame."""
-    _validate_legend_position(legend_position)
+    validate_legend_position(legend_position)
 
     if one_dim_orientation is not None:
         warnings.warn(
@@ -717,13 +707,6 @@ def _flow_view_animate(
     )
 
 
-def _validate_legend_position(legend_position: str) -> None:
-    if legend_position not in _LEGEND_POSITIONS:
-        supported = ", ".join(f"{position!r}" for position in _LEGEND_POSITIONS)
-        error_msg = f"unsupported legend_position: {legend_position!r}. Supported positions: {supported}."
-        raise ValueError(error_msg)
-
-
 def _box_factory(
     low_dim_orientation: str,
     scale_xy: float,
@@ -981,40 +964,7 @@ def _draw_legend(
         background_fill=background_fill,
         horizontal=True,
     )
-    return _place_legend(img, legend_image, legend_position, background_fill)
-
-
-def _place_legend(
-    img: PIL.Image,
-    legend_image: PIL.Image,
-    legend_position: LegendPosition,
-    background_fill: str | tuple[int, ...],
-) -> PIL.Image:
-    """Place the legend outside the diagram while aligning it within the final canvas."""
-    vertical_position, horizontal_position = legend_position.split("-", 1)
-    canvas = Image.new(
-        "RGBA",
-        (max(img.width, legend_image.width), img.height + legend_image.height),
-        background_fill,
-    )
-    legend_x = _horizontal_legend_offset(canvas.width, legend_image.width, horizontal_position)
-
-    if vertical_position == "top":
-        canvas.paste(legend_image, (legend_x, 0))
-        canvas.paste(img, (0, legend_image.height))
-    else:
-        canvas.paste(img, (0, 0))
-        canvas.paste(legend_image, (legend_x, img.height))
-    return canvas
-
-
-def _horizontal_legend_offset(canvas_width: int, legend_width: int, horizontal_position: str) -> int:
-    """Return the x offset for the legend row inside the final canvas."""
-    if horizontal_position == "right":
-        return canvas_width - legend_width
-    if horizontal_position == "center":
-        return (canvas_width - legend_width) // 2
-    return 0
+    return place_legend(img, legend_image, legend_position, background_fill)
 
 
 def _column_label_and_center(column: list[VolumetricBox]) -> tuple[str, float]:

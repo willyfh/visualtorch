@@ -15,6 +15,7 @@ from PIL import Image, ImageFont
 from torch import nn
 
 from ._animation import animate_frames
+from ._legend import LegendPosition, place_legend, validate_legend_position
 from ._volumetric_layout import ColumnLayout, VolumetricBox, layout_columns
 from .backend import Architecture, extract_architecture
 from .connectors import compute_skip_levels, draw_connector
@@ -31,7 +32,6 @@ from .utils.utils import (
     linear_layout,
     resolve_palette,
     self_multiply,
-    vertical_image_concat,
 )
 
 _LABEL_ROW_HEIGHT = 100
@@ -69,6 +69,7 @@ def lenet_view(
     connector_width: int = 1,
     one_dim_orientation: str | None = None,
     legend: bool = False,
+    legend_position: LegendPosition = "bottom-left",
 ) -> PIL.Image:
     """Generate a LeNet style architecture visualization for a given torch model.
 
@@ -114,6 +115,7 @@ def lenet_view(
         connector_width,
         one_dim_orientation,
         legend,
+        legend_position,
     )
 
 
@@ -149,6 +151,7 @@ def _lenet_view(
     connector_width: int = 1,
     one_dim_orientation: str | None = None,
     legend: bool = False,
+    legend_position: LegendPosition = "bottom-left",
 ) -> PIL.Image:
     """The actual lenet_view implementation.
 
@@ -215,10 +218,15 @@ def _lenet_view(
         connector_width (int, optional): Line width in pixels for funnel and skip-connection lines. Defaults to 1.
         one_dim_orientation (str, optional): Deprecated, use `low_dim_orientation` instead.
         legend (bool, optional): If True, append a layer-color legend using stacked-plane swatches.
+        legend_position (str, optional): Where to place the legend when `legend=True`. One of
+            "top-left", "top-right", "top-center", "bottom-left", "bottom-right", or
+            "bottom-center". Defaults to "bottom-left", which preserves the original layout.
 
     Returns:
         PIL.Image: An Image object representing the generated architecture visualization.
     """
+    validate_legend_position(legend_position)
+
     setup = _prepare_lenet_render(
         model,
         input_shape,
@@ -261,6 +269,7 @@ def _lenet_view(
         opacity=opacity,
         spacing=spacing,
         background_fill=background_fill,
+        legend_position=legend_position,
     )
 
     if to_file is not None:
@@ -438,6 +447,7 @@ def _draw_diagram_frame(
     opacity: int,
     spacing: int,
     background_fill: str | tuple[int, ...],
+    legend_position: LegendPosition,
 ) -> PIL.Image:
     """Draw a single frame: everything in columns `0..reveal_up_to`, on a copy of the shared canvas.
 
@@ -499,6 +509,7 @@ def _draw_diagram_frame(
             spacing,
             padding,
             background_fill,
+            legend_position,
         )
 
     return img
@@ -536,6 +547,7 @@ def _lenet_view_animate(
     connector_width: int = 1,
     one_dim_orientation: str | None = None,
     legend: bool = False,
+    legend_position: LegendPosition = "bottom-left",
     frame_duration: int = 600,
     final_hold_duration: int = 1500,
     loop: bool = True,
@@ -604,6 +616,9 @@ def _lenet_view_animate(
         connector_width (int, optional): Line width in pixels for funnel and skip-connection lines. Defaults to 1.
         one_dim_orientation (str, optional): Deprecated, use `low_dim_orientation` instead.
         legend (bool, optional): If True, append a fixed layer-color legend using stacked-plane swatches.
+        legend_position (str, optional): Where to place the legend when `legend=True`. One of
+            "top-left", "top-right", "top-center", "bottom-left", "bottom-right", or
+            "bottom-center". Defaults to "bottom-left", which preserves the original layout.
         frame_duration (int, optional): Milliseconds each intermediate frame is displayed.
         final_hold_duration (int, optional): Milliseconds the final, fully-revealed frame is
             displayed before the GIF loops - gives a viewer time to actually see the complete
@@ -621,6 +636,8 @@ def _lenet_view_animate(
         writing to a file. `to_file` should end in `.gif`; a mismatched extension will not raise,
         it will silently save only the first frame.
     """
+    validate_legend_position(legend_position)
+
     setup = _prepare_lenet_render(
         model,
         input_shape,
@@ -664,6 +681,7 @@ def _lenet_view_animate(
             opacity,
             spacing,
             background_fill,
+            legend_position,
         )
 
     return animate_frames(
@@ -922,6 +940,7 @@ def _draw_legend(
     spacing: int,
     padding: int,
     background_fill: str | tuple[int, ...],
+    legend_position: LegendPosition,
 ) -> PIL.Image:
     """Append a color legend whose swatches match LeNet's stacked planes."""
     text_height = font.getbbox("Ag")[3]
@@ -971,4 +990,4 @@ def _draw_legend(
         background_fill=background_fill,
         horizontal=True,
     )
-    return vertical_image_concat(img, legend_image, background_fill)
+    return place_legend(img, legend_image, legend_position, background_fill)

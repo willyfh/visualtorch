@@ -203,6 +203,20 @@ def test_graph_and_lenet_legends_are_fixed_from_first_frame(style: str) -> None:
     assert legend_crop(frames[0]).tobytes() == legend_crop(frames[-1]).tobytes()
 
 
+@pytest.mark.parametrize("style", ["graph", "lenet"])
+def test_graph_and_lenet_animate_forwards_legend_position(style: str) -> None:
+    """Animated graph and LeNet renders should place legends like static renders."""
+    model = nn.Sequential(nn.Conv2d(3, 4, 3, 1, 1), nn.BatchNorm2d(4), nn.ReLU())
+    input_shape = (1, 3, 8, 8)
+
+    static_top = _STATIC_VIEW_FUNCS[style](model, input_shape, legend=True, legend_position="top-left")
+    static_bottom = _STATIC_VIEW_FUNCS[style](model, input_shape, legend=True, legend_position="bottom-left")
+    frames = animate(model, input_shape, style=style, legend=True, legend_position="top-left")
+
+    assert frames[-1].tobytes() == static_top.tobytes()
+    assert frames[-1].tobytes() != static_bottom.tobytes()
+
+
 @pytest.mark.parametrize("style", _STYLES)
 def test_show_dimension_labels_appear_with_their_column(style: str, sequential_model: nn.Module) -> None:
     """A column's shape label appears exactly when that column's boxes do, not before."""

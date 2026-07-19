@@ -437,6 +437,87 @@ def test_graph_view_with_legend(conv_model: nn.Module) -> None:
     assert with_legend.height > without_legend.height
 
 
+@pytest.mark.parametrize(
+    "legend_position",
+    ["top-left", "top-right", "top-center", "bottom-left", "bottom-right", "bottom-center"],
+)
+def test_graph_view_with_legend_position(conv_model: nn.Module, legend_position: str) -> None:
+    """legend_position should accept every documented top/bottom alignment."""
+    img = graph_view(
+        conv_model,
+        input_shape=(1, 3, 16, 16),
+        show_neurons=False,
+        legend=True,
+        legend_position=legend_position,
+    )
+
+    assert img is not None
+
+
+def test_graph_view_default_legend_position_matches_bottom_left(conv_model: nn.Module) -> None:
+    """The default legend placement should preserve the previous bottom-left layout."""
+    default = graph_view(conv_model, input_shape=(1, 3, 16, 16), show_neurons=False, legend=True)
+    explicit = graph_view(
+        conv_model,
+        input_shape=(1, 3, 16, 16),
+        show_neurons=False,
+        legend=True,
+        legend_position="bottom-left",
+    )
+
+    assert default.tobytes() == explicit.tobytes()
+
+
+def test_graph_view_legend_position_moves_legend_vertically(conv_model: nn.Module) -> None:
+    """Top and bottom legend placements should produce different layouts."""
+    top = graph_view(
+        conv_model,
+        input_shape=(1, 3, 16, 16),
+        show_neurons=False,
+        legend=True,
+        legend_position="top-left",
+    )
+    bottom = graph_view(
+        conv_model,
+        input_shape=(1, 3, 16, 16),
+        show_neurons=False,
+        legend=True,
+        legend_position="bottom-left",
+    )
+
+    assert top.size == bottom.size
+    assert top.tobytes() != bottom.tobytes()
+
+
+def test_graph_view_legend_position_moves_legend_horizontally(conv_model: nn.Module) -> None:
+    """Left and right legend placements should align the legend within the available width."""
+    left = graph_view(
+        conv_model,
+        input_shape=(1, 3, 16, 16),
+        show_neurons=False,
+        legend=True,
+        legend_position="bottom-left",
+        layer_spacing=400,
+    )
+    right = graph_view(
+        conv_model,
+        input_shape=(1, 3, 16, 16),
+        show_neurons=False,
+        legend=True,
+        legend_position="bottom-right",
+        layer_spacing=400,
+    )
+
+    assert left.size == right.size
+    assert left.tobytes() != right.tobytes()
+
+
+def test_graph_view_invalid_legend_position_raises(conv_model: nn.Module) -> None:
+    """Invalid legend positions should fail with a targeted error."""
+    with pytest.raises(ValueError, match="legend_position"):
+        graph_view(conv_model, input_shape=(1, 3, 16, 16), legend=True, legend_position="left")
+
+
 def test_graph_view_legend_false_preserves_default(conv_model: nn.Module) -> None:
     """The opt-in legend must not change graph_view's default output."""
     default = graph_view(conv_model, input_shape=(1, 3, 16, 16), show_neurons=False)

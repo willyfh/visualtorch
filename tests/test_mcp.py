@@ -85,6 +85,15 @@ def test_static_capabilities_match_public_visualtorch_contracts() -> None:
                 assert advertised[name]["default"] == field.default
 
     assert capabilities["palettes"] == {name: list(colors) for name, colors in sorted(visualtorch.PALETTES.items())}
+    for style in option_types:
+        assert capabilities["styles"][style]["options"]["legend_position"]["enum"] == [
+            "top-left",
+            "top-right",
+            "top-center",
+            "bottom-left",
+            "bottom-right",
+            "bottom-center",
+        ]
 
 
 @pytest.mark.parametrize(
