@@ -69,6 +69,7 @@ class GraphStyleOptions:
     show_input: bool = True
     show_arrows: bool = False
     legend: bool = False
+    legend_position: LegendPosition = "bottom-left"
 
 
 @dataclass
@@ -120,6 +121,7 @@ class LenetStyleOptions:
     connector_width: int = 1
     one_dim_orientation: str | None = None  # deprecated, use low_dim_orientation
     legend: bool = False
+    legend_position: LegendPosition = "bottom-left"
 
 
 def _render_graph(
@@ -154,6 +156,7 @@ def _render_graph(
         level_gap=common.level_gap,
         show_input=options.show_input,
         legend=options.legend,
+        legend_position=options.legend_position,
     )
 
 
@@ -237,6 +240,7 @@ def _render_lenet(
         connector_width=options.connector_width,
         one_dim_orientation=options.one_dim_orientation,
         legend=options.legend,
+        legend_position=options.legend_position,
     )
 
 

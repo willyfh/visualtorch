@@ -17,6 +17,7 @@ from PIL import Image, ImageFont
 from ._animation import animate_frames
 from .backend import extract_architecture
 from .connectors import compute_skip_levels, draw_connector
+from .flow import LegendPosition, _place_legend, _validate_legend_position
 from .utils.traced_layer import TracedLayer
 from .utils.utils import (
     Box,
@@ -29,7 +30,6 @@ from .utils.utils import (
     format_shape_label,
     linear_layout,
     resolve_palette,
-    vertical_image_concat,
 )
 
 
@@ -59,6 +59,7 @@ def graph_view(
     show_input: bool = True,
     show_arrows: bool = False,
     legend: bool = False,
+    legend_position: LegendPosition = "bottom-left",
 ) -> Image.Image:
     """Generates an architecture visualization for a given linear PyTorch model in a graph style.
 
@@ -98,6 +99,7 @@ def graph_view(
         show_input,
         show_arrows,
         legend,
+        legend_position,
     )
 
 
@@ -127,11 +129,11 @@ def _graph_view(
     show_input: bool = True,
     show_arrows: bool = False,
     legend: bool = False,
+    legend_position: LegendPosition = "bottom-left",
 ) -> Image.Image:
     """The actual graph_view implementation.
 
     Called directly by render() to avoid triggering graph_view's own deprecation warning on
-    every render() call.
 
     Args:
         model (torch.nn.Module): A PyTorch model that will be visualized.
@@ -207,6 +209,7 @@ def _graph_view(
         level_gap,
         show_input,
         background_fill,
+        legend_position,
     )
 
     img = _draw_architecture_frame(
@@ -220,6 +223,7 @@ def _graph_view(
         show_dimension=show_dimension,
         font_color=font_color,
         legend=legend,
+        legend_position=legend_position,
         opacity=opacity,
         spacing=node_spacing,
         background_fill=background_fill,
@@ -270,8 +274,11 @@ def _prepare_render(
     level_gap: int | None,
     show_input: bool,
     background_fill: str | tuple[int, ...],
+    legend_position: LegendPosition,
 ) -> _RenderSetup:
     """Trace the model and compute the full layout/canvas once - shared by every frame."""
+    _validate_legend_position(legend_position)
+
     if type_ignore is None:
         type_ignore = []
 
@@ -398,6 +405,7 @@ def _draw_architecture_frame(
     show_dimension: bool,
     font_color: str | tuple[int, ...],
     legend: bool,
+    legend_position: LegendPosition,
     opacity: int,
     spacing: int,
     background_fill: str | tuple[int, ...],
@@ -451,6 +459,7 @@ def _draw_architecture_frame(
             spacing,
             padding,
             background_fill,
+            legend_position,
         )
 
     return img
@@ -482,6 +491,7 @@ def _graph_view_animate(
     show_input: bool = True,
     show_arrows: bool = False,
     legend: bool = False,
+    legend_position: LegendPosition = "bottom-left",
     frame_duration: int = 600,
     final_hold_duration: int = 1500,
     loop: bool = True,
@@ -578,6 +588,7 @@ def _graph_view_animate(
         level_gap,
         show_input,
         background_fill,
+        legend_position,
     )
 
     def render_frame(reveal_up_to: int) -> Image.Image:
@@ -592,6 +603,7 @@ def _graph_view_animate(
             show_dimension,
             font_color,
             legend,
+            legend_position,
             opacity,
             node_spacing,
             background_fill,
@@ -753,6 +765,7 @@ def _draw_legend(
     spacing: int,
     padding: int,
     background_fill: str | tuple[int, ...],
+    legend_position: LegendPosition,
 ) -> Image.Image:
     """Append a color legend whose swatches match graph nodes."""
     text_height = font.getbbox("Ag")[3]
@@ -791,7 +804,7 @@ def _draw_legend(
         background_fill=background_fill,
         horizontal=True,
     )
-    return vertical_image_concat(img, legend_image, background_fill)
+    return _place_legend(img, legend_image, legend_position, background_fill)
 
 
 def _retrieve_isbox_units(layer: TracedLayer, show_neurons: bool) -> tuple[bool, int]:

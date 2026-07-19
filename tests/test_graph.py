@@ -437,6 +437,27 @@ def test_graph_view_with_legend(conv_model: nn.Module) -> None:
     assert with_legend.height > without_legend.height
 
 
+def test_graph_view_legend_position_changes_layout(conv_model: nn.Module) -> None:
+    """legend_position should move the legend around the graph diagram."""
+    top = graph_view(
+        conv_model,
+        input_shape=(1, 3, 16, 16),
+        show_neurons=False,
+        legend=True,
+        legend_position="top-left",
+    )
+    bottom = graph_view(
+        conv_model,
+        input_shape=(1, 3, 16, 16),
+        show_neurons=False,
+        legend=True,
+        legend_position="bottom-right",
+    )
+
+    assert top.size == bottom.size
+    assert top.tobytes() != bottom.tobytes()
+
+
 def test_graph_view_legend_false_preserves_default(conv_model: nn.Module) -> None:
     """The opt-in legend must not change graph_view's default output."""
     default = graph_view(conv_model, input_shape=(1, 3, 16, 16), show_neurons=False)

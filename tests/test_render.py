@@ -113,6 +113,31 @@ def test_render_forwards_legend_for_graph_and_lenet(sequential_model: nn.Sequent
     assert with_legend.height > without_legend.height
 
 
+@pytest.mark.parametrize("style", ["graph", "lenet"])
+def test_render_forwards_legend_position_for_graph_and_lenet(
+    sequential_model: nn.Sequential,
+    style: str,
+) -> None:
+    """Graph and LeNet styles should accept and forward legend_position through render()."""
+    top = render(
+        sequential_model,
+        input_shape=(1, 3, 16, 16),
+        style=style,
+        legend=True,
+        legend_position="top-left",
+    )
+    bottom = render(
+        sequential_model,
+        input_shape=(1, 3, 16, 16),
+        style=style,
+        legend=True,
+        legend_position="bottom-left",
+    )
+
+    assert top.size == bottom.size
+    assert top.tobytes() != bottom.tobytes()
+
+
 def test_render_forwards_flow_legend_position(sequential_model: nn.Sequential) -> None:
     """Flow style should accept and forward legend_position through the render entry point."""
     top = render(

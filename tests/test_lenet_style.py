@@ -238,6 +238,27 @@ def test_lenet_view_with_legend(small_sequential_model: nn.Sequential) -> None:
     assert with_legend.height > without_legend.height
 
 
+def test_lenet_view_legend_position_changes_layout(small_sequential_model: nn.Sequential) -> None:
+    """legend_position should move the legend around the LeNet diagram."""
+    top = lenet_view(
+        small_sequential_model,
+        input_shape=(1, 3, 16, 16),
+        show_dimension=False,
+        legend=True,
+        legend_position="top-left",
+    )
+    bottom = lenet_view(
+        small_sequential_model,
+        input_shape=(1, 3, 16, 16),
+        show_dimension=False,
+        legend=True,
+        legend_position="bottom-right",
+    )
+
+    assert top.size == bottom.size
+    assert top.tobytes() != bottom.tobytes()
+
+
 def test_lenet_view_legend_false_preserves_default(small_sequential_model: nn.Sequential) -> None:
     """The opt-in legend must not change lenet_view's default output."""
     default = lenet_view(small_sequential_model, input_shape=(1, 3, 16, 16))
