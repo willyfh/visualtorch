@@ -19,8 +19,8 @@ how to actually submit a change, see [CONTRIBUTING.md](CONTRIBUTING.md).
 Current maintainer(s):
 
 - [@willyfh](https://github.com/willyfh)
-- [@Tariolle](https://github.com/Tariolle) (joined via the "brings in and takes ownership of a
-  substantial existing component" path above - contributed the `visualtorch_mcp` package)
+- [@Tariolle](https://github.com/Tariolle) (joined via the "Bringing in an existing component"
+  path - contributed the `visualtorch_mcp` package)
 
 ## Decision-Making
 
@@ -35,8 +35,11 @@ current size - this section will be revisited if the maintainer team grows enoug
 
 ## Becoming a Maintainer
 
-There's no fixed contribution count or tenure requirement, but a contributor is a strong
-candidate for becoming a maintainer once they've:
+There's no fixed contribution count or tenure requirement. There are two paths:
+
+### Sustained contribution
+
+A contributor is a strong candidate once they've:
 
 - Submitted several non-trivial, well-tested pull requests over a sustained period (not just a
   single one-off contribution).
@@ -44,10 +47,14 @@ candidate for becoming a maintainer once they've:
   `visualtorch/backend.py`, the per-style rendering modules, the test suite).
 - Shown a willingness to help review other contributors' pull requests, not just submit their own.
 
+### Bringing in an existing component
+
 A contributor who brings in and takes ownership of a substantial existing component (e.g. merging
 in a tool they've already built and maintained elsewhere) can also become a maintainer directly,
 without the sustained-PR history above. The trust signal there is the track record of the
 existing work, not incremental PRs to this repo.
+
+### Nomination and approval
 
 An existing maintainer nominates the candidate (e.g. in an issue, discussion, or pull request).
 Any existing maintainer may approve the nomination - this doesn't require active sign-off from
