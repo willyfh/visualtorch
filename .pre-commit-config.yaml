@@ -24,13 +24,13 @@ repos:
       - id: prettier
 
   - repo: https://github.com/igorshubovych/markdownlint-cli
-    rev: v0.49.0
+    rev: v0.49.1
     hooks:
       - id: markdownlint
         args: ["--ignore", "paper/paper.md"]
 
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: "v0.15.21"
+    rev: "v0.15.22"
     hooks:
       # Run the linter.
       - id: ruff
