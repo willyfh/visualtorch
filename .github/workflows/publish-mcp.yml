@@ -1,0 +1,48 @@
+name: Publish to MCP Registry
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Install mcp-publisher
+        run: |
+          curl -L "https://github.com/modelcontextprotocol/registry/releases/latest/download/mcp-publisher_$(uname -s | tr '[:upper:]' '[:lower:]')_$(uname -m | sed 's/x86_64/amd64/;s/aarch64/arm64/').tar.gz" | tar xz mcp-publisher
+
+      - name: Validate server.json
+        run: ./mcp-publisher validate server.json
+
+      - name: Wait for PyPI package ownership marker
+        shell: bash
+        run: |
+          set -euo pipefail
+          VERSION=$(python3 -c 'import json; print(json.load(open("server.json"))["packages"][0]["version"])')
+          echo "Waiting for visualtorch==${VERSION} on PyPI with mcp-name ownership proof..."
+          for attempt in $(seq 1 30); do
+            desc=$(curl -fsSL "https://pypi.org/pypi/visualtorch/${VERSION}/json" | python3 -c 'import json,sys; print(json.load(sys.stdin)["info"]["description"])' || true)
+            if printf '%s' "$desc" | grep -Fq 'mcp-name: io.github.willyfh/visualtorch'; then
+              echo "Found ownership proof for visualtorch==${VERSION}"
+              exit 0
+            fi
+            echo "Attempt ${attempt}/30: package not ready yet"
+            sleep 20
+          done
+          echo "Timed out waiting for visualtorch==${VERSION} on PyPI with ownership proof" >&2
+          exit 1
+
+      - name: Authenticate to MCP Registry
+        run: ./mcp-publisher login github-oidc
+
+      - name: Publish server to MCP Registry
+        run: ./mcp-publisher publish

@@ -66,6 +66,8 @@ styles (`graph`, `flow`, and `lenet`). Install it with `pip install "visualtorch
 for the tool schemas, generic stdio configuration, examples, and trusted-code security boundary.
 No client-specific plugin or extension is required.
 
+<!-- mcp-name: io.github.willyfh/visualtorch -->
+
 ## Used in Research
 
 VisualTorch has been used in published research, including works published in Nature, IEEE, and MDPI.
