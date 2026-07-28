@@ -1,0 +1,38 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.willyfh/visualtorch",
+  "title": "VisualTorch",
+  "description": "Render PyTorch architecture diagrams and animated GIF reveals from trusted model source.",
+  "websiteUrl": "https://visualtorch.readthedocs.io/en/latest/markdown/get_started/mcp.html",
+  "repository": {
+    "url": "https://github.com/willyfh/visualtorch",
+    "source": "github"
+  },
+  "version": "1.4.1",
+  "packages": [
+    {
+      "registryType": "pypi",
+      "registryBaseUrl": "https://pypi.org",
+      "identifier": "visualtorch",
+      "version": "1.4.1",
+      "runtimeHint": "uvx",
+      "packageArguments": [
+        {
+          "type": "positional",
+          "value": "--from"
+        },
+        {
+          "type": "positional",
+          "value": "visualtorch[mcp]"
+        },
+        {
+          "type": "positional",
+          "value": "visualtorch-mcp"
+        }
+      ],
+      "transport": {
+        "type": "stdio"
+      }
+    }
+  ]
+}
