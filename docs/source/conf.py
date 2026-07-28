@@ -9,6 +9,7 @@ https://www.sphinx-doc.org/en/master/usage/configuration.html#project-informatio
 
 from __future__ import annotations
 
+import re
 import sys
 from pathlib import Path
 
@@ -20,6 +21,19 @@ module_path = Path(__file__).parent.parent / "src"
 
 # Insert the path to sys.path
 sys.path.insert(0, str(module_path.resolve()))
+
+# Regenerate the pinned `pip install visualtorch==X.Y.Z` snippet from setup.py's version on every
+# doc build, so the Installation page can never show a stale version again (it was missed on 3
+# releases in a row when this was a manually-updated file). Parsed directly from setup.py's source
+# text, not the installed package's metadata - an editable install can report a stale version
+# after a version-bump commit until it's reinstalled, which would silently defeat the point here.
+_setup_py = (Path(__file__).parent.parent.parent / "setup.py").read_text(encoding="utf-8")
+_version_match = re.search(r'version\s*=\s*"([^"]+)"', _setup_py)
+if _version_match is None:
+    message = 'Could not find version="..." in setup.py to regenerate the install snippet.'
+    raise RuntimeError(message)
+_pypi_snippet = Path(__file__).parent / "snippets" / "install" / "pypi.txt"
+_pypi_snippet.write_text(f"pip install visualtorch=={_version_match.group(1)}\n", encoding="utf-8")
 
 # Sphinx-Gallery captures each example's figure via matplotlib's savefig, at whatever DPI is
 # active during the doc build - matplotlib's own default (100) downscales anything larger than
