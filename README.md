@@ -1,10 +1,6 @@
 <div align="center">
 
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/willyfh/visualtorch/main/docs/source/_static/images/logos/wordmark-dark.png" />
-  <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/willyfh/visualtorch/main/docs/source/_static/images/logos/wordmark-light.png" />
-  <img alt="VisualTorch" height="70" src="https://raw.githubusercontent.com/willyfh/visualtorch/main/docs/source/_static/images/logos/wordmark-light.png" />
-</picture>
+<img alt="VisualTorch" height="70" src="https://raw.githubusercontent.com/willyfh/visualtorch/main/docs/source/_static/images/logos/wordmark-light.png" />
 
 <br/>
 <br/>
