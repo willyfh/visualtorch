@@ -55,7 +55,7 @@ def _fetch_stargazer_timestamps() -> list[datetime]:
     page = 1
     while True:
         url = f"https://api.github.com/repos/{REPO}/stargazers?per_page=100&page={page}"
-        request = urllib.request.Request(url, headers=headers)  # noqa: S310
+        request = urllib.request.Request(url, headers=headers)
         with urllib.request.urlopen(request) as response:  # noqa: S310
             entries = json.loads(response.read())
         if not entries:
