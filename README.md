@@ -1,3 +1,5 @@
+[![MCP Toplist](https://mcptoplist.com/badge/io.github.willyfh%2Fvisualtorch.svg)](https://mcptoplist.com/server/io.github.willyfh%2Fvisualtorch)
+
 <div align="center">
 
 <img alt="VisualTorch" height="70" src="https://raw.githubusercontent.com/willyfh/visualtorch/main/docs/source/_static/images/logos/wordmark-light.png" />
