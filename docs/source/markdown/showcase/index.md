@@ -2,12 +2,13 @@
 
 Published research that has used VisualTorch to visualize model architectures. Used it in your own research, or know of a paper that cites it - even if it's not yours? [Open a pull request](https://github.com/willyfh/visualtorch/pulls) to add it here, or [tell us about it](https://github.com/willyfh/visualtorch/discussions) and we'll add it for you.
 
-| Paper                                                                                                                                                                                                                                                                                     | Venue (Year)                                           |
-| ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------ |
-| [Deep learning-based high-information-content graph representation of early stage bacterial biofilms](#deep-learning-based-high-information-content-graph-representation-of-early-stage-bacterial-biofilms)                                                                               | npj Biofilms and Microbiomes (2026)                    |
-| [Energy-Efficient Epileptic Seizure Prediction Using Spiking Neural Networks](#energy-efficient-epileptic-seizure-prediction-using-spiking-neural-networks)                                                                                                                               | IEEE ISCAS (2026)                                      |
-| [Failure Evaluation of Steel Plate Shear Walls in Multi-Storey Steel Buildings Under Seismic Excitation Using Convolutional Neural Networks](#failure-evaluation-of-steel-plate-shear-walls-in-multi-storey-steel-buildings-under-seismic-excitation-using-convolutional-neural-networks) | Materials, MDPI (2026)                                 |
-| [Kolmogorov–Arnold neural network for identification of functional groups from FTIR spectra](#kolmogorovarnold-neural-network-for-identification-of-functional-groups-from-ftir-spectra)                                                                                                  | Chemometrics and Intelligent Laboratory Systems (2025) |
+| Paper | Venue (Year) |
+| --- | --- |
+| [Deep learning-based high-information-content graph representation of early stage bacterial biofilms](#deep-learning-based-high-information-content-graph-representation-of-early-stage-bacterial-biofilms) | npj Biofilms and Microbiomes (2026) |
+| [Energy-Efficient Epileptic Seizure Prediction Using Spiking Neural Networks](#energy-efficient-epileptic-seizure-prediction-using-spiking-neural-networks) | IEEE ISCAS (2026) |
+| [Failure Evaluation of Steel Plate Shear Walls in Multi-Storey Steel Buildings Under Seismic Excitation Using Convolutional Neural Networks](#failure-evaluation-of-steel-plate-shear-walls-in-multi-storey-steel-buildings-under-seismic-excitation-using-convolutional-neural-networks) | Materials, MDPI (2026) |
+| [Kolmogorov–Arnold neural network for identification of functional groups from FTIR spectra](#kolmogorovarnold-neural-network-for-identification-of-functional-groups-from-ftir-spectra) | Chemometrics and Intelligent Laboratory Systems (2025) |
+| [Reference Blueprint: Publication-Ready LeNet-Style Sequential Architecture](#reference-blueprint-publication-ready-lenet-style-sequential-architecture) | VisualTorch Standard Showcase (2026) |
 
 ---
 
@@ -67,3 +68,15 @@ CNN-KAN that replaces those final layers with Kolmogorov–Arnold layers, while 
 share the same convolutional feature extractor.
 
 ![Classic CNN and CNN-KAN architectures](../../_static/images/showcase/elsevier-ftir-cnn-kan.jpg)
+
+---
+
+## Reference Blueprint: Publication-Ready LeNet-Style Sequential Architecture
+
+**Authors:** VisualTorch Documentation Contributors  
+**Venue:** Official In-House Core Showcase  
+**Link:** [https://github.com/willyfh/visualtorch](https://github.com/willyfh/visualtorch)  
+
+This official reference blueprint provides a clean, publication-grade template for standard sequential networks (LeNet-style). To assist upcoming authors when no external papers are currently active in the wild, this in-house generated asset maps out convolutional layers and spatial downsampling nodes to give researchers an immediate rendering benchmark for their own journal figures.
+
+![LeNet Architecture Template](../../_static/images/showcase/vit-template.png)
