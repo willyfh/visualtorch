@@ -12,14 +12,14 @@ repos:
       - id: detect-private-key
 
   - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: "v2.3.0"
+    rev: "v2.3.1"
     hooks:
       - id: mypy
         additional_dependencies: [types-PyYAML]
         exclude: "tests"
 
   - repo: https://github.com/pre-commit/mirrors-prettier
-    rev: v3.1.0
+    rev: v4.0.0-alpha.8
     hooks:
       - id: prettier
 
@@ -30,7 +30,7 @@ repos:
         args: ["--ignore", "paper/paper.md"]
 
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: "v0.15.22"
+    rev: "v0.16.3"
     hooks:
       # Run the linter.
       - id: ruff
