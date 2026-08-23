@@ -18,10 +18,20 @@ repos:
         additional_dependencies: [types-PyYAML]
         exclude: "tests"
 
-  - repo: https://github.com/pre-commit/mirrors-prettier
-    rev: v3.1.0
+  # A `local` hook instead of the `mirrors-prettier` repo mirror: that mirror only has alpha
+  # pre-releases past v3.1.0 (prettier hasn't cut a stable v4 yet), and pre-commit.ci's autoupdate
+  # always jumps to the highest available tag regardless of pre-release status - repeatedly
+  # proposing a broken v4.0.0-alpha.x bump (see #168, #188, #192, #200). A `local` hook has no
+  # `rev` for autoupdate to touch, so it's pinned here until manually bumped to a real stable
+  # release.
+  - repo: local
     hooks:
       - id: prettier
+        name: prettier
+        entry: prettier --write --list-different --ignore-unknown
+        language: node
+        types: [text]
+        additional_dependencies: ["prettier@3.1.0"]
 
   - repo: https://github.com/igorshubovych/markdownlint-cli
     rev: v0.49.1
