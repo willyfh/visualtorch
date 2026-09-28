@@ -117,6 +117,7 @@ import torch
 import visualtorch
 from torch import nn
 
+
 class SimpleDense(nn.Module):
     def __init__(self) -> None:
         super().__init__()
@@ -130,6 +131,7 @@ class SimpleDense(nn.Module):
         x = self.h1(x)
         x = self.h2(x)
         return self.out(x)
+
 
 model = SimpleDense()
 
