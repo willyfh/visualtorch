@@ -4,11 +4,11 @@ We welcome your feedbacks and contributions!
 
 ## Bug Report and Feature Request
 
-We use GitHub issues to track bugs and feature requests. If you want to report a bug or request a feature, please [create a new issue](https://github.com/willyfh/visualtorch/issues). Please make sure there are no existing issues to avoid duplication.
+We use GitHub issues to track bugs and feature requests. If you want to report a bug or request a feature, please [create a new issue](https://github.com/hiddenstateresearch/visualtorch/issues). Please make sure there are no existing issues to avoid duplication.
 
 ## Discussion
 
-The [GitHub Discussions](https://github.com/willyfh/visualtorch/discussions/) is enabled in visualtorch to help the community asking questions and/or propose ideas/solutions.
+The [GitHub Discussions](https://github.com/hiddenstateresearch/visualtorch/discussions/) is enabled in visualtorch to help the community asking questions and/or propose ideas/solutions.
 
 ## Development & PRs
 

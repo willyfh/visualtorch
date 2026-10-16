@@ -1,6 +1,6 @@
 """Regression tests for shape-handling crashes reported in open GitHub issues.
 
-See https://github.com/willyfh/visualtorch/issues/63, /68, /69, /84, /85.
+See https://github.com/hiddenstateresearch/visualtorch/issues/63, /68, /69, /84, /85.
 """
 
 # Copyright (C) 2024 VisualTorch Contributors

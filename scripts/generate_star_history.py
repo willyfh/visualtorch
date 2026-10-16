@@ -32,7 +32,7 @@ from scipy.interpolate import PchipInterpolator
 REPO_ROOT = Path(__file__).resolve().parent.parent
 IMAGE_DIR = REPO_ROOT / "docs" / "source" / "_static" / "images"
 LOGO_PATH = IMAGE_DIR / "logos" / "traced-flame-icon.png"
-REPO = "willyfh/visualtorch"
+REPO = "hiddenstateresearch/visualtorch"
 ACCENT_COLOR = "#E69F00"  # first color of visualtorch's own "okabe_ito" palette.
 
 _THEMES = {

@@ -17,8 +17,8 @@ class DocsPage:
     readthedocs_url: str
 
 
-DOCS_BASE = "https://github.com/willyfh/visualtorch/blob/main/docs"
-RAW_BASE = "https://raw.githubusercontent.com/willyfh/visualtorch/main/docs"
+DOCS_BASE = "https://github.com/hiddenstateresearch/visualtorch/blob/main/docs"
+RAW_BASE = "https://raw.githubusercontent.com/hiddenstateresearch/visualtorch/main/docs"
 RTD_BASE = "https://visualtorch.readthedocs.io/en/latest"
 
 STYLE_ALIASES: dict[str, tuple[str, ...]] = {

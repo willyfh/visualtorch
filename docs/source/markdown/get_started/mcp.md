@@ -252,9 +252,9 @@ authentication, branding, or packaging for any particular MCP host.
 ## MCP Registry
 
 VisualTorch is prepared for the official MCP Registry as
-`io.github.willyfh/visualtorch`. The package ownership proof is the
-`mcp-name: io.github.willyfh/visualtorch` marker in the project README that ships on PyPI.
-Registry metadata lives in [`server.json`](https://github.com/willyfh/visualtorch/blob/main/server.json)
+`io.github.hiddenstateresearch/visualtorch`. The package ownership proof is the
+`mcp-name: io.github.hiddenstateresearch/visualtorch` marker in the project README that ships on PyPI.
+Registry metadata lives in [`server.json`](https://github.com/hiddenstateresearch/visualtorch/blob/main/server.json)
 at the repository root.
 
 Hosts that consume the registry can install and launch the server with:
