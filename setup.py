@@ -29,7 +29,7 @@ setuptools.setup(
     keywords=["visualize architecture", "torch visualization", "visualtorch"],
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://github.com/willyfh/visualtorch",
+    url="https://github.com/hiddenstateresearch/visualtorch",
     packages=setuptools.find_packages(),
     classifiers=[
         "Programming Language :: Python :: 3.10",

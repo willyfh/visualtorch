@@ -31,7 +31,7 @@ jobs:
           echo "Waiting for visualtorch==${VERSION} on PyPI with mcp-name ownership proof..."
           for attempt in $(seq 1 30); do
             desc=$(curl -fsSL "https://pypi.org/pypi/visualtorch/${VERSION}/json" | python3 -c 'import json,sys; print(json.load(sys.stdin)["info"]["description"])' || true)
-            if printf '%s' "$desc" | grep -Fq 'mcp-name: io.github.willyfh/visualtorch'; then
+            if printf '%s' "$desc" | grep -Fq 'mcp-name: io.github.hiddenstateresearch/visualtorch'; then
               echo "Found ownership proof for visualtorch==${VERSION}"
               exit 0
             fi

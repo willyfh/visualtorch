@@ -1,11 +1,11 @@
 {
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
-  "name": "io.github.willyfh/visualtorch",
+  "name": "io.github.hiddenstateresearch/visualtorch",
   "title": "VisualTorch",
   "description": "Render PyTorch architecture diagrams and animated GIF reveals from trusted model source.",
   "websiteUrl": "https://visualtorch.readthedocs.io/en/latest/markdown/get_started/mcp.html",
   "repository": {
-    "url": "https://github.com/willyfh/visualtorch",
+    "url": "https://github.com/hiddenstateresearch/visualtorch",
     "source": "github"
   },
   "version": "1.4.1",

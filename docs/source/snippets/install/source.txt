@@ -1,1 +1,1 @@
-pip install git+https://github.com/willyfh/visualtorch
+pip install git+https://github.com/hiddenstateresearch/visualtorch

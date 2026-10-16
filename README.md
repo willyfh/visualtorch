@@ -1,11 +1,11 @@
 <div align="center">
 
-<img alt="VisualTorch" height="70" src="https://raw.githubusercontent.com/willyfh/visualtorch/main/docs/source/_static/images/logos/wordmark-light.png" />
+<img alt="VisualTorch" height="70" src="https://raw.githubusercontent.com/hiddenstateresearch/visualtorch/main/docs/source/_static/images/logos/wordmark-light.png" />
 
 <br/>
 <br/>
 
-[![python](https://img.shields.io/badge/python-3.10%2B-blue)]() [![pytorch](https://img.shields.io/badge/pytorch-2.0%2B-orange)]() [![Downloads](https://static.pepy.tech/personalized-badge/visualtorch?period=total&units=international_system&left_color=grey&right_color=green&left_text=PyPI%20Downloads)](https://pepy.tech/project/visualtorch) [![Run Tests](https://github.com/willyfh/visualtorch/actions/workflows/pytest.yml/badge.svg)](https://github.com/willyfh/visualtorch/actions/workflows/pytest.yml) [![Documentation Status](https://readthedocs.org/projects/visualtorch/badge/?version=latest)](https://visualtorch.readthedocs.io/en/latest/?badge=latest)
+[![python](https://img.shields.io/badge/python-3.10%2B-blue)]() [![pytorch](https://img.shields.io/badge/pytorch-2.0%2B-orange)]() [![Downloads](https://static.pepy.tech/personalized-badge/visualtorch?period=total&units=international_system&left_color=grey&right_color=green&left_text=PyPI%20Downloads)](https://pepy.tech/project/visualtorch) [![Run Tests](https://github.com/hiddenstateresearch/visualtorch/actions/workflows/pytest.yml/badge.svg)](https://github.com/hiddenstateresearch/visualtorch/actions/workflows/pytest.yml) [![Documentation Status](https://readthedocs.org/projects/visualtorch/badge/?version=latest)](https://visualtorch.readthedocs.io/en/latest/?badge=latest)
 
 </div>
 
@@ -24,7 +24,7 @@ the first. Downstream connections are correct either way. Contributions are welc
 
 <div align="center">
 
-![VisualTorch Examples](https://raw.githubusercontent.com/willyfh/visualtorch/e6ad79751e0f7412b1074beb45f9baeccd1419e4/docs/source/_static/images/banners/readme-examples.png)
+![VisualTorch Examples](https://raw.githubusercontent.com/hiddenstateresearch/visualtorch/e6ad79751e0f7412b1074beb45f9baeccd1419e4/docs/source/_static/images/banners/readme-examples.png)
 
 </div>
 
@@ -38,7 +38,7 @@ via `visualtorch.animate(model, input_shape, style=...)` - see it in action for
 
 <div align="center">
 
-![Animated VisualTorch Example](https://raw.githubusercontent.com/willyfh/visualtorch/57ce9d41e7a2dfdb76c4b6cf0df82b0c5c0846e5/docs/source/_static/images/banners/readme-animated-demo.gif)
+![Animated VisualTorch Example](https://raw.githubusercontent.com/hiddenstateresearch/visualtorch/57ce9d41e7a2dfdb76c4b6cf0df82b0c5c0846e5/docs/source/_static/images/banners/readme-animated-demo.gif)
 
 </div>
 
@@ -62,7 +62,7 @@ styles (`graph`, `flow`, and `lenet`). Install it with `pip install "visualtorch
 for the tool schemas, generic stdio configuration, examples, and trusted-code security boundary.
 No client-specific plugin or extension is required.
 
-<!-- mcp-name: io.github.willyfh/visualtorch -->
+<!-- mcp-name: io.github.hiddenstateresearch/visualtorch -->
 
 ## Used in Research
 
@@ -70,7 +70,7 @@ VisualTorch has been used in published research, including works published in Na
 
 See the [Research Showcase page](https://visualtorch.readthedocs.io/en/latest/markdown/showcase/index.html) for the full list.
 
-Used VisualTorch in your research, built something with it, or found a paper that cites it? [Tell us about it](https://github.com/willyfh/visualtorch/discussions) or [open a pull request](https://github.com/willyfh/visualtorch/pulls) to add it directly - we'd love to hear.
+Used VisualTorch in your research, built something with it, or found a paper that cites it? [Tell us about it](https://github.com/hiddenstateresearch/visualtorch/discussions) or [open a pull request](https://github.com/hiddenstateresearch/visualtorch/pulls) to add it directly - we'd love to hear.
 
 ## Examples
 
@@ -78,15 +78,15 @@ See the [Usage Examples page](https://visualtorch.readthedocs.io/en/latest/usage
 
 ## Contributing
 
-Please feel free to send a pull request to contribute to this project by following this [guideline](https://github.com/willyfh/visualtorch/blob/main/CONTRIBUTING.md).
+Please feel free to send a pull request to contribute to this project by following this [guideline](https://github.com/hiddenstateresearch/visualtorch/blob/main/CONTRIBUTING.md).
 
 ## Releases
 
-See [GOVERNANCE.md](https://github.com/willyfh/visualtorch/blob/main/GOVERNANCE.md#release-process) for release methodology and cadence, and the [PyPI release history](https://pypi.org/project/visualtorch/#history) for past releases.
+See [GOVERNANCE.md](https://github.com/hiddenstateresearch/visualtorch/blob/main/GOVERNANCE.md#release-process) for release methodology and cadence, and the [PyPI release history](https://pypi.org/project/visualtorch/#history) for past releases.
 
 ## License
 
-This poject is available as open source under the terms of the [MIT License](https://github.com/willyfh/visualtorch/blob/main/LICENSE.md).
+This poject is available as open source under the terms of the [MIT License](https://github.com/hiddenstateresearch/visualtorch/blob/main/LICENSE.md).
 
 Originally, this project was based on the [visualkeras](https://github.com/paulgavrikov/visualkeras) (under the MIT license), with additional modifications inspired by [pytorchviz](https://github.com/szagoruyko/pytorchviz), [pytorch-summary](https://github.com/sksq96/pytorch-summary), and [torchview](https://github.com/mert-kurttutan/torchview), all of which are also licensed under the MIT license.
 
@@ -117,7 +117,7 @@ always resolves to what was actually reviewed and published.
 ## Star History
 
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/willyfh/visualtorch/assets/docs/source/_static/images/star-history-dark.png" />
-  <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/willyfh/visualtorch/assets/docs/source/_static/images/star-history-light.png" />
-  <img alt="Star History Chart" src="https://raw.githubusercontent.com/willyfh/visualtorch/assets/docs/source/_static/images/star-history-light.png" />
+  <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/hiddenstateresearch/visualtorch/assets/docs/source/_static/images/star-history-dark.png" />
+  <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/hiddenstateresearch/visualtorch/assets/docs/source/_static/images/star-history-light.png" />
+  <img alt="Star History Chart" src="https://raw.githubusercontent.com/hiddenstateresearch/visualtorch/assets/docs/source/_static/images/star-history-light.png" />
 </picture>
